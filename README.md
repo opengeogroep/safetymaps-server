@@ -39,7 +39,7 @@ Om deze webapp te installeren moet je de tomcat vertellen hoe hij met de databas
 />
 ```
  
-Hier moeten uiteraard de juiste gegevens worden ingevuld. Hierna moet de Postgres driver worden gedownload en worden gekopieerd in tomcat/lib. Deze kan [hier|http://jdbc.postgresql.org/download.html] gedownload worden.
+Hier moeten uiteraard de juiste gegevens worden ingevuld. Hierna moet de Postgres driver worden gedownload en worden gekopieerd in tomcat/lib. Deze kan gedownload worden van de volgende site:http://jdbc.postgresql.org/download.html.
 Hierna moet tomcat worden herstart en kan de applicatie worden gedeployed.
 
 ### 
