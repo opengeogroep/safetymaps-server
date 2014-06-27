@@ -8,15 +8,18 @@ Backend for the AJAX calls made by the DBKComponent of @escheper.
 Deze webapplicatie maakt de calls naar de Postgres database waarin de DBK objecten staan. Het ondersteund de volgende API-calls:
 
 **/api/features.json**
+
 Hij geeft GeoJSON terug met een featurecollection van alle DBK's
 
 __ToDo:__
+
 srid als parameter implementeren
 
 **/api/object/<id>.json**
 
 
 __ToDo:__
+
 srid als parameter implementeren
 
 
@@ -39,7 +42,7 @@ Om deze webapp te installeren moet je de tomcat vertellen hoe hij met de databas
 />
 ```
  
-Hier moeten uiteraard de juiste gegevens worden ingevuld. Hierna moet de Postgres driver worden gedownload en worden gekopieerd in tomcat/lib. Deze kan gedownload worden van de volgende site:http://jdbc.postgresql.org/download.html.
+Hier moeten uiteraard de juiste gegevens worden ingevuld. Hierna moet de Postgres driver worden gedownload en worden gekopieerd in tomcat/lib. Deze kan gedownload worden van de volgende site:http://jdbc.postgresql.org/download.html. \
 Hierna moet tomcat worden herstart en kan de applicatie worden gedeployed.
 
 ### 
