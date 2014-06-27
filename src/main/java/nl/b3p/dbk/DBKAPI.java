@@ -19,17 +19,21 @@ package nl.b3p.dbk;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
+import java.util.Map;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
+import org.apache.commons.dbutils.DbUtils;
+import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.MapListHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  *
@@ -37,6 +41,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class DBKAPI extends HttpServlet {
 
+    private static final Log log = LogFactory.getLog(DBKAPI.class);    
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -66,38 +71,47 @@ public class DBKAPI extends HttpServlet {
 
     private void processFeature() throws SQLException {
         Connection conn = getConnection();
+       MapListHandler h = new MapListHandler();
+        // No DataSource so we must handle Connections manually
+        QueryRunner run = new QueryRunner();
+
         try {
-            // make sure autocommit is off
-            conn.setAutoCommit(false);
-            Statement st = conn.createStatement();
-
-// Turn use of the cursor on.
-            st.setFetchSize(50);
-            ResultSet rs = st.executeQuery("select \"feature\" from dbk.dbkfeatures_json()");
-            
-            while (rs.next()) {
-                int i = 0;
-                System.out.print("a row was returned.");
-            }
-            rs.close();
-
-// Close the statement.
-            st.close();
-        } catch (SQLException ex) {
-            conn.close();
+            List<Map<String,Object>> result = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json()", h);
+            // do something with the result
+            int a = 0 ;
+        } finally {
+            // Use this helper method so we don't have to check for null
+            DbUtils.close(conn);
         }
+
     }
 
     private void processObject() {
 
     }
 
-    public Connection getConnection() throws SQLException {
-        Properties props = new Properties();
-        props.put("user", "dbk");
-        props.put("password", "***");
-        return DriverManager.getConnection("jdbc:postgresql://vru/dbk", props);
+    public Connection getConnection() {
+        try {
+            InitialContext cxt = new InitialContext();
+            if (cxt == null) {
+                throw new Exception("Uh oh -- no context!");
+            }
+            
+            DataSource ds = (DataSource) cxt.lookup("java:/comp/env/jdbc/dbk-api");
+            
+            if (ds == null) {
+                throw new Exception("Data source not found!");
+            }
+            Connection connection = ds.getConnection();
+            return connection;
+        } catch (NamingException ex) {
+            log.error("naming",ex);
+        } catch (Exception ex) {
+            log.error("exception",ex);
+        }
+        return null;
     }
+
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
@@ -114,7 +128,7 @@ public class DBKAPI extends HttpServlet {
         try {
             processRequest(request, response);
         } catch (SQLException ex) {
-            Logger.getLogger(DBKAPI.class.getName()).log(Level.SEVERE, null, ex);
+           // Logger.getLogger(DBKAPI.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -132,7 +146,7 @@ public class DBKAPI extends HttpServlet {
         try {
             processRequest(request, response);
         } catch (SQLException ex) {
-            Logger.getLogger(DBKAPI.class.getName()).log(Level.SEVERE, null, ex);
+           // Logger.getLogger(DBKAPI.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
