@@ -162,7 +162,7 @@ public class DBKAPI extends HttpServlet {
                 throw new IllegalArgumentException("Given id didn't yield any results.");
             }
             JSONObject pgObject = new JSONObject( feature.get("DBKObject"));
-            json =new JSONObject(pgObject.getString("value"));
+            json = new JSONObject(pgObject.getString("value"));
            
         } finally {
             DbUtils.close(conn);
@@ -231,7 +231,7 @@ public class DBKAPI extends HttpServlet {
         try {
             processRequest(request, response);
         } catch (SQLException ex) {
-           // Logger.getLogger(DBKAPI.class.getName()).log(Level.SEVERE, null, ex);
+           log.error("GET failed: ",ex);
         }
     }
 
@@ -249,7 +249,7 @@ public class DBKAPI extends HttpServlet {
         try {
             processRequest(request, response);
         } catch (SQLException ex) {
-           // Logger.getLogger(DBKAPI.class.getName()).log(Level.SEVERE, null, ex);
+           log.error("POST failed: ",ex);
         }
     }
 
