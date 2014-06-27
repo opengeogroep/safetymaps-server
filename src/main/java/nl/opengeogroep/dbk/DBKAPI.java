@@ -62,7 +62,7 @@ public class DBKAPI extends HttpServlet {
             if(method.contains(FEATURES)){
                 output = processFeatureRequest(request);    
             }else if(method.contains(OBJECT)){
-                processObjectRequest();
+                processObjectRequest(request);
             }else {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 output.put("success", Boolean.FALSE);
@@ -114,6 +114,13 @@ public class DBKAPI extends HttpServlet {
         return geoJSON;
     }
     
+    
+    private void processObjectRequest(HttpServletRequest request) {
+
+    }
+
+    
+    
     private JSONObject processFeature(Map<String,Object> feature){
         JSONObject jsonFeature = new JSONObject();
         JSONObject properties = new JSONObject();
@@ -135,10 +142,6 @@ public class DBKAPI extends HttpServlet {
             properties.put(key, value);
         }
         return jsonFeature;
-    }
-
-    private void processObjectRequest() {
-
     }
 
     public Connection getConnection() {
