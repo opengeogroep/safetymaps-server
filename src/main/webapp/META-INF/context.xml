@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context antiJARLocking="true" path="/DBKBackend">
-    <!-- Paste this in tomcat/conf/server.xml with the correct settings. Restart tomcat. This has to be done once.
+<Context antiJARLocking="true" path="/dbk-api">
+  <!-- Paste this in tomcat/conf/server.xml with the correct settings. Restart tomcat. This has to be done once.
     
         <Resource 
             name="jdbc/dbk-api"
