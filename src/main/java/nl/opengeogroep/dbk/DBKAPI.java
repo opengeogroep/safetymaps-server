@@ -54,20 +54,24 @@ public class DBKAPI extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         response.setContentType("application/json;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
+        PrintWriter out = response.getWriter();
+        try{
             String requestedUri = request.getRequestURI();
             String method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
             JSONObject output = new JSONObject();
             if(method.contains(FEATURES)){
                 output = processFeatureRequest(request);    
             }else if(method.contains(OBJECT)){
-                
+                processObjectRequest();
             }else {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 output.put("success", Boolean.FALSE);
                 output.put("message", "Requested method not understood. Method was: " + method + " but expected are: " + FEATURES + " or " + OBJECT);
             }
             out.print(output.toString());
+        }catch(Exception e){
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.println("Exception occured.");
         }
     }
 
@@ -77,14 +81,17 @@ public class DBKAPI extends HttpServlet {
      * @return A JSONObject with the GeoJSON representation of all the DBK's
      * @throws SQLException 
      */
-    private JSONObject processFeatureRequest(HttpServletRequest request) throws SQLException {
+    private JSONObject processFeatureRequest(HttpServletRequest request) throws SQLException, Exception {
+        JSONObject geoJSON = new JSONObject();
+        JSONArray jFeatures = new JSONArray();
         boolean hasParameter = request.getParameter(PARAMETER_SRID) != null;
         Connection conn = getConnection();
+        if(conn == null){
+            throw new Exception("Connection could not be established");
+        }
         MapListHandler h = new MapListHandler();
         QueryRunner run = new QueryRunner();
         
-        JSONObject geoJSON = new JSONObject();
-        JSONArray jFeatures = new JSONArray();
         geoJSON.put("type", "FeatureCollection");
         geoJSON.put("features",jFeatures);
         try {
