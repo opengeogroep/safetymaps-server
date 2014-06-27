@@ -56,16 +56,18 @@ public class DBKAPI extends HttpServlet {
         try (PrintWriter out = response.getWriter()) {
             String requestedUri = request.getRequestURI();
             String method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
+            JSONObject output = new JSONObject();
             if(method.contains(FEATURES)){
-                JSONObject feats = processFeatureRequest();    
+                output = processFeatureRequest();    
                 
-                out.print(feats.toString());
             }else if(method.contains(OBJECT)){
                 
             }else {
-                out.print("Onjuiste paramters");
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                output.put("success", Boolean.FALSE);
+                output.put("message", "Requested method not understood. Method was: " + method + " but expected are: " + FEATURES + " or " + OBJECT);
             }
-            
+            out.print(output.toString());
         }
     }
 

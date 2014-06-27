@@ -6,11 +6,7 @@
     </servlet>
     <servlet-mapping>
         <servlet-name>Features</servlet-name>
-        <url-pattern>/api/features.json</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>Features</servlet-name>
-        <url-pattern>/api/object/*</url-pattern>
+        <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
     <session-config>
         <session-timeout>
