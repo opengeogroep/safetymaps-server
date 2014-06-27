@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -47,7 +48,8 @@ public class DBKAPI extends HttpServlet {
     private static final Log log = LogFactory.getLog(DBKAPI.class);    
     private static final String API_PART = "/api/";
     private static final String FEATURES = "features.json";
-    private static final String OBJECT = "object.json";
+    private static final String OBJECT = "object/";
+    private static final String JSON = ".json";
     
     private static final String PARAMETER_SRID = "srid";
    
@@ -55,21 +57,29 @@ public class DBKAPI extends HttpServlet {
             throws ServletException, IOException, SQLException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
+        String method = null;
         try{
             String requestedUri = request.getRequestURI();
-            String method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
+            method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
             JSONObject output = new JSONObject();
             if(method.contains(FEATURES)){
                 output = processFeatureRequest(request);    
             }else if(method.contains(OBJECT)){
-                processObjectRequest(request);
+                output = processObjectRequest(request,method);
             }else {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 output.put("success", Boolean.FALSE);
                 output.put("message", "Requested method not understood. Method was: " + method + " but expected are: " + FEATURES + " or " + OBJECT);
             }
             out.print(output.toString());
-        }catch(Exception e){
+        }catch (IllegalArgumentException ex){
+            
+            log.error("Error happened with " + method +":",ex);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            out.println("Exception occured: "+ex.getLocalizedMessage());
+        }
+        catch(Exception e){
+            log.error("Error happened with " + method +":",e );
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.println("Exception occured.");
         }
@@ -114,12 +124,51 @@ public class DBKAPI extends HttpServlet {
         return geoJSON;
     }
     
-    
-    private void processObjectRequest(HttpServletRequest request) {
-
+    /**
+     * Method for requesting a single DBKObject
+     * @param request The HttpServletRequest of this request
+     * @param method Method containing possible (mandatory!) parameters: the id
+     * @return An JSONObject representing the requested DBKObject, of an empty JSONObject if none is found
+     * @throws Exception 
+     */
+    private JSONObject processObjectRequest(HttpServletRequest request,String method) throws Exception {
+        JSONObject json = new JSONObject();
+        boolean hasSrid = request.getParameter(PARAMETER_SRID) != null;
+        Connection conn = getConnection();
+        if(conn == null){
+            throw new Exception("Connection could not be established");
+        }
+        MapHandler h = new MapHandler();
+        QueryRunner run = new QueryRunner();
+        
+        String idString = null;
+        Integer id = null; 
+        try{
+            idString = method.substring(method.indexOf(OBJECT) + OBJECT.length(), method.indexOf(JSON));
+            id = Integer.parseInt(idString);
+        }catch(NumberFormatException ex){
+            throw new IllegalArgumentException("Given id not correct, should be an integer. Was: " + idString);
+        }
+        try {
+            Map<String, Object> feature;
+            if (hasSrid) {
+                String sridString = request.getParameter(PARAMETER_SRID);
+                Integer srid = Integer.parseInt(sridString);
+                feature = run.query(conn, "select \"DBKObject\" from dbk.dbkobject_json(?,?)", h, id, srid);
+            } else {
+                feature = run.query(conn, "select \"DBKObject\" from dbk.dbkobject_json(?)", h, id);
+            }
+            if(feature == null){
+                throw new IllegalArgumentException("Given id didn't yield any results.");
+            }
+            JSONObject pgObject = new JSONObject( feature.get("DBKObject"));
+            json =new JSONObject(pgObject.getString("value"));
+           
+        } finally {
+            DbUtils.close(conn);
+        }
+        return json;
     }
-
-    
     
     private JSONObject processFeature(Map<String,Object> feature){
         JSONObject jsonFeature = new JSONObject();
