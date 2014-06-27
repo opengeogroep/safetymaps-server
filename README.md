@@ -6,17 +6,18 @@ Backend for the AJAX calls made by the DBKComponent of @escheper.
 
 ## Functionality
 Deze webapplicatie maakt de calls naar de Postgres database waarin de DBK objecten staan. Het ondersteund de volgende API-calls:
-
-**/api/features.json**
+```
+**/api/features.json**  
+```
 Hij geeft GeoJSON terug met een featurecollection van alle DBK's
 
-__ToDo:__
+__ToDo:__  
 srid als parameter implementeren
-
+```
 **/api/object/<id>.json**
+```
 
-
-__ToDo:__
+__ToDo:__  
 srid als parameter implementeren
 
 
