@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.naming.InitialContext;
@@ -34,6 +35,8 @@ import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  *
@@ -42,51 +45,76 @@ import org.apache.commons.logging.LogFactory;
 public class DBKAPI extends HttpServlet {
 
     private static final Log log = LogFactory.getLog(DBKAPI.class);    
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+    private static final String API_PART = "/api/";
+    private static final String FEATURES = "features.json";
+    private static final String OBJECT = "object.json";
+    
+   
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
-        response.setContentType("text/html;charset=UTF-8");
+        response.setContentType("application/json;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet Features</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet Features at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-            processFeature();
+            String requestedUri = request.getRequestURI();
+            String method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
+            if(method.contains(FEATURES)){
+                JSONObject feats = processFeatureRequest();    
+                
+                out.print(feats.toString());
+            }else if(method.contains(OBJECT)){
+                
+            }else {
+                out.print("Onjuiste paramters");
+            }
+            
         }
     }
 
-    private void processFeature() throws SQLException {
+    private JSONObject processFeatureRequest() throws SQLException {
         Connection conn = getConnection();
-       MapListHandler h = new MapListHandler();
-        // No DataSource so we must handle Connections manually
+        MapListHandler h = new MapListHandler();
         QueryRunner run = new QueryRunner();
-
+        
+        JSONObject geoJSON = new JSONObject();
+        JSONArray jFeatures = new JSONArray();
+        geoJSON.put("type", "FeatureCollection");
+        geoJSON.put("features",jFeatures);
         try {
-            List<Map<String,Object>> result = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json()", h);
-            // do something with the result
-            int a = 0 ;
+            List<Map<String,Object>> features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json()", h);
+            
+            for (Map<String, Object> feature : features) {
+                JSONObject jFeature = processFeature(feature);
+                jFeatures.put(jFeature);
+            }
         } finally {
-            // Use this helper method so we don't have to check for null
             DbUtils.close(conn);
         }
-
+        return geoJSON;
+    }
+    
+    private JSONObject processFeature(Map<String,Object> feature){
+        JSONObject jsonFeature = new JSONObject();
+        JSONObject properties = new JSONObject();
+        
+        JSONObject  dbFeatureObject = new JSONObject(feature.get("feature"));
+        JSONObject featureValues = new JSONObject(dbFeatureObject.getString("value"));
+        
+        jsonFeature.put("type", "Feature");
+        jsonFeature.put("id", "DBKFeature.gid--" + featureValues.get("gid"));
+        jsonFeature.put("geometry", featureValues.get("geometry"));
+        
+        jsonFeature.put("properties", properties);
+        for (Iterator it = featureValues.keys(); it.hasNext();) {
+            String key = (String)it.next();
+            if(key.equals("geometry")){
+                continue;
+            }
+            Object value = featureValues.get(key);
+            properties.put(key, value);
+        }
+        return jsonFeature;
     }
 
-    private void processObject() {
+    private void processObjectRequest() {
 
     }
 
