@@ -9,15 +9,12 @@ Deze webapplicatie maakt de calls naar de Postgres database waarin de DBK object
 ```
 **/api/features.json**  
 ```
-Hij geeft GeoJSON terug met een featurecollection van alle DBK's. Mogelijke parameter is srid (defaults naar 28992).
+Geeft GeoJSON terug met een featurecollection van alle DBK's. Mogelijke parameter is __srid__ (niet verplicht, defaults naar 28992).
 
 ```
 **/api/object/<id>.json**
 ```
-
-__ToDo:__  
-srid als parameter implementeren
-
+Geeft een JSON object terug met een DBKObject. Mogelijke parameter is __srid__ (niet verplicht, defaults naar 28992).
 
 ## Installation
 Om deze webapp te installeren moet je de tomcat vertellen hoe hij met de database kan connecten. Dit doe je door in tomcat/conf/server.xml het volgende blok onder <GlobalNamingResources> te zetten:
@@ -40,7 +37,4 @@ Om deze webapp te installeren moet je de tomcat vertellen hoe hij met de databas
  
 Hier moeten uiteraard de juiste gegevens worden ingevuld. Hierna moet de Postgres driver worden gedownload en worden gekopieerd in tomcat/lib. Deze kan gedownload worden van de volgende site:http://jdbc.postgresql.org/download.html.  
 Hierna moet tomcat worden herstart en kan de applicatie worden gedeployed.
-
-### 
-
 
