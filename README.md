@@ -1,4 +1,16 @@
 DBKBackend
 ==========
 
-Backend for the AJAX calls made by the DBKComponent of @escheper
+Backend for the AJAX calls made by the DBKComponent of @escheper.
+
+
+Functionality
+=============
+
+
+Installation
+============
+
+
+Configuration
+-------------
