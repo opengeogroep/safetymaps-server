@@ -1,7 +1,7 @@
 # DBKBackend
 
 
-Backend for the AJAX calls made by the DBKComponent of @escheper.
+Backend voor de AJAX calls die gemaakt worden door het  DBKComponent van @escheper.
 
 
 ## Functionality
