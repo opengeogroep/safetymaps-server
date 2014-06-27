@@ -9,10 +9,8 @@ Deze webapplicatie maakt de calls naar de Postgres database waarin de DBK object
 ```
 **/api/features.json**  
 ```
-Hij geeft GeoJSON terug met een featurecollection van alle DBK's
+Hij geeft GeoJSON terug met een featurecollection van alle DBK's. Mogelijke parameter is srid (defaults naar 28992).
 
-__ToDo:__  
-srid als parameter implementeren
 ```
 **/api/object/<id>.json**
 ```

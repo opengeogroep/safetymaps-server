@@ -49,6 +49,7 @@ public class DBKAPI extends HttpServlet {
     private static final String FEATURES = "features.json";
     private static final String OBJECT = "object.json";
     
+    private static final String PARAMETER_SRID = "srid";
    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
@@ -58,8 +59,7 @@ public class DBKAPI extends HttpServlet {
             String method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
             JSONObject output = new JSONObject();
             if(method.contains(FEATURES)){
-                output = processFeatureRequest();    
-                
+                output = processFeatureRequest(request);    
             }else if(method.contains(OBJECT)){
                 
             }else {
@@ -71,7 +71,14 @@ public class DBKAPI extends HttpServlet {
         }
     }
 
-    private JSONObject processFeatureRequest() throws SQLException {
+    /**
+     * Process the call to /api/features.json[?srid=<integer>]
+     * @param request The requestobject
+     * @return A JSONObject with the GeoJSON representation of all the DBK's
+     * @throws SQLException 
+     */
+    private JSONObject processFeatureRequest(HttpServletRequest request) throws SQLException {
+        boolean hasParameter = request.getParameter(PARAMETER_SRID) != null;
         Connection conn = getConnection();
         MapListHandler h = new MapListHandler();
         QueryRunner run = new QueryRunner();
@@ -81,7 +88,14 @@ public class DBKAPI extends HttpServlet {
         geoJSON.put("type", "FeatureCollection");
         geoJSON.put("features",jFeatures);
         try {
-            List<Map<String,Object>> features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json()", h);
+            List<Map<String,Object>> features;
+            if(hasParameter){
+                String sridString = request.getParameter(PARAMETER_SRID);
+                Integer srid = Integer.parseInt(sridString);
+                features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json(?)", h,srid);
+            }else{
+                features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json()", h);
+            }
             
             for (Map<String, Object> feature : features) {
                 JSONObject jFeature = processFeature(feature);
