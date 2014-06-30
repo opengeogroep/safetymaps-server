@@ -162,7 +162,8 @@ public class DBKAPI extends HttpServlet {
                 throw new IllegalArgumentException("Given id didn't yield any results.");
             }
             JSONObject pgObject = new JSONObject( feature.get("DBKObject"));
-            json = new JSONObject(pgObject.getString("value"));
+            json = new JSONObject();
+            json.put("DBKObject", pgObject.getString("value"));
            
         } finally {
             DbUtils.close(conn);
