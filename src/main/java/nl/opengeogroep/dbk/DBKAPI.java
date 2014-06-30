@@ -163,7 +163,7 @@ public class DBKAPI extends HttpServlet {
             }
             JSONObject pgObject = new JSONObject( feature.get("DBKObject"));
             json = new JSONObject();
-            json.put("DBKObject", pgObject.getString("value"));
+            json.put("DBKObject", new JSONObject(pgObject.getString("value")));
            
         } finally {
             DbUtils.close(conn);
