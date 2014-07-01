@@ -36,5 +36,11 @@ Om deze webapp te installeren moet je de tomcat vertellen hoe hij met de databas
 ```
  
 Hier moeten uiteraard de juiste gegevens worden ingevuld. Hierna moet de Postgres driver worden gedownload en worden gekopieerd in tomcat/lib. Deze kan gedownload worden van de volgende site:http://jdbc.postgresql.org/download.html.  
+Daarna moet de context.xml aangepast worden om te vertellen waar de mediabestenden worden geupload. Dit kan met de volgende contextparameter:
+
+```xml
+  <Parameter name="dbk.media.path" value="<pad/naar/media>" override="false"/>
+```
+De context.xml kan aangepast worden in de .war file zelf, of hij kan - afhankelijk van de configuratie van tomcat - na deployen in /tomcat/conf/Catalina/localhost/dbk-api.xml (hij wordt door tomcat hernoemd).
 Hierna moet tomcat worden herstart en kan de applicatie worden gedeployed.
 

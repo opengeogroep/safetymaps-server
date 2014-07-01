@@ -16,8 +16,10 @@
  */
 package nl.opengeogroep.dbk;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -38,6 +40,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.apache.commons.io.IOUtils;
 
 /**
  *
@@ -49,39 +52,49 @@ public class DBKAPI extends HttpServlet {
     private static final String API_PART = "/api/";
     private static final String FEATURES = "features.json";
     private static final String OBJECT = "object/";
+    private static final String MEDIA = "media/";
     private static final String JSON = ".json";
     
     private static final String PARAMETER_SRID = "srid";
    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
-        response.setContentType("application/json;charset=UTF-8");
-        PrintWriter out = response.getWriter();
         String method = null;
+        OutputStream out = response.getOutputStream();
         try{
             String requestedUri = request.getRequestURI();
             method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
             JSONObject output = new JSONObject();
-            if(method.contains(FEATURES)){
-                output = processFeatureRequest(request);    
-            }else if(method.contains(OBJECT)){
-                output = processObjectRequest(request,method);
-            }else {
+            if(method.contains(FEATURES)||method.contains(OBJECT)){
+                 if(method.contains(FEATURES)){
+                    output = processFeatureRequest(request);    
+                }else {
+                    output = processObjectRequest(request,method);
+                }
+                 
+                response.setContentType("application/json;charset=UTF-8");
+                out.write(output.toString().getBytes());
+            } else if(method.contains(MEDIA)){
+                processMedia(method,request,response,out);
+            } else{
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 output.put("success", Boolean.FALSE);
-                output.put("message", "Requested method not understood. Method was: " + method + " but expected are: " + FEATURES + " or " + OBJECT);
+                output.put("message", "Requested method not understood. Method was: " + method + " but expected are: " + FEATURES +", " + OBJECT + " or " +MEDIA);
+                out.write(output.toString().getBytes());
             }
-            out.print(output.toString());
         }catch (IllegalArgumentException ex){
-            
+            response.setContentType("text/plain;charset=UTF-8");
             log.error("Error happened with " + method +":",ex);
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.println("Exception occured: "+ex.getLocalizedMessage());
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.write(ex.getLocalizedMessage().getBytes());
         }
         catch(Exception e){
             log.error("Error happened with " + method +":",e );
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.println("Exception occured.");
+            out.write("Exception occured.".getBytes());
+        }finally{
+            out.flush();
+            out.close();
         }
     }
 
@@ -171,6 +184,42 @@ public class DBKAPI extends HttpServlet {
         return json;
     }
     
+    /**
+     * Processes the request for retrieving the media belonging to a DBK.
+     * @param method The part of the url after /api/, containing the file name (and possible subdirectory)
+     * @param request The http request
+     * @param response The http response
+     * @param out The outputstream to which the file must be written.
+     * @throws IOException 
+     */
+    private void processMedia( String method, HttpServletRequest request,HttpServletResponse response, OutputStream out) throws IOException {
+        FileInputStream fis = null;
+        try {
+            String basePath = request.getServletContext().getInitParameter("dbk.media.path");
+            File base = new File(basePath);
+            String fileArgument = method.substring(method.indexOf(MEDIA)+MEDIA.length());
+            String totalPath = basePath + File.separatorChar + fileArgument;
+            File requestedFile = new File(totalPath);
+            
+            if (isRequestedFileInPath(requestedFile, base)){
+                fis = new FileInputStream(requestedFile);
+                byte[] bytes = IOUtils.toByteArray(fis);
+                response.setContentType(request.getServletContext().getMimeType(totalPath));
+                response.setContentLength(bytes.length);
+                out.write(bytes);
+            }else{
+                throw new IllegalArgumentException("Requested file \"" + fileArgument + "\" does not exist");
+            }
+        } catch (IOException ex) {
+            log.error("Error retrieving media.",ex);
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        }finally{
+            if(fis != null){
+                fis.close();
+            }
+        }
+    }
+    
     private JSONObject processFeature(Map<String,Object> feature){
         JSONObject jsonFeature = new JSONObject();
         JSONObject properties = new JSONObject();
@@ -216,6 +265,31 @@ public class DBKAPI extends HttpServlet {
         return null;
     }
 
+    /**
+     * Checks whether or not the requestedFile is in the basePath (or a subdirectory of the basepath), and if so, if the file does exists.
+     * @param requestedFile The file requested by the user.
+     * @param basePath The basepath as configured by the administrator
+     * @return A boolean indicating whether the requestedFile is valid (resides under the basePath and does exist).
+     * @throws IOException 
+     */
+    private boolean isRequestedFileInPath(File requestedFile, File basePath) throws IOException {
+        final File parent = basePath.getCanonicalFile();
+        if (!parent.exists() || !parent.isDirectory()) {
+            // this cannot possibly be the parent
+            return false;
+        }
+
+        File child = requestedFile.getCanonicalFile();
+        while (child != null) {
+            if (child.equals(parent)) {
+                // Check here against the requestedfile instead of child, because child always exists and we want to know if the requestedFile exists.
+                return requestedFile.exists();
+            }
+            child = child.getParentFile();
+        }
+        // No match found, and we've hit the root directory
+        return false;
+    }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
