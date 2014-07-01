@@ -66,7 +66,7 @@ public class DBKAPI extends HttpServlet {
             method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
             JSONObject output = new JSONObject();
             if(method.contains(FEATURES)||method.contains(OBJECT)){
-                 if(method.contains(FEATURES)){
+                if(method.contains(FEATURES)){
                     output = processFeatureRequest(request);    
                 }else {
                     output = processObjectRequest(request,method);
@@ -87,8 +87,7 @@ public class DBKAPI extends HttpServlet {
             log.error("Error happened with " + method +":",ex);
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.write(ex.getLocalizedMessage().getBytes());
-        }
-        catch(Exception e){
+        }catch(Exception e){
             log.error("Error happened with " + method +":",e );
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.write("Exception occured.".getBytes());
@@ -203,10 +202,10 @@ public class DBKAPI extends HttpServlet {
             
             if (isRequestedFileInPath(requestedFile, base)){
                 fis = new FileInputStream(requestedFile);
-                byte[] bytes = IOUtils.toByteArray(fis);
                 response.setContentType(request.getServletContext().getMimeType(totalPath));
-                response.setContentLength(bytes.length);
-                out.write(bytes);
+                Long size = requestedFile.length();
+                response.setContentLength(size.intValue());
+                IOUtils.copy(fis, out);
             }else{
                 throw new IllegalArgumentException("Requested file \"" + fileArgument + "\" does not exist");
             }
