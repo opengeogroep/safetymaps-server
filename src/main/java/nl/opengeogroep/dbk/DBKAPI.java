@@ -195,12 +195,11 @@ public class DBKAPI extends HttpServlet {
         FileInputStream fis = null;
         try {
             String basePath = request.getServletContext().getInitParameter("dbk.media.path");
-            File base = new File(basePath);
             String fileArgument = method.substring(method.indexOf(MEDIA)+MEDIA.length());
             String totalPath = basePath + File.separatorChar + fileArgument;
             File requestedFile = new File(totalPath);
             
-            if (isRequestedFileInPath(requestedFile, base)){
+            if (isRequestedFileInPath(requestedFile, basePath)){
                 fis = new FileInputStream(requestedFile);
                 response.setContentType(request.getServletContext().getMimeType(totalPath));
                 Long size = requestedFile.length();
@@ -271,23 +270,9 @@ public class DBKAPI extends HttpServlet {
      * @return A boolean indicating whether the requestedFile is valid (resides under the basePath and does exist).
      * @throws IOException 
      */
-    private boolean isRequestedFileInPath(File requestedFile, File basePath) throws IOException {
-        final File parent = basePath.getCanonicalFile();
-        if (!parent.exists() || !parent.isDirectory()) {
-            // this cannot possibly be the parent
-            return false;
-        }
-
+    private boolean isRequestedFileInPath(File requestedFile, String basePath) throws IOException {
         File child = requestedFile.getCanonicalFile();
-        while (child != null) {
-            if (child.equals(parent)) {
-                // Check here against the requestedfile instead of child, because child always exists and we want to know if the requestedFile exists.
-                return requestedFile.exists();
-            }
-            child = child.getParentFile();
-        }
-        // No match found, and we've hit the root directory
-        return false;
+        return child.getCanonicalPath().startsWith(basePath);
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
