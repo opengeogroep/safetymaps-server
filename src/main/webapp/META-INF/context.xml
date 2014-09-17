@@ -18,6 +18,6 @@
 
     -->
     
-  <Parameter name="dbk.media.path" value="/opt/dbk-api-data" override="false"/>
+  <Parameter name="dbk.media.path" value="/opt/dbk-data" override="false"/>
   <ResourceLink global="jdbc/dbk-api" name="jdbc/dbk-api" type="javax.sql.Datasource"/>
 </Context>

@@ -90,7 +90,7 @@ public class DBKAPI extends HttpServlet {
         }catch(Exception e){
             log.error("Error happened with " + method +":",e );
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.write("Exception occured.".getBytes());
+            out.write(("Exception occured:" +e.getLocalizedMessage()).getBytes());
         }finally{
             out.flush();
             out.close();
@@ -206,6 +206,7 @@ public class DBKAPI extends HttpServlet {
                 response.setContentLength(size.intValue());
                 IOUtils.copy(fis, out);
             }else{
+                log.error( "Cannot load media: " + requestedFile.getCanonicalPath());
                 throw new IllegalArgumentException("Requested file \"" + fileArgument + "\" does not exist");
             }
         } catch (IOException ex) {
@@ -272,7 +273,7 @@ public class DBKAPI extends HttpServlet {
      */
     private boolean isRequestedFileInPath(File requestedFile, String basePath) throws IOException {
         File child = requestedFile.getCanonicalFile();
-        return child.getCanonicalPath().startsWith(basePath);
+        return child.getCanonicalPath().contains(basePath);
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
