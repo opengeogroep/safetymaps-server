@@ -71,9 +71,8 @@ public class DBKAPI extends HttpServlet {
                 }else {
                     output = processObjectRequest(request,method);
                 }
-                 
                 response.setContentType("application/json;charset=UTF-8");
-                out.write(output.toString().getBytes());
+                out.write(output.toString().getBytes("UTF-8"));
             } else if(method.contains(MEDIA)){
                 processMedia(method,request,response,out);
             } else{
