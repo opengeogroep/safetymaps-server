@@ -192,24 +192,23 @@ public class DBKAPI extends HttpServlet {
      */
     private void processMedia( String method, HttpServletRequest request,HttpServletResponse response, OutputStream out) throws IOException {
         FileInputStream fis = null;
+        File requestedFile = null;
+        String basePath = request.getServletContext().getInitParameter("dbk.media.path");
         try {
-            String basePath = request.getServletContext().getInitParameter("dbk.media.path");
-            String fileArgument = method.substring(method.indexOf(MEDIA)+MEDIA.length());
+            String fileArgument = method.substring(method.indexOf(MEDIA) + MEDIA.length());
             String totalPath = basePath + File.separatorChar + fileArgument;
-            File requestedFile = new File(totalPath);
-            
-            if (isRequestedFileInPath(requestedFile, basePath)){
-                fis = new FileInputStream(requestedFile);
-                response.setContentType(request.getServletContext().getMimeType(totalPath));
-                Long size = requestedFile.length();
-                response.setContentLength(size.intValue());
-                IOUtils.copy(fis, out);
-            }else{
-                log.error( "Cannot load media: " + requestedFile.getCanonicalPath());
-                throw new IllegalArgumentException("Requested file \"" + fileArgument + "\" does not exist");
-            }
+            requestedFile = new File(totalPath);
+
+            fis = new FileInputStream(requestedFile);
+            response.setContentType(request.getServletContext().getMimeType(totalPath));
+            Long size = requestedFile.length();
+            response.setContentLength(size.intValue());
+            IOUtils.copy(fis, out);
         } catch (IOException ex) {
-            log.error("Error retrieving media.",ex);
+            log.error("Error retrieving media.", ex);
+            if (requestedFile != null) {
+                log.error("Cannot load media: " + requestedFile.getCanonicalPath() + " from basePath: " + basePath);
+            }
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }finally{
             if(fis != null){
@@ -261,18 +260,6 @@ public class DBKAPI extends HttpServlet {
             log.error("exception",ex);
         }
         return null;
-    }
-
-    /**
-     * Checks whether or not the requestedFile is in the basePath (or a subdirectory of the basepath), and if so, if the file does exists.
-     * @param requestedFile The file requested by the user.
-     * @param basePath The basepath as configured by the administrator
-     * @return A boolean indicating whether the requestedFile is valid (resides under the basePath and does exist).
-     * @throws IOException 
-     */
-    private boolean isRequestedFileInPath(File requestedFile, String basePath) throws IOException {
-        File child = requestedFile.getCanonicalFile();
-        return child.getCanonicalPath().contains(basePath);
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
