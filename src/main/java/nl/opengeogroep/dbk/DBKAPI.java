@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -197,6 +198,8 @@ public class DBKAPI extends HttpServlet {
         try {
             String fileArgument = method.substring(method.indexOf(MEDIA) + MEDIA.length());
             String totalPath = basePath + File.separatorChar + fileArgument;
+
+            totalPath = URLDecoder.decode(totalPath,response.getCharacterEncoding());
             requestedFile = new File(totalPath);
 
             fis = new FileInputStream(requestedFile);
