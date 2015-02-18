@@ -53,6 +53,7 @@ public class DBKAPI extends HttpServlet {
     private static final String API_PART = "/api/";
     private static final String FEATURES = "features.json";
     private static final String OBJECT = "object/";
+    private static final String GEBIED = "gebied/";
     private static final String MEDIA = "media/";
     private static final String JSON = ".json";
     
@@ -66,17 +67,19 @@ public class DBKAPI extends HttpServlet {
             String requestedUri = request.getRequestURI();
             method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
             JSONObject output = new JSONObject();
-            if(method.contains(FEATURES)||method.contains(OBJECT)){
+            if(method.contains(FEATURES)||method.contains(OBJECT) || method.contains(GEBIED)){
                 if(method.contains(FEATURES)){
                     output = processFeatureRequest(request);    
-                }else {
+                }else if(method.contains(OBJECT)){
                     output = processObjectRequest(request,method);
+                }else {
+                    output = processGebiedRequest(request,method);
                 }
                 response.setContentType("application/json;charset=UTF-8");
                 out.write(output.toString().getBytes("UTF-8"));
             } else if(method.contains(MEDIA)){
                 processMedia(method,request,response,out);
-            } else{
+            }else{
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 output.put("success", Boolean.FALSE);
                 output.put("message", "Requested method not understood. Method was: " + method + " but expected are: " + FEATURES +", " + OBJECT + " or " +MEDIA);
@@ -177,6 +180,46 @@ public class DBKAPI extends HttpServlet {
             json = new JSONObject();
             json.put("DBKObject", new JSONObject(pgObject.getString("value")));
            
+        } finally {
+            DbUtils.close(conn);
+        }
+        return json;
+    }
+
+    private JSONObject processGebiedRequest(HttpServletRequest request,String method) throws Exception{
+        JSONObject json = new JSONObject();
+         boolean hasSrid = request.getParameter(PARAMETER_SRID) != null;
+        Connection conn = getConnection();
+        if(conn == null){
+            throw new Exception("Connection could not be established");
+        }
+        MapHandler h = new MapHandler();
+        QueryRunner run = new QueryRunner();
+
+        String idString = null;
+        Integer id = null;
+        try{
+            idString = method.substring(method.indexOf(GEBIED) + GEBIED.length(), method.indexOf(JSON));
+            id = Integer.parseInt(idString);
+        }catch(NumberFormatException ex){
+            throw new IllegalArgumentException("Given id not correct, should be an integer. Was: " + idString);
+        }
+        try {
+            Map<String, Object> feature;
+            if (hasSrid) {
+                String sridString = request.getParameter(PARAMETER_SRID);
+                Integer srid = Integer.parseInt(sridString);
+                feature = run.query(conn, "select \"DBKGebied\" from dbk.dbkgebied_json(?,?)", h, id, srid);
+            } else {
+                feature = run.query(conn, "select \"DBKGebied\" from dbk.dbkgebied_json(?)", h, id);
+            }
+            if(feature == null){
+                throw new IllegalArgumentException("Given id didn't yield any results.");
+            }
+            JSONObject pgObject = new JSONObject( feature.get("DBKGebied"));
+            json = new JSONObject();
+            json.put("DBKGebied", new JSONObject(pgObject.getString("value")));
+
         } finally {
             DbUtils.close(conn);
         }
