@@ -26,13 +26,11 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
+import nl.opengeogroep.safetymaps.server.db.Database;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapHandler;
@@ -49,16 +47,16 @@ import org.apache.commons.io.IOUtils;
  */
 public class DBKAPI extends HttpServlet {
 
-    private static final Log log = LogFactory.getLog(DBKAPI.class);    
+    private static final Log log = LogFactory.getLog(DBKAPI.class);
     private static final String API_PART = "/api/";
     private static final String FEATURES = "features.json";
     private static final String OBJECT = "object/";
     private static final String GEBIED = "gebied/";
     private static final String MEDIA = "media/";
     private static final String JSON = ".json";
-    
+
     private static final String PARAMETER_SRID = "srid";
-   
+
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         String method = null;
@@ -69,7 +67,7 @@ public class DBKAPI extends HttpServlet {
             JSONObject output = new JSONObject();
             if(method.contains(FEATURES)||method.contains(OBJECT) || method.contains(GEBIED)){
                 if(method.contains(FEATURES)){
-                    output = processFeatureRequest(request);    
+                    output = processFeatureRequest(request);
                 }else if(method.contains(OBJECT)){
                     output = processObjectRequest(request,method);
                 }else {
@@ -104,19 +102,19 @@ public class DBKAPI extends HttpServlet {
      * Process the call to /api/features.json[?srid=<integer>]
      * @param request The requestobject
      * @return A JSONObject with the GeoJSON representation of all the DBK's
-     * @throws SQLException 
+     * @throws SQLException
      */
     private JSONObject processFeatureRequest(HttpServletRequest request) throws SQLException, Exception {
         JSONObject geoJSON = new JSONObject();
         JSONArray jFeatures = new JSONArray();
         boolean hasParameter = request.getParameter(PARAMETER_SRID) != null;
-        Connection conn = getConnection();
+        Connection conn = Database.getConnection();
         if(conn == null){
             throw new Exception("Connection could not be established");
         }
         MapListHandler h = new MapListHandler();
         QueryRunner run = new QueryRunner();
-        
+
         geoJSON.put("type", "FeatureCollection");
         geoJSON.put("features",jFeatures);
         try {
@@ -128,7 +126,7 @@ public class DBKAPI extends HttpServlet {
             }else{
                 features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json()", h);
             }
-            
+
             for (Map<String, Object> feature : features) {
                 JSONObject jFeature = processFeature(feature);
                 jFeatures.put(jFeature);
@@ -138,26 +136,26 @@ public class DBKAPI extends HttpServlet {
         }
         return geoJSON;
     }
-    
+
     /**
      * Method for requesting a single DBKObject
      * @param request The HttpServletRequest of this request
      * @param method Method containing possible (mandatory!) parameters: the id
      * @return An JSONObject representing the requested DBKObject, of an empty JSONObject if none is found
-     * @throws Exception 
+     * @throws Exception
      */
     private JSONObject processObjectRequest(HttpServletRequest request,String method) throws Exception {
         JSONObject json = new JSONObject();
         boolean hasSrid = request.getParameter(PARAMETER_SRID) != null;
-        Connection conn = getConnection();
+        Connection conn = Database.getConnection();
         if(conn == null){
             throw new Exception("Connection could not be established");
         }
         MapHandler h = new MapHandler();
         QueryRunner run = new QueryRunner();
-        
+
         String idString = null;
-        Integer id = null; 
+        Integer id = null;
         try{
             idString = method.substring(method.indexOf(OBJECT) + OBJECT.length(), method.indexOf(JSON));
             id = Integer.parseInt(idString);
@@ -179,7 +177,7 @@ public class DBKAPI extends HttpServlet {
             JSONObject pgObject = new JSONObject( feature.get("DBKObject"));
             json = new JSONObject();
             json.put("DBKObject", new JSONObject(pgObject.getString("value")));
-           
+
         } finally {
             DbUtils.close(conn);
         }
@@ -189,7 +187,7 @@ public class DBKAPI extends HttpServlet {
     private JSONObject processGebiedRequest(HttpServletRequest request,String method) throws Exception{
         JSONObject json = new JSONObject();
          boolean hasSrid = request.getParameter(PARAMETER_SRID) != null;
-        Connection conn = getConnection();
+        Connection conn = Database.getConnection();
         if(conn == null){
             throw new Exception("Connection could not be established");
         }
@@ -225,14 +223,14 @@ public class DBKAPI extends HttpServlet {
         }
         return json;
     }
-    
+
     /**
      * Processes the request for retrieving the media belonging to a DBK.
      * @param method The part of the url after /api/, containing the file name (and possible subdirectory)
      * @param request The http request
      * @param response The http response
      * @param out The outputstream to which the file must be written.
-     * @throws IOException 
+     * @throws IOException
      */
     private void processMedia( String method, HttpServletRequest request,HttpServletResponse response, OutputStream out) throws IOException {
         FileInputStream fis = null;
@@ -262,18 +260,18 @@ public class DBKAPI extends HttpServlet {
             }
         }
     }
-    
+
     private JSONObject processFeature(Map<String,Object> feature){
         JSONObject jsonFeature = new JSONObject();
         JSONObject properties = new JSONObject();
-        
+
         JSONObject  dbFeatureObject = new JSONObject(feature.get("feature"));
         JSONObject featureValues = new JSONObject(dbFeatureObject.getString("value"));
-        
+
         jsonFeature.put("type", "Feature");
         jsonFeature.put("id", "DBKFeature.gid--" + featureValues.get("gid"));
         jsonFeature.put("geometry", featureValues.get("geometry"));
-        
+
         jsonFeature.put("properties", properties);
         for (Iterator it = featureValues.keys(); it.hasNext();) {
             String key = (String)it.next();
@@ -284,28 +282,6 @@ public class DBKAPI extends HttpServlet {
             properties.put(key, value);
         }
         return jsonFeature;
-    }
-
-    public Connection getConnection() {
-        try {
-            InitialContext cxt = new InitialContext();
-            if (cxt == null) {
-                throw new Exception("Uh oh -- no context!");
-            }
-            
-            DataSource ds = (DataSource) cxt.lookup("java:/comp/env/jdbc/dbk-api");
-            
-            if (ds == null) {
-                throw new Exception("Data source not found!");
-            }
-            Connection connection = ds.getConnection();
-            return connection;
-        } catch (NamingException ex) {
-            log.error("naming",ex);
-        } catch (Exception ex) {
-            log.error("exception",ex);
-        }
-        return null;
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">

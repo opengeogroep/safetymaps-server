@@ -3,7 +3,7 @@
   <!-- Paste this in tomcat/conf/server.xml with the correct settings. Restart tomcat. This has to be done once.
     
         <Resource 
-            name="jdbc/dbk-api"
+            name="jdbc/safetymaps-server"
             auth="Container"
             type="javax.sql.DataSource"
             username="<dbuser>"
@@ -18,5 +18,5 @@
 
     -->
   <Parameter name="dbk.media.path" override="false" value="/opt/dbk-data"/>
-  <ResourceLink global="jdbc/dbk-api" name="jdbc/dbk-api" type="javax.sql.Datasource"/>
+  <ResourceLink global="jdbc/safetymaps-server" name="jdbc/safetymaps-server" type="javax.sql.Datasource"/>
 </Context>
