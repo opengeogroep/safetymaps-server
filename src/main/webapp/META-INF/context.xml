@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context antiJARLocking="true" path="/dbk-api">
+<Context antiJARLocking="true" path="/safetymaps-server">
   <!-- Paste this in tomcat/conf/server.xml with the correct settings. Restart tomcat. This has to be done once.
     
         <Resource 
@@ -17,7 +17,6 @@
         />
 
     -->
-    
-  <Parameter name="dbk.media.path" value="/opt/dbk-data" override="false"/>
+  <Parameter name="dbk.media.path" override="false" value="/opt/dbk-data"/>
   <ResourceLink global="jdbc/dbk-api" name="jdbc/dbk-api" type="javax.sql.Datasource"/>
 </Context>

@@ -2,13 +2,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>nl.b3p.dbk</groupId>
-    <artifactId>dbk-api</artifactId>
+    <groupId>nl.opengeogroep</groupId>
+    <artifactId>safetymaps-server</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <name>dbk-api</name>
-
+    <name>safetymaps-server</name>
+    <url>https://github.com/opengeogroep/safetymaps-server</url>
+    
     <properties>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -46,17 +47,28 @@
             <artifactId>commons-io</artifactId>
             <version>2.4</version>
         </dependency>
+        <dependency>
+            <groupId>jstl</groupId>
+            <artifactId>jstl</artifactId>
+            <version>1.2</version>
+        </dependency>        
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>        
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.7</source>
+                    <target>1.7</target>
                     <compilerArguments>
                         <endorseddirs>${endorsed.dir}</endorseddirs>
                     </compilerArguments>
@@ -68,6 +80,15 @@
                 <version>2.3</version>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
+                    <webResources>
+                        <resource>
+                            <directory>src/main/webapp</directory>
+                            <filtering>true</filtering>
+                            <includes>
+                                <include>about.jsp</include>
+                            </includes>
+                        </resource>
+                    </webResources>                    
                 </configuration>
             </plugin>
             <plugin>
@@ -95,6 +116,36 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>2.1.5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <prefix>git</prefix>
+                    <dateFormat>dd.MM.yyyy '@' HH:mm:ss z</dateFormat>
+                    <verbose>true</verbose>
+                    <dotGitDirectory>${project.basedir}/../.git</dotGitDirectory>
+                    <skipPoms>true</skipPoms>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <generateGitPropertiesFilename>src/main/resources/git.properties</generateGitPropertiesFilename>
+                    <failOnNoGitDirectory>false</failOnNoGitDirectory>
+                    <gitDescribe>
+                        <skip>true</skip>
+                        <always>true</always>
+                        <abbrev>7</abbrev>
+                        <dirty>-dirty</dirty>
+                        <forceLongFormat>false</forceLongFormat>
+                    </gitDescribe>
+                </configuration>
+            </plugin>          
         </plugins>
     </build>
 
