@@ -34,7 +34,7 @@
                     <div id="navbar" class="navbar-collapse collapse">
                         <jsp:include page="/WEB-INF/jsp/admin/menu.jsp"/>
                         <ul class="nav navbar-nav navbar-right">
-                            <li><a href=#">Ingelogd als: <span class="username"><c:out value="${pageContext.request.userPrincipal.name}"/>geert.plaisier</span></a></li>
+                            <li><a href=#">Ingelogd als: <span class="username"><c:out value="${pageContext.request.userPrincipal.name}"/></span></a></li>
                         </ul>
                     </div>
                 </div>
