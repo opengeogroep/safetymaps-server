@@ -7,6 +7,9 @@
             <div><a ${menuitem == 'index' ? 'class="selected"' : ''} href="${contextPath}/admin/index.jsp">Start</a></div>
         </li>
         <li>
+            <div><a ${menuitem == 'app' ? 'class="menuselected"' : ''} href="#">Applicatieinstellingen</a></div>
+        </li>
+        <li>
             <div><a ${menuitem == 'layers' ? 'class="menuselected"' : ''} href="<stripes:url beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean"/>">Lagenbeheer</a></div>
         </li>
         <li>
