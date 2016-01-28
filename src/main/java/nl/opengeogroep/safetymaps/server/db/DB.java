@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -12,7 +13,7 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author Matthijs Laan
  */
-public class Database {
+public class DB {
     private static final Log log = LogFactory.getLog("db");
 
     private static final String JNDI_NAME = "java:/comp/env/jdbc/safetymaps-server";
@@ -29,5 +30,9 @@ public class Database {
 
     public static final Connection getConnection() throws NamingException, SQLException {
         return getDataSource().getConnection();
+    }
+
+    public static final QueryRunner qr() throws NamingException {
+        return new QueryRunner(getDataSource());
     }
 }

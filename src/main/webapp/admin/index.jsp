@@ -21,8 +21,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <stripes:layout-component name="content">
         
         <h1>Beheer SafetyMaps</h1>
-        
-        Kies in het menu een optie.
-
+        <p>
+            Kies in het menu een optie om instellingen aan te passen.
+        </p>
+        <p>
+            De aanpassingen van de configuratie worden direct zichtbaar in een
+            online SafetyMaps kantoorviewer. Voor de voertuigviewer moeten de 
+            aanpassingen mogelijk handmatig worden toegepast op de 
+            <stripes:link href="#">Voertuigviewer</stripes:link> pagina.
+        </p>
     </stripes:layout-component>
 </stripes:layout-render>

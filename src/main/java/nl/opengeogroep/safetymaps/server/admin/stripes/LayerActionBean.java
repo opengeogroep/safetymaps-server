@@ -27,8 +27,8 @@ import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.controller.LifecycleStage;
 import net.sourceforge.stripes.validation.*;
 import nl.opengeogroep.safetymaps.server.config.ConfiguredLayer;
-import nl.opengeogroep.safetymaps.server.db.Database;
-import org.apache.commons.dbutils.QueryRunner;
+import nl.opengeogroep.safetymaps.server.db.Cfg;
+import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -55,7 +55,16 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     private List<ConfiguredLayer> layers = new ArrayList();
 
     @ValidateNestedProperties({
-        @Validate(field = "name", required = true, trim = true, maxlength = 255)
+        @Validate(field = "name", required = true, trim = true, maxlength = 255),
+        @Validate(field = "url", required = true, trim = true, maxlength = 255),
+        @Validate(field = "enabled"),
+        @Validate(field = "baselayer"),
+        @Validate(field = "params"),
+        @Validate(field = "options"),
+        @Validate(field = "layertype", required = true),
+        @Validate(field = "index"),
+        @Validate(field = "legend", trim = true, maxlength = 255),
+        @Validate(field = "notes")
     })
     private ConfiguredLayer layer = new ConfiguredLayer();
 
@@ -89,7 +98,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
     @Before
     private void loadLayers() throws NamingException, SQLException {
-        layers = new QueryRunner(Database.getDataSource()).query(
+        layers = qr().query(
                 "select * from " + TABLE + " order by gid",
                 new BeanListHandler<>(ConfiguredLayer.class));
     }
@@ -112,7 +121,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         if(StringUtils.isNotBlank(s)) {
             Integer id = Integer.parseInt(s);
 
-            layer = new QueryRunner(Database.getDataSource()).query(
+            layer = qr().query(
                     "select * from " + TABLE + " where gid = ?", new BeanHandler<>(ConfiguredLayer.class), id);
         }
     }
@@ -141,7 +150,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         };
         if(layer.getGid() == null) {
             log.debug("inserting new layer: " + Arrays.toString(params));
-            Integer newId = new QueryRunner(Database.getDataSource()).insert(
+            Integer newId = qr().insert(
                     "insert into " + TABLE
                     + "(name,url,proxy,enabled,baselayer,params,options,getcapabilities,parent,pl,layertype,index,abstract,legend) "
                     + "values(?,?,?,?,?,?::json,?::json,?,?,?,?,?,?,?)",
@@ -151,12 +160,13 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
             log.debug("new layer id: " + newId);
         } else {
             log.debug("updating layer id " + layer.getGid() + ": " + Arrays.toString(params));
-            new QueryRunner(Database.getDataSource()).update(
+            qr().update(
                     "update " + TABLE
                     + "set name=?,url=?,proxy=?,enabled=?,baselayer=?,params=?::json,options=?::json,getcapabilities=?,parent=?,pl=?,layertype=?,index=?,abstract=?,legend=? "
                     + "where gid=" + layer.getGid(),
                     params);
         }
+        Cfg.settingsUpdated();
 
         getContext().getMessages().add(new SimpleMessage("Laag opgeslagen."));
         return new RedirectResolution(this.getClass()).flash(this);
@@ -166,7 +176,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     public Resolution delete() throws Exception {
         String id = context.getRequest().getParameter("id");
         if(id != null) {
-            new QueryRunner(Database.getDataSource()).update("delete from " + TABLE + " where gid=?::integer", id);
+            qr().update("delete from " + TABLE + " where gid=?::integer", id);
             getContext().getMessages().add(new SimpleMessage("Laag verwijderd."));
         } else {
             getContext().getMessages().add(new SimpleMessage("Geen laag id om te verwijderen!"));

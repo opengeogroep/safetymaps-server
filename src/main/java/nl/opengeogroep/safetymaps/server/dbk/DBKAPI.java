@@ -30,7 +30,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import nl.opengeogroep.safetymaps.server.db.Database;
+import nl.opengeogroep.safetymaps.server.db.DB;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapHandler;
@@ -108,7 +108,7 @@ public class DBKAPI extends HttpServlet {
         JSONObject geoJSON = new JSONObject();
         JSONArray jFeatures = new JSONArray();
         boolean hasParameter = request.getParameter(PARAMETER_SRID) != null;
-        Connection conn = Database.getConnection();
+        Connection conn = DB.getConnection();
         if(conn == null){
             throw new Exception("Connection could not be established");
         }
@@ -147,7 +147,7 @@ public class DBKAPI extends HttpServlet {
     private JSONObject processObjectRequest(HttpServletRequest request,String method) throws Exception {
         JSONObject json = new JSONObject();
         boolean hasSrid = request.getParameter(PARAMETER_SRID) != null;
-        Connection conn = Database.getConnection();
+        Connection conn = DB.getConnection();
         if(conn == null){
             throw new Exception("Connection could not be established");
         }
@@ -187,7 +187,7 @@ public class DBKAPI extends HttpServlet {
     private JSONObject processGebiedRequest(HttpServletRequest request,String method) throws Exception{
         JSONObject json = new JSONObject();
          boolean hasSrid = request.getParameter(PARAMETER_SRID) != null;
-        Connection conn = Database.getConnection();
+        Connection conn = DB.getConnection();
         if(conn == null){
             throw new Exception("Connection could not be established");
         }

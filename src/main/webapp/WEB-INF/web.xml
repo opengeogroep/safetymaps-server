@@ -5,6 +5,11 @@
         <param-name>javax.servlet.jsp.jstl.fmt.localizationContext</param-name>
         <param-value>SafetymapsServerResources</param-value>
     </context-param>
+    <!-- NL locale voor formatten van getallen: 1.234.567,89 -->
+    <context-param>
+        <param-name>javax.servlet.jsp.jstl.fmt.locale</param-name>
+        <param-value>nl</param-value>
+    </context-param>    
     <filter>
         <description>Filter from Tomcat 6 distribution, see http://wiki.apache.org/tomcat/FAQ/CharacterEncoding</description>
         <filter-name>SetCharacterEncodingFilter</filter-name>
