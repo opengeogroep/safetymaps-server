@@ -19,92 +19,108 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 <stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Lagen" menuitem="layers">
     <stripes:layout-component name="content">
-        
+
         <h1>Beheer lagen</h1>
-        
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Naam</th>
-                <th>URL</th>
-                <th>Enabled</th>
-                <th>Baselayer</th>
-                <th>Layertype</th>
-                <th>Index</th>
-            </tr>
+
+        <table class="table table-bordered table-striped table-fixed-header" id="layers-table">
+            <thead>
+                <tr>
+                    <th>Naam</th>
+                    <th>URL</th>
+                    <th>Enabled</th>
+                    <th>Baselayer</th>
+                    <th>Layertype</th>
+                    <th>Index</th>
+                    <th class="table-actions">&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
             <c:forEach var="l" items="${actionBean.layers}">
                 <tr>
-                    <td>
-                        <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean" event="edit">
-                            <stripes:param name="id" value="${l.gid}"/>
-                            ${l.gid}
-                        </stripes:link>
-                    </td>
                     <td><c:out value="${l.name}"/></td>
                     <td><c:out value="${l.url}"/></td>
-                    <td><c:out value="${l.enabled ? '✓' : ''}"/></td>
-                    <td><c:out value="${l.baselayer ? '✓' : ''}"/></td>
+                    <td>
+                        <span class="glyphicon ${l.enabled ? 'glyphicon-ok-circle text-success' : 'glyphicon-remove-circle'}"></span>
+                    </td>
+                    <td>
+                        <span class="glyphicon ${l.baselayer ? 'glyphicon-ok-circle text-success' : 'glyphicon-remove-circle'}"></span>
+                    </td>
                     <td><c:out value="${l.layertype}"/></td>
                     <td><c:out value="${l.index}"/></td>
+                    <td class="table-actions">
+                        <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean" event="edit" title="Bewerken">
+                            <stripes:param name="id" value="${l.gid}"/>
+                            <span class="glyphicon glyphicon-pencil"></span>
+                        </stripes:link>
+                        <stripes:link class="remove-item" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean" event="delete" title="Verwijderen">
+                            <stripes:param name="id" value="${l.gid}"/>
+                            <span class="glyphicon glyphicon-remove"></span>
+                        </stripes:link>
+                    </td>
                 </tr>
             </c:forEach>
+            </tbody>
         </table>
         <jsp:include page="/WEB-INF/jsp/common/messages.jsp"/>
-        <stripes:form beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean">
+        <stripes:form beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean" class="form-horizontal">
             <c:set var="event" value="${actionBean.context.eventName}"/>
             <c:if test="${event == 'list'}">
-                <stripes:submit name="edit">Nieuw</stripes:submit>
+                <stripes:submit name="edit" class="btn btn-primary">Nieuw</stripes:submit>
             </c:if>
             <c:if test="${event == 'edit' || event == 'save'}">
-                <c:set var="l" value="${actionBean.layer}"/>                
+                <c:set var="l" value="${actionBean.layer}"/>
                 <stripes:hidden name="id" value="${l.gid}"/>
-                
+
                 <%--p>${l}</p--%>
-                <stripes:submit name="save">Opslaan</stripes:submit>
-                <stripes:submit name="delete" onclick="return confirm('Zeker weten?');">Verwijderen</stripes:submit>
-                <stripes:submit name="cancel">Annuleren</stripes:submit>
+                <stripes:submit name="save" class="btn btn-primary">Opslaan</stripes:submit>
+                <stripes:submit name="delete" class="btn btn-danger remove-item">Verwijderen</stripes:submit>
+                <stripes:submit name="cancel" class="btn btn-default">Annuleren</stripes:submit>
 
                 <c:set var="name" value="${!empty l.name ? 'laag '.concat(l.name) : '<Onbenoemde laag>'}"/>
                 <h2>Bewerken van <c:out value="${!empty l.gid ? name : 'nieuwe laag'}"/></h2>
 
-                <table>
-                    <tr>
-                        <td>Naam:</td><td><stripes:text name="layer.name"/></td>
-                    </tr>
-                    <tr>
-                        <td>URL:</td><td><stripes:text name="layer.url" size="80" maxlength="255"/></td>
-                    </tr>                    
-                    <tr>
-                        <td/><td><label><stripes:checkbox name="layer.enabled"/>Enabled</label></td>
-                    </tr>                    
-                    <tr>
-                        <td/><td><label><stripes:checkbox name="layer.baselayer"/>Basislaag</label></td>
-                    </tr>                    
-                    <tr>
-                        <td valign="top">HTTP parameters:<br>(JSON) </td><td><stripes:textarea cols="80" rows="6" name="layer.params"/></td>
-                    </tr>                    
-                    <tr>
-                        <td valign="top">OpenLayers opties:<br>(JSON) </td><td><stripes:textarea cols="80" rows="4"  name="layer.options"/></td>
-                    </tr>                    
-                    <tr>
-                        <td>Layertype:</td>
-                        <td>
-                            <stripes:select name="layer.layertype">
-                                <stripes:option>WMS</stripes:option>
-                            </stripes:select>
-                        </td>
-                    </tr>                    
-                    <tr>
-                        <td>Index:</td><td><stripes:text name="layer.index" size="3" maxlength="3"/></td>
-                    </tr>                    
-                    <tr>
-                        <td>Legenda URL:</td><td><stripes:text name="layer.legend" size="80" maxlength="255"/></td>
-                    </tr>                    
-                    <tr>
-                        <td valign="top">Beschrijving: </td><td><stripes:textarea cols="80" rows="4"  name="layer.notes"/></td>
-                    </tr>                        
-                </table>
-                
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Naam:</label>
+                    <div class="col-sm-10"><stripes:text class="form-control" name="layer.name"/></div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">URL:</label>
+                    <div class="col-sm-10"><stripes:text class="form-control" name="layer.url" size="80" maxlength="255"/></div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <div class="checkbox">
+                            <label><stripes:checkbox name="layer.enabled"/>Enabled</label>
+                        </div>
+                        <div class="checkbox">
+                            <label><stripes:checkbox name="layer.baselayer"/>Basislaag</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">HTTP parameters:<br>(JSON)</label>
+                    <div class="col-sm-10"><stripes:textarea cols="80" rows="6" name="layer.params" class="form-control" /></div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">OpenLayers opties:<br>(JSON)</label>
+                    <div class="col-sm-10"><stripes:textarea cols="80" rows="4"  name="layer.options" class="form-control" /></div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Layertype:</label>
+                    <div class="col-sm-10"><stripes:select name="layer.layertype"><stripes:option>WMS</stripes:option></stripes:select></div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Index:</label>
+                    <div class="col-sm-10"><stripes:text class="form-control" name="layer.index" size="3" maxlength="3"/></div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Legenda URL:</label>
+                    <div class="col-sm-10"><stripes:text class="form-control" name="layer.legend" size="80" maxlength="255" /></div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Beschrijving:</label>
+                    <div class="col-sm-10"><stripes:textarea cols="80" rows="4" class="form-control" name="layer.notes"/></div>
+                </div>
             </c:if>
         </stripes:form>
     </stripes:layout-component>

@@ -17,19 +17,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <%@include file="/WEB-INF/jsp/taglibs.jsp"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-<stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Applicatieinstellingen" menuitem="layers">
+<stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Applicatieinstellingen" menuitem="app">
     <stripes:layout-component name="content">
         
         <h1>Applicatieinstellingen</h1>
 
         <stripes:useActionBean var="actionBean" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.SettingsActionBean" event="list"/> 
         
-        <table>
-            <tr>
-                <th>Instelling</th>
-                <th>Waarde</th>
-            </tr>
-            
+        <table class="table table-bordered table-striped table-fixed-header">
+            <thead>
+                <tr>
+                    <th>Instelling</th>
+                    <th>Waarde</th>
+                </tr>
+            </thead>
+            <tbody>
             <c:forEach var="s" items="${actionBean.settings}">
                 <tr>
                     <td><c:out value="${s.name}"/></td>
@@ -39,6 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     </td>
                 </tr>
             </c:forEach>
+            </tbody>
         </table>
         
     </stripes:layout-component>
