@@ -19,18 +19,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 <stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Lagen" menuitem="static">
     <stripes:layout-component name="head">
-        <meta http-equiv="Refresh" content="3">
+        <meta http-equiv="Refresh" content="5">
     </stripes:layout-component>
     <stripes:layout-component name="content">
         
         <h1>Beheer voertuigviewer</h1>
         <jsp:include page="/WEB-INF/jsp/common/messages.jsp"/>
         <ul>
-            <li>Laatste update voertuigviewer: <fmt:formatDate type="both" dateStyle="full" timeStyle="full" value="${actionBean.lastOfflineUpdate}"/></li>
+            <li>Laatste update voertuigviewer: <fmt:formatDate type="both" dateStyle="full" timeStyle="full" value="${actionBean.lastStaticUpdate}"/></li>
             <li>Laatste wijziging configuratie: <fmt:formatDate type="both" dateStyle="full" timeStyle="full" value="${actionBean.lastConfigUpdate}"/></li>
             <li>Versie informatie: ...</li>            
         </p>
-        <c:if test="${actionBean.lastConfigUpdate.after(actionBean.lastOfflineUpdate)}">
+        <c:if test="${actionBean.lastConfigUpdate.after(actionBean.lastStaticUpdate)}">
             <p>
                 De configuratie is gewijzigd sinds de laatste keer dat de voertuigviewer is geupdate. Druk op de knop om dit te doen en de wijzigingen
                 toe te passen:

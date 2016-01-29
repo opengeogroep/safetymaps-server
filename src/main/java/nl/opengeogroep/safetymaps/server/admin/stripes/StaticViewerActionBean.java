@@ -9,12 +9,7 @@ import java.sql.SQLException;
 import java.util.Date;
 import javax.naming.NamingException;
 import javax.servlet.http.HttpServletResponse;
-import net.sourceforge.stripes.action.ActionBean;
-import net.sourceforge.stripes.action.ActionBeanContext;
-import net.sourceforge.stripes.action.DefaultHandler;
-import net.sourceforge.stripes.action.ForwardResolution;
-import net.sourceforge.stripes.action.Resolution;
-import net.sourceforge.stripes.action.StreamingResolution;
+import net.sourceforge.stripes.action.*;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -25,15 +20,17 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author Matthijs Laan
  */
+@StrictBinding
+@UrlBinding("/admin/action/static")
 public class StaticViewerActionBean implements ActionBean {
     private ActionBeanContext context;
 
     private static final Log log = LogFactory.getLog("cfg");
 
-    private static final String JSP = "/WEB-INF/jsp/admin/offline.jsp";
+    private static final String JSP = "/WEB-INF/jsp/admin/static.jsp";
 
     private Date lastConfigUpdate;
-    private Date lastOfflineUpdate;
+    private Date lastStaticUpdate;
 
     @Override
     public ActionBeanContext getContext() {
@@ -53,12 +50,12 @@ public class StaticViewerActionBean implements ActionBean {
         this.lastConfigUpdate = lastConfigUpdate;
     }
 
-    public Date getLastOfflineUpdate() {
-        return lastOfflineUpdate;
+    public Date getLastStaticUpdate() {
+        return lastStaticUpdate;
     }
 
-    public void setLastOfflineUpdate(Date lastOfflineUpdate) {
-        this.lastOfflineUpdate = lastOfflineUpdate;
+    public void setLastStaticUpdate(Date lastStaticUpdate) {
+        this.lastStaticUpdate = lastStaticUpdate;
     }
 
     @DefaultHandler
@@ -69,9 +66,9 @@ public class StaticViewerActionBean implements ActionBean {
 
         try {
             System.out.println(outputDir + ";" + outputDir.lastModified());
-            lastOfflineUpdate = new Date(outputDir.lastModified());
+            lastStaticUpdate = new Date(outputDir.lastModified());
         } catch(Exception e) {
-            String s = "Error getting last offline update: " + e.getClass() + ": " + e.getMessage();
+            String s = "Error getting last static update: " + e.getClass() + ": " + e.getMessage();
             log.warn(s);
             if(log.isDebugEnabled()) {
                 log.debug(s, e);

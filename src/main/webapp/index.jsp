@@ -20,10 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <!DOCTYPE html><html>
     <head>
         <stripes:url var="url" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean"/>
-        <meta http-equiv="Refresh" content="0;url=${url}">
-        <title>JSP Page</title>
+        <meta http-equiv="Refresh" content="0;url=${contextPath}/admin/">
+        <title>Index</title>
     </head>
     <body>
-        <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean">Layer admin</stripes:link>
     </body>
 </html>
