@@ -15,10 +15,10 @@
         <ul class="dropdown-menu">
             <li${menuitem == 'app' ? ' class="active"' : ''}><a href="${contextPath}/admin/app.jsp">Instellingen</a></li>
             <li${menuitem == 'customize' ? ' class="active"' : ''}><a href="${contextPath}/admin/customize.jsp">Maatwerk</a></li>
-            <li${menuitem == 'symbols' ? ' class="active"' : ''}><a href="${contextPath}/admin/dbksymbols.jsp">DBK Symbolen</a></li>
+            <li${menuitem == 'dbksymbols' ? ' class="active"' : ''}><a href="${contextPath}/admin/dbksymbols.jsp">DBK Symbolen</a></li>
             <li${menuitem == 'layertoggle' ? ' class="active"' : ''}><a href="${contextPath}/admin/layertoggle.jsp">Inzetbalk</a></li>
-            <li${menuitem == 'layertoggle' ? ' class="active"' : ''}><a href="#">Tekenmodule</a></li>
+            <li${menuitem == 'edit' ? ' class="active"' : ''}><a href="#">Tekenmodule</a></li>
         </ul>
     </li>
-    <li${menuitem == 'basemaps' ? ' class="active"' : ''}><a href="${contextPath}/admin/basemapsupdate.jsp">Basiskaart update</a></li>
+    <li${menuitem == 'basemapsupdate' ? ' class="active"' : ''}><a href="${contextPath}/admin/basemapsupdate.jsp">Basiskaart update</a></li>
 </ul>

@@ -65,7 +65,6 @@ public class StaticViewerActionBean implements ActionBean {
         File outputDir = Cfg.getPath("static_outputdir");
 
         try {
-            System.out.println(outputDir + ";" + outputDir.lastModified());
             lastStaticUpdate = new Date(outputDir.lastModified());
         } catch(Exception e) {
             String s = "Error getting last static update: " + e.getClass() + ": " + e.getMessage();
@@ -109,6 +108,5 @@ public class StaticViewerActionBean implements ActionBean {
                 }
             }
         };
-
     }
 }

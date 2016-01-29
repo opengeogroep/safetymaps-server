@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <%@include file="/WEB-INF/jsp/taglibs.jsp"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-<stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Basiskaart update" menuitem="index">
+<stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Basiskaart update" menuitem="basemapsupdate">
     <stripes:layout-component name="content">
         
         <h1>Basiskaart update</h1>
