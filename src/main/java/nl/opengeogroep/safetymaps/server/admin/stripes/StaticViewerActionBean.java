@@ -6,13 +6,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.naming.NamingException;
 import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -80,11 +85,16 @@ public class StaticViewerActionBean implements ActionBean {
     public Resolution update() throws NamingException, SQLException, IOException {
         // TODO check update flagfile option
 
-        final String updateCommand = (String)Cfg.getSetting("static_update_command");
+        final List<String> commands = new ArrayList<>();
+        String s = (String)Cfg.getSetting("static_update_command");
+        Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(s);
+        while(m.find()) {
+            commands.add(m.group(1).replace("\"",""));
+        }
 
-        log.info("Updating static app using command " + updateCommand);
+        log.info("Updating static app using command " + commands);
 
-        ProcessBuilder builder = new ProcessBuilder(updateCommand);
+        ProcessBuilder builder = new ProcessBuilder(commands);
         builder.redirectErrorStream(true);
         final Process process = builder.start();
         final InputStream stdout = process.getInputStream();
@@ -93,7 +103,7 @@ public class StaticViewerActionBean implements ActionBean {
             @Override
             public void stream(HttpServletResponse response) throws IOException  {
                 OutputStream out = response.getOutputStream();
-                out.write(("Start update script " + updateCommand + "...\n\n").getBytes());
+                out.write(("Start update script " + StringUtils.join(commands, " ") + "...\n\n").getBytes());
                 out.flush();
                 ByteArrayOutputStream output = new ByteArrayOutputStream();
                 IOUtils.copy(stdout, new TeeOutputStream(output, out));
