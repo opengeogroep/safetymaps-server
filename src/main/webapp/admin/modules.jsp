@@ -17,27 +17,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <%@include file="/WEB-INF/jsp/taglibs.jsp"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-<stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Instellingen" menuitem="app">
+<stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Modules" menuitem="modules">
     <stripes:layout-component name="content">
         
-        <h1>Instellingen</h1>
+        <h1>Modules</h1>
 
-        <stripes:useActionBean var="actionBean" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.SettingsActionBean" event="list"/> 
+        <stripes:useActionBean var="actionBean" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.ModulesActionBean" event="list"/> 
         
         <table class="table table-bordered table-striped table-fixed-header">
             <thead>
                 <tr>
-                    <th>Instelling</th>
-                    <th>Waarde</th>
+                    <th>Module</th>
+                    <th>Ingeschakeld</th>
                 </tr>
             </thead>
             <tbody>
-            <c:forEach var="s" items="${actionBean.settings}">
+            <c:forEach var="s" items="${actionBean.modules}">
                 <tr>
                     <td><c:out value="${s.name}"/></td>
                     <td>
-                        <c:if test="${s.type != 'text'}"><c:out value="${s.value}"/></c:if>
-                        <c:if test="${s.type == 'text'}">(lange waarde)</c:if>
+                        <span class="glyphicon ${s.enabled ? 'glyphicon-ok-circle text-success' : 'glyphicon-remove-circle'}"></span>
                     </td>
                 </tr>
             </c:forEach>

@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         </p>
         <c:if test="${actionBean.lastConfigUpdate.after(actionBean.lastStaticUpdate)}">
             <p>
-                De configuratie is gewijzigd sinds de laatste keer dat de voertuigviewer is geupdate. Druk op de knop om dit te doen en de wijzigingen
+                De configuratie is gewijzigd sinds de laatste keer dat de voertuigviewer is geupdate. Druk op de knop om de wijzigingen
                 toe te passen:
             </p>
         </c:if>

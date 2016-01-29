@@ -17,19 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <%@include file="/WEB-INF/jsp/taglibs.jsp"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-<stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Basiskaart update" menuitem="basemapsupdate">
+<stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Synchronisatie" menuitem="locationsearch">
     <stripes:layout-component name="content">
         
-        <h1>Basiskaart update</h1>
+        <h1>Locatiezoeker</h1>
         <p>
-            Laatste datum update basiskaart: ...
+            Huidige datum BAG: ...
         </p>
         <p>
-        <ul>
-            <li>Updatedatum</li>
-            <li>Totale grootte, aantal bestanden, slack space</li>
-            <li>Aantal verschillende tiles (en totale bestandsgrootte van die tiles) vergeleken met vorige versie</li>
-        </ul>
+            Updaten van de locatiezoeker database.
         </p>
     </stripes:layout-component>
 </stripes:layout-render>
