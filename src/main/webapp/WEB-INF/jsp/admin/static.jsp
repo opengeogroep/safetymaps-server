@@ -17,13 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <%@include file="/WEB-INF/jsp/taglibs.jsp"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-<stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Lagen" menuitem="static">
+<stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Voertuigviewer" menuitem="static">
     <stripes:layout-component name="head">
         <meta http-equiv="Refresh" content="5">
     </stripes:layout-component>
     <stripes:layout-component name="content">
         
-        <h1>Beheer voertuigviewer</h1>
+        <h1>Update voertuigviewer</h1>
         <jsp:include page="/WEB-INF/jsp/common/messages.jsp"/>
         <ul>
             <li>Laatste update voertuigviewer: <fmt:formatDate type="both" dateStyle="full" timeStyle="full" value="${actionBean.lastStaticUpdate}"/></li>
