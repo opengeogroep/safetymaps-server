@@ -80,11 +80,11 @@ public class StaticViewerActionBean implements ActionBean {
     public Resolution update() throws NamingException, SQLException, IOException {
         // TODO check update flagfile option
 
-        final File updateScript = Cfg.getPath("static_update_script");
+        final String updateCommand = (String)Cfg.getSetting("static_update_command");
 
-        log.info("Updating static app using script " + updateScript);
+        log.info("Updating static app using command " + updateCommand);
 
-        ProcessBuilder builder = new ProcessBuilder(updateScript.toString());
+        ProcessBuilder builder = new ProcessBuilder(updateCommand);
         builder.redirectErrorStream(true);
         final Process process = builder.start();
         final InputStream stdout = process.getInputStream();
@@ -93,7 +93,7 @@ public class StaticViewerActionBean implements ActionBean {
             @Override
             public void stream(HttpServletResponse response) throws IOException  {
                 OutputStream out = response.getOutputStream();
-                out.write(("Start update script " + updateScript + "...\n\n").getBytes());
+                out.write(("Start update script " + updateCommand + "...\n\n").getBytes());
                 out.flush();
                 ByteArrayOutputStream output = new ByteArrayOutputStream();
                 IOUtils.copy(stdout, new TeeOutputStream(output, out));
