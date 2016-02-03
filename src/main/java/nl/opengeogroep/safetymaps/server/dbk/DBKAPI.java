@@ -35,6 +35,7 @@ import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
@@ -98,6 +99,10 @@ public class DBKAPI extends HttpServlet {
         }
     }
 
+    private static final Object featuresCacheMonitor = new Object();
+    private static String featuresCacheKey = null;
+    private static JSONObject featuresCache = null;
+
     /**
      * Process the call to /api/features.json[?srid=<integer>]
      * @param request The requestobject
@@ -107,34 +112,52 @@ public class DBKAPI extends HttpServlet {
     private JSONObject processFeatureRequest(HttpServletRequest request) throws SQLException, Exception {
         JSONObject geoJSON = new JSONObject();
         JSONArray jFeatures = new JSONArray();
-        boolean hasParameter = request.getParameter(PARAMETER_SRID) != null;
+        String sridString = request.getParameter(PARAMETER_SRID);
         Connection conn = DB.getConnection();
         if(conn == null){
             throw new Exception("Connection could not be established");
         }
-        MapListHandler h = new MapListHandler();
-        QueryRunner run = new QueryRunner();
-
-        geoJSON.put("type", "FeatureCollection");
-        geoJSON.put("features",jFeatures);
         try {
-            List<Map<String,Object>> features;
-            if(hasParameter){
-                String sridString = request.getParameter(PARAMETER_SRID);
-                Integer srid = Integer.parseInt(sridString);
-                features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json(?)", h,srid);
-            }else{
-                features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json()", h);
-            }
+            MapListHandler h = new MapListHandler();
+            QueryRunner run = new QueryRunner();
 
-            for (Map<String, Object> feature : features) {
-                JSONObject jFeature = processFeature(feature);
-                jFeatures.put(jFeature);
+            // TODO: implement conditional GET request using Last-Modified/If-Modified-Since
+
+            synchronized(featuresCacheMonitor) {
+                String currentCacheKey = sridString + "_" + run.query(conn, "select max(\"Datum_Actualisatie\") from wfs.\"DBK\"", new ScalarHandler<String>());
+                if(featuresCacheKey != null) {
+                    if(currentCacheKey.equals(featuresCacheKey)) {
+                        log.info("Returning cached features JSON (cache key: " + currentCacheKey + ")");
+                        return featuresCache;
+                    }
+
+                    log.info("Features JSON cache outdated (cache key: " + featuresCacheKey + ", current: " + currentCacheKey + ")");
+                }
+
+                long startTime = System.currentTimeMillis();
+
+                geoJSON.put("type", "FeatureCollection");
+                geoJSON.put("features",jFeatures);
+                List<Map<String,Object>> features;
+                if(sridString != null){
+                    Integer srid = Integer.parseInt(sridString);
+                    features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json(?)", h,srid);
+                }else{
+                    features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json()", h);
+                }
+
+                for (Map<String, Object> feature : features) {
+                    JSONObject jFeature = processFeature(feature);
+                    jFeatures.put(jFeature);
+                }
+                featuresCacheKey = currentCacheKey;
+                featuresCache = geoJSON;
+                log.info("Created features JSON cache for key " + featuresCacheKey + " in " + (System.currentTimeMillis() - startTime) + "ms");
+                return geoJSON;
             }
         } finally {
             DbUtils.close(conn);
         }
-        return geoJSON;
     }
 
     /**
