@@ -141,9 +141,9 @@ public class DBKAPI extends HttpServlet {
                 List<Map<String,Object>> features;
                 if(sridString != null){
                     Integer srid = Integer.parseInt(sridString);
-                    features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json(?)", h,srid);
+                    features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_adres_json(?)", h,srid);
                 }else{
-                    features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_json()", h);
+                    features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_adres_json()", h);
                 }
 
                 for (Map<String, Object> feature : features) {
