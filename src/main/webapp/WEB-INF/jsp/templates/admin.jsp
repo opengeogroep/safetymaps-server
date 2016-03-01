@@ -16,6 +16,25 @@
             <link rel="stylesheet" type="text/css" href="${contextPath}/public/css/main.css" />
             <script type="text/javascript" src="${contextPath}/public/vendor/jquery-2.2.0/jquery.min.js"></script>
             <script type="text/javascript" src="${contextPath}/public/vendor/bootstrap-3.3.6-dist/js/bootstrap.min.js"></script>
+            <script type="text/javascript" src="${contextPath}/public/vendor/moment-with-locales.js"></script>
+            <script>
+                moment.locale("nl");
+            </script>
+            <script type="text/javascript" src="${contextPath}/public/vendor/mustache.min.js"></script>
+            <script>
+                $.mustache = function (template, view, partials) {
+                  return Mustache.render(template, view, partials);
+                };
+
+                $.fn.mustache = function (view, partials) {
+                  return $(this).map(function (i, elm) {
+                    var template = $.trim($(elm).html());
+                    var output = $.mustache(template, view, partials);
+                    return $(output).get();
+                  });
+                };
+                   
+            </script>
             <script type="text/javascript" src="${contextPath}/public/js/main.js"></script>
             <stripes:layout-component name="head"/>
         </head>

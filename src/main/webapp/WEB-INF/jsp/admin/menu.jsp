@@ -7,7 +7,7 @@
         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Voertuig <span class="caret"></span></a>
         <ul class="dropdown-menu">
             <li${menuitem == 'static' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.StaticViewerActionBean">Update</stripes:link></li>
-            <%--li${menuitem == 'sync' ? ' class="active"' : ''}><a href="${contextPath}/admin/sync.jsp">Synchronisatie</a></li--%>
+            <li${menuitem == 'sync' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.SyncStatusActionBean">Synchronisatie</stripes:link></li>
         </ul>
     </li>
     <li class="dropdown">
