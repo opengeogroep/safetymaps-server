@@ -81,10 +81,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         
         <div id="info" >
             <div id="offline">
-                <h2>Offline langer dan 1 dag <span id="offline_h"/></h2>
+                <h2>Offline <span id="offline_h"/></h2>
                 <table class="table">
                     <thead>
-                        <tr><th>Naam</th><th colspan="2">Laatst gezien</th></tr>
+                        <tr><th>Naam</th><th>Laatst gezien</th><th>Details</th></tr>
                     </thead>
                     <tbody id="offline_tb">
 

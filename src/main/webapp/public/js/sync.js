@@ -106,6 +106,7 @@ function display(stateReports, startupReports) {
 
     var activeRows = [];
 
+
     $.each(stateReports, function(i, sr) {
         var cutoff = moment().subtract(24, 'hours');
         var time = moment(sr.report_time);
@@ -118,9 +119,26 @@ function display(stateReports, startupReports) {
             mode: sr.mode
         };
 
-        if(time.isBefore(cutoff)) {
+        // check if earliest next_scheduled is before now minus 5 min delay
+        var now = new Date().getTime();
+        var filesetScheduledInPast = null;
+        $.each(sr.filesets, function(j, fs) {
+            if(fs.next_scheduled && fs.next_scheduled !== "ASAP" && fs.next_scheduled < now - (5*60000)) {
+                console.log(sr.client_id + ", " + sr.mode + "; fileset scheduled in past " + moment(fs.next_scheduled).format("LTS"), fs);
+                filesetScheduledInPast = fs;
+                return false;
+            };
+        });
+
+        if(time.isBefore(cutoff) || filesetScheduledInPast) {
             stats.offline++;
-            $("#offline_tb").append($.mustache("<tr data-id=\"{{client_id}}\"><td>{{client_id}}</td><td>{{datetime}}</td><td>{{fromNow}}</td></tr>", view));
+            if(time.isBefore(cutoff)) {
+                view.details = "Laatst gezien langer dan 24 uur geleden";
+            } else {
+                var timeScheduled = moment(filesetScheduledInPast.next_scheduled);
+                view.details = "Taak " + filesetScheduledInPast.name + " was gepland op " + timeScheduled.format("LTS") + ", " + timeScheduled.fromNow();
+            }
+            $("#offline_tb").append($.mustache("<tr data-id=\"{{client_id}}\"><td>{{client_id}}</td><td>{{datetime}}, {{fromNow}}</td><td>{{details}}</td></tr>", view));
         } else {
             if(sr.mode.indexOf("waiting") === 0) {
                 stats.waiting++;
