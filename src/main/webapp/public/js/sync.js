@@ -29,7 +29,9 @@ function showPopup(e) {
     });
 
     if(startup === null) {
-        $("#os").text("?");
+        $("#os").text("-");
+        $("#sync").text("-");
+        $("#java").text("-");
     } else {
         $("#os").html($.mustache("{{os.name}}, versie {{os.version}} {{os.arch}}, MAC adres: {{machine_id}}", startup));
         $("#sync").html($.mustache("versie {{version}}, gebouwd op {{git_build_time}}<br>opgestart op {{startup}} ({{sinds}})", {
@@ -40,8 +42,6 @@ function showPopup(e) {
         }));
         $("#java").html($.mustache("{{vm_name}}, {{vm_version}}, {{name}}", startup.runtime));
     }
-
-
 
     if(state === null) {
         $("#filesets_t").hide();
