@@ -143,7 +143,7 @@ function display(stateReports, startupReports) {
                     var progress = {
                         count: state.progress_count,
                         total: state.progress_count_total,
-                        size: state.progress_size ? progress_size / 1024 / 1024 + " MB" : null
+                        size: state.progress_size ? Number(state.progress_size / 1024 / 1024).toFixed(1) + " MB" : null
                     };
                     if(state.progress_count_total && state.progress_count) {
                         progress.percent = Number(state.progress_count / state.progress_count_total * 100.0).toFixed(2);
