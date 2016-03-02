@@ -124,7 +124,6 @@ function display(stateReports, startupReports) {
         var filesetScheduledInPast = null;
         $.each(sr.filesets, function(j, fs) {
             if(fs.next_scheduled && fs.next_scheduled !== "ASAP" && fs.next_scheduled < now - (5*60000)) {
-                console.log(sr.client_id + ", " + sr.mode + "; fileset scheduled in past " + moment(fs.next_scheduled).format("LTS"), fs);
                 filesetScheduledInPast = fs;
                 return false;
             };
