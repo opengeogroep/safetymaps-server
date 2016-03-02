@@ -123,9 +123,10 @@ function display(stateReports, startupReports) {
         var now = new Date().getTime();
         var filesetScheduledInPast = null;
         $.each(sr.filesets, function(j, fs) {
-            if(fs.next_scheduled && fs.next_scheduled !== "ASAP" && fs.next_scheduled < now - (5*60000)) {
-                filesetScheduledInPast = fs;
-                return false;
+            if(fs.next_scheduled && fs.next_scheduled !== "ASAP" && (fs.next_scheduled < now - (5*60000))) {
+                if(filesetScheduledInPast === null || fs.next_scheduled < filesetScheduledInPast.next_scheduled) {
+                    filesetScheduledInPast = fs;
+                }
             };
         });
 
