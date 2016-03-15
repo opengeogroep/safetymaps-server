@@ -20,23 +20,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Lagen" menuitem="layers">
     <stripes:layout-component name="content">
 
-        <h1>Beheer lagen</h1>
+        <h1>Beheer WMS lagen</h1>
 
-        <table class="table table-bordered table-striped table-fixed-header" id="layers-table">
+        <table class="table table-bordered table-striped table-fixed-header table-condensed table-hover" id="layers-table">
             <thead>
                 <tr>
                     <th>Naam</th>
                     <th>URL</th>
-                    <th>Enabled</th>
-                    <th>Baselayer</th>
-                    <th>Layertype</th>
+                    <th>Beschikbaar</th>
+                    <th>Basislaag</th>
                     <th>Index</th>
                     <th class="table-actions">&nbsp;</th>
                 </tr>
             </thead>
             <tbody>
             <c:forEach var="l" items="${actionBean.layers}">
-                <tr>
+                <stripes:url var="editLink" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean" event="edit">
+                    <stripes:param name="id" value="${l.gid}"/>
+                </stripes:url>
+                <tr style="cursor: pointer" class="${actionBean.layer.gid == l.gid ? 'info' : ''}" onclick="window.location.href='${editLink}'">
                     <td><c:out value="${l.name}"/></td>
                     <td><c:out value="${l.url}"/></td>
                     <td>
@@ -45,7 +47,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <td>
                         <span class="glyphicon ${l.baselayer ? 'glyphicon-ok-circle text-success' : 'glyphicon-remove-circle'}"></span>
                     </td>
-                    <td><c:out value="${l.layertype}"/></td>
                     <td><c:out value="${l.index}"/></td>
                     <td class="table-actions">
                         <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean" event="edit" title="Bewerken">
@@ -80,8 +81,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <h2>Bewerken van <c:out value="${!empty l.gid ? name : 'nieuwe laag'}"/></h2>
 
                 <div class="form-group">
+                    <label class="col-sm-2 control-label">Tabblad:</label>
+                    <div class="col-sm-10"><stripes:text class="form-control" name="tab"/></div>
+                </div>
+                <div class="form-group">
                     <label class="col-sm-2 control-label">Naam:</label>
-                    <div class="col-sm-10"><stripes:text class="form-control" name="layer.name"/></div>
+                    <div class="col-sm-10"><stripes:text class="form-control" name="name"/></div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label">URL:</label>
@@ -90,24 +95,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
                         <div class="checkbox">
-                            <label><stripes:checkbox name="layer.enabled"/>Enabled</label>
+                            <label><stripes:checkbox name="layer.enabled"/>Beschikbaar</label>
                         </div>
-                        <div class="checkbox">
+                        <%--div class="checkbox">
                             <label><stripes:checkbox name="layer.baselayer"/>Basislaag</label>
-                        </div>
+                        </div--%>
+                        <div class="checkbox">
+                            <label><stripes:checkbox name="visible"/>Standaard ingeschakeld</label>
+                        </div>                        
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="col-sm-2 control-label">HTTP parameters:<br>(JSON)</label>
-                    <div class="col-sm-10"><stripes:textarea cols="80" rows="6" name="layer.params" class="form-control" /></div>
-                </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">OpenLayers opties:<br>(JSON)</label>
-                    <div class="col-sm-10"><stripes:textarea cols="80" rows="4"  name="layer.options" class="form-control" /></div>
-                </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">Layertype:</label>
-                    <div class="col-sm-10"><stripes:select name="layer.layertype"><stripes:option>WMS</stripes:option></stripes:select></div>
+                    <label class="col-sm-2 control-label">HTTP parameters:</label>
+                    <div class="col-sm-10"><stripes:text name="params" class="form-control" /></div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Index:</label>
@@ -117,10 +117,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <label class="col-sm-2 control-label">Legenda URL:</label>
                     <div class="col-sm-10"><stripes:text class="form-control" name="layer.legend" size="80" maxlength="255" /></div>
                 </div>
-                <div class="form-group">
+                <%--div class="form-group">
                     <label class="col-sm-2 control-label">Beschrijving:</label>
                     <div class="col-sm-10"><stripes:textarea cols="80" rows="4" class="form-control" name="layer.notes"/></div>
-                </div>
+                </div--%>
             </c:if>
         </stripes:form>
     </stripes:layout-component>

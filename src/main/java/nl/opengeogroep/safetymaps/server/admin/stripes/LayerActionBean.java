@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import javax.naming.NamingException;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.controller.LifecycleStage;
@@ -35,6 +36,7 @@ import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONObject;
 
 /**
  *
@@ -55,18 +57,26 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     private List<ConfiguredLayer> layers = new ArrayList();
 
     @ValidateNestedProperties({
-        @Validate(field = "name", required = true, trim = true, maxlength = 255),
         @Validate(field = "url", required = true, trim = true, maxlength = 255),
         @Validate(field = "enabled"),
-        @Validate(field = "baselayer"),
-        @Validate(field = "params"),
-        @Validate(field = "options"),
-        @Validate(field = "layertype", required = true),
+//        @Validate(field = "baselayer"),
         @Validate(field = "index"),
-        @Validate(field = "legend", trim = true, maxlength = 255),
-        @Validate(field = "notes")
+        @Validate(field = "legend", trim = true, maxlength = 255)/*,
+        @Validate(field = "notes")*/
     })
     private ConfiguredLayer layer = new ConfiguredLayer();
+
+    @Validate
+    private String tab;
+
+    @Validate
+    private String name;
+
+    @Validate
+    private boolean visible = true;
+
+    @Validate
+    private String params;
 
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
@@ -94,12 +104,44 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     public void setLayer(ConfiguredLayer layer) {
         this.layer = layer;
     }
+
+    public String getTab() {
+        return tab;
+    }
+
+    public void setTab(String tab) {
+        this.tab = tab;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
+
+    public String getParams() {
+        return params;
+    }
+
+    public void setParams(String params) {
+        this.params = params;
+    }
     // </editor-fold>
 
     @Before
     private void loadLayers() throws NamingException, SQLException {
         layers = qr().query(
-                "select * from " + TABLE + " order by gid",
+                "select * from " + TABLE + " where layertype = 'WMS' order by gid",
                 new BeanListHandler<>(ConfiguredLayer.class));
     }
 
@@ -123,6 +165,34 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
             layer = qr().query(
                     "select * from " + TABLE + " where gid = ?", new BeanHandler<>(ConfiguredLayer.class), id);
+
+            String n = layer.getName();
+            int i;
+            if(n != null && (i = n.indexOf("\\")) != -1) {
+                tab = n.substring(0, i);
+                name = n.substring(i+1);
+            } else {
+                name = n;
+            }
+
+            try {
+                JSONObject options = new JSONObject(layer.getOptions());
+                visible = options.getBoolean("visibility");
+            } catch(Exception e) {
+                visible = false;
+            }
+
+            try {
+                params = "";
+                JSONObject p = new JSONObject(layer.getParams());
+                for(String key: (Set<String>)p.keySet()) {
+                    if(params.length() > 0) {
+                        params += ",";
+                    }
+                    params += key + "=" + p.getString(key);
+                }
+            } catch(Exception e) {
+            }
         }
     }
 
@@ -132,14 +202,30 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     }
 
     public Resolution save() throws Exception {
-        Object[] params = new Object[] {
-            layer.getName(),
+        if(tab != null) {
+            name = tab + '\\' + name;
+            layer.setParent(null);
+        } else {
+            layer.setParent("#overlaypanel_b2");
+        }
+        JSONObject p = new JSONObject();
+        if(params != null) {
+            for(String s: params.split(",")) {
+                String[] parts = s.split("=", 2);
+                if(parts.length == 2) {
+                    p.put(parts[0], parts[1]);
+                }
+            }
+        }
+
+        Object[] qparams = new Object[] {
+            name,
             layer.getUrl(),
             layer.isProxy(),
             layer.isEnabled(),
             layer.isBaselayer(),
-            layer.getParams(),
-            layer.getOptions(),
+            p.toString(),
+            "{ \"visibility\": " + visible + "}",
             layer.isGetcapabilities(),
             layer.getParent(),
             layer.getPl(),
@@ -149,22 +235,22 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
             layer.getLegend()
         };
         if(layer.getGid() == null) {
-            log.debug("inserting new layer: " + Arrays.toString(params));
+            log.debug("inserting new layer: " + Arrays.toString(qparams));
             Integer newId = qr().insert(
                     "insert into " + TABLE
                     + "(name,url,proxy,enabled,baselayer,params,options,getcapabilities,parent,pl,layertype,index,abstract,legend) "
                     + "values(?,?,?,?,?,?::json,?::json,?,?,?,?,?,?,?)",
                     new ScalarHandler<Integer>(),
-                    params);
+                    qparams);
             layer.setGid(newId);
             log.debug("new layer id: " + newId);
         } else {
-            log.debug("updating layer id " + layer.getGid() + ": " + Arrays.toString(params));
+            log.debug("updating layer id " + layer.getGid() + ": " + Arrays.toString(qparams));
             qr().update(
                     "update " + TABLE
                     + "set name=?,url=?,proxy=?,enabled=?,baselayer=?,params=?::json,options=?::json,getcapabilities=?,parent=?,pl=?,layertype=?,index=?,abstract=?,legend=? "
                     + "where gid=" + layer.getGid(),
-                    params);
+                    qparams);
         }
         Cfg.settingsUpdated();
 

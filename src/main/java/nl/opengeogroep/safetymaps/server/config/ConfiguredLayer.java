@@ -132,6 +132,10 @@ public class ConfiguredLayer {
         this.legend = legend;
     }
 
+    public void setAbstract(String s) {
+        this.notes = s;
+    }
+    
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
