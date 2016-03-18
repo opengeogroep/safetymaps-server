@@ -18,6 +18,7 @@
 
 package nl.opengeogroep.safetymaps.server.admin.stripes;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,9 +34,12 @@ import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.LineIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -77,6 +81,17 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
     @Validate
     private String params;
+
+    @Validate
+    private String layersParam;
+
+    @Validate
+    private boolean dpiConversionEnabled = true;
+
+    @Validate
+    private String layerToggleKey;
+
+    private String mapFilesJson = "{}";
 
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
@@ -136,6 +151,38 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     public void setParams(String params) {
         this.params = params;
     }
+
+    public String getMapFilesJson() {
+        return mapFilesJson;
+    }
+
+    public void setMapFilesJson(String mapFilesJson) {
+        this.mapFilesJson = mapFilesJson;
+    }
+
+    public String getLayersParam() {
+        return layersParam;
+    }
+
+    public void setLayersParam(String layersParam) {
+        this.layersParam = layersParam;
+    }
+
+    public boolean isDpiConversionEnabled() {
+        return dpiConversionEnabled;
+    }
+
+    public void setDpiConversionEnabled(boolean dpiConversionEnabled) {
+        this.dpiConversionEnabled = dpiConversionEnabled;
+    }
+
+    public String getLayerToggleKey() {
+        return layerToggleKey;
+    }
+
+    public void setLayerToggleKey(String layerToggleKey) {
+        this.layerToggleKey = layerToggleKey;
+    }
     // </editor-fold>
 
     @Before
@@ -157,8 +204,46 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         return new ForwardResolution(JSP);
     }
 
+    @Before(stages = LifecycleStage.BindingAndValidation)
+    private void findMapfiles() {
+        try {
+            JSONArray a = new JSONArray();
+            File search = Cfg.getPath("static_mapserver_searchdirs");
+
+            if(search != null) {
+                search = new File("/home/matthijsln/dev/dbk/vrh/webdav");
+                for(File f: FileUtils.listFiles(search, new String[] {"map"}, true)) {
+                    JSONObject m = new JSONObject();
+                    m.put("path", f.getPath().substring(search.getPath().length()+1));
+                    a.put(m);
+
+                    // Naive mapfile parser. Perhaps replace by JavaScript client-side
+                    // GetCap parsing
+                    JSONArray l = new JSONArray();
+                    m.put("layers", l);
+                    LineIterator it = FileUtils.lineIterator(f, "US-ASCII");
+                    try {
+                        while(it.hasNext()) {
+                            String line = it.nextLine().trim();
+                            if(line.equals("LAYER")) {
+                                String n = it.nextLine().trim();
+                                n = n.substring(6, n.length()-1);
+                                l.put(n);
+                            }
+                        }
+                    } finally {
+                        it.close();
+                    }
+                }
+            }
+            mapFilesJson = a.toString(4);
+        } catch(Exception e) {
+        }
+    }
+
     @Before(stages = LifecycleStage.BindingAndValidation, on = {"edit","save"})
     public void loadLayer() throws NamingException, SQLException {
+
         String s = context.getRequest().getParameter("id");
         if(StringUtils.isNotBlank(s)) {
             Integer id = Integer.parseInt(s);
@@ -184,12 +269,19 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
             try {
                 params = "";
+                dpiConversionEnabled = false;
                 JSONObject p = new JSONObject(layer.getParams());
                 for(String key: (Set<String>)p.keySet()) {
-                    if(params.length() > 0) {
-                        params += ",";
+                    if("layers".equalsIgnoreCase(key)) {
+                        layersParam = p.getString(key);
+                    } else if("map_resolution".equalsIgnoreCase(key)) {
+                        dpiConversionEnabled = true;
+                    } else {
+                        if(params.length() > 0) {
+                            params += ",";
+                        }
+                        params += key + "=" + p.getString(key);
                     }
-                    params += key + "=" + p.getString(key);
                 }
             } catch(Exception e) {
             }
@@ -217,6 +309,14 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
                 }
             }
         }
+
+        if(dpiConversionEnabled) {
+            p.put("map_resolution", 58); // Convert ArcGIS 90 dpi to 72 dpi MapServer resolution: 72 / (90 / 72) = 57.6 = 58
+        }
+        p.put("layers", layersParam);
+
+        // XXX
+        layer.setNotes(layerToggleKey);
 
         Object[] qparams = new Object[] {
             name,
