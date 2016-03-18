@@ -211,7 +211,6 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
             File search = Cfg.getPath("static_mapserver_searchdirs");
 
             if(search != null) {
-                search = new File("/home/matthijsln/dev/dbk/vrh/webdav");
                 for(File f: FileUtils.listFiles(search, new String[] {"map"}, true)) {
                     JSONObject m = new JSONObject();
                     m.put("path", f.getPath().substring(search.getPath().length()+1));
