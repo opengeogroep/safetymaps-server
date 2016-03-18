@@ -2,6 +2,7 @@ package nl.opengeogroep.safetymaps.server.admin.stripes;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.naming.NamingException;
@@ -18,6 +19,8 @@ public class SettingsActionBean implements ActionBean {
 
     private List<Map<String,Object>> settings = new ArrayList();
 
+    private Map<String,String> strings = new HashMap();
+
     @Override
     public ActionBeanContext getContext() {
         return context;
@@ -32,13 +35,18 @@ public class SettingsActionBean implements ActionBean {
         return settings;
     }
 
-    public void setSettings(List<Map<String, Object>> settings) {
-        this.settings = settings;
+    public Map<String, String> getStrings() {
+        return strings;
     }
 
     @DefaultHandler
     public Resolution list() throws NamingException, SQLException {
         settings = DB.qr().query("select * from safetymaps.settings order by name", new MapListHandler());
+
+        for(Map<String,Object> s: settings) {
+            strings.put((String)s.get("name"), (String)s.get("value"));
+        }
+
         return null;
     }
 }
