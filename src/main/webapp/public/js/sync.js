@@ -130,7 +130,7 @@ function display(stateReports, startupReports) {
             };
         });
 
-        if(time.isBefore(cutoff) || filesetScheduledInPast) {
+        if(time.isBefore(cutoff) || (!sr.current_fileset && filesetScheduledInPast)) {
             stats.offline++;
             if(time.isBefore(cutoff)) {
                 view.details = "Laatst gezien langer dan 24 uur geleden";
