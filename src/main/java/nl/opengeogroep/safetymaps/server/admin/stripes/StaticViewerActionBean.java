@@ -37,6 +37,8 @@ public class StaticViewerActionBean implements ActionBean {
     private Date lastConfigUpdate;
     private Date lastStaticUpdate;
 
+    private boolean updateRequired;
+
     @Override
     public ActionBeanContext getContext() {
         return context;
@@ -63,6 +65,10 @@ public class StaticViewerActionBean implements ActionBean {
         this.lastStaticUpdate = lastStaticUpdate;
     }
 
+    public boolean isUpdateRequired() {
+        return updateRequired;
+    }
+
     @DefaultHandler
     public Resolution info() throws NamingException, SQLException {
         lastConfigUpdate = Cfg.getLastUpdated();
@@ -71,6 +77,8 @@ public class StaticViewerActionBean implements ActionBean {
 
         try {
             lastStaticUpdate = new Date(outputDir.lastModified());
+
+            updateRequired = lastStaticUpdate.before(lastConfigUpdate);
         } catch(Exception e) {
             String s = "Error getting last static update: " + e.getClass() + ": " + e.getMessage();
             log.warn(s);

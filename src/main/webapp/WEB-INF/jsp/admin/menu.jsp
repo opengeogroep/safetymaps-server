@@ -1,6 +1,9 @@
 <%@include file="/WEB-INF/jsp/taglibs.jsp" %>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
+<stripes:useActionBean var="staticBean" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.StaticViewerActionBean" event="info"/>
+
+<c:if test="${staticBean.updateRequired}">Configuratie aangepast: <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.StaticViewerActionBean">update</stripes:link> van voertuigviewer nodig</c:if>
 <ul class="nav navbar-nav">
     <li${menuitem == 'index' ? ' class="active"' : ''}><a href="${contextPath}/admin/index.jsp">Start</a></li>
     <li class="dropdown">
