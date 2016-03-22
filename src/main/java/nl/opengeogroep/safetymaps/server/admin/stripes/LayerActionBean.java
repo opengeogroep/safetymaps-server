@@ -266,6 +266,8 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
                 visible = false;
             }
 
+            layerToggleKey = layer.getNotes();
+
             try {
                 params = "";
                 dpiConversionEnabled = false;
