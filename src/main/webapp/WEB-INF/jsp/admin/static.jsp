@@ -36,7 +36,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 toe te passen:
             </p>
         </c:if>
+            
         <stripes:url var="url" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.StaticViewerActionBean" event="update"/>
         <input type="button" onclick="window.open('${url}')" value="Update voertuigviewer">
+        
+        <p>
+            <h3>Aangeven dat voertuigviewer moet worden ververst (gebruik bij nieuwe versie):</h3>
+
+            <stripes:form beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.StaticViewerActionBean">
+                <stripes:submit name="updateAutoReloadSequence" value="Ophogen autoreload sequence"/>
+            </stripes:form>
+            
+            De autoreload module controleert regelmatig de waarde van de autoreload sequence. Indien deze
+            met bovenstaande knop is aangepast, en door de voertuigviewer wordt gecontroleerd (na update en
+            synchronisatie) zal de voertuigviewer de browserpagina zelf verversen om de nieuwe versie te
+            laden.
+        </p>
     </stripes:layout-component>
 </stripes:layout-render>

@@ -15,11 +15,14 @@ import javax.naming.NamingException;
 import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
+import nl.opengeogroep.safetymaps.server.db.DB;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONObject;
 
 /**
  *
@@ -126,5 +129,22 @@ public class StaticViewerActionBean implements ActionBean {
                 }
             }
         };
+    }
+
+    public Resolution updateAutoReloadSequence() throws Exception {
+
+        Object options = DB.qr().query("select options from organisation.modules where name = 'autoreload'", new ScalarHandler<Object>());
+
+        if(options == null) {
+            options = "{ \"sequence\": 0}";
+        }
+
+        JSONObject j = new JSONObject(options.toString());
+        int sequence = j.getInt("sequence");
+        j.put("sequence", sequence+1);
+
+        DB.qr().update("update organisation.modules set options = ?::json where name = 'autoreload'", j.toString());
+        getContext().getMessages().add(new SimpleMessage("Sequence geupdate naar " + j.getInt("sequence") + "!"));
+        return info();
     }
 }
