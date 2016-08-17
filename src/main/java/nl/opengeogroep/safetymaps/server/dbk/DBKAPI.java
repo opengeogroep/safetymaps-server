@@ -124,7 +124,7 @@ public class DBKAPI extends HttpServlet {
             // TODO: implement conditional GET request using Last-Modified/If-Modified-Since
 
             synchronized(featuresCacheMonitor) {
-                String currentCacheKey = sridString + "_" + run.query(conn, "select max(\"Datum_Actualisatie\") from wfs.\"DBK\"", new ScalarHandler<String>());
+                String currentCacheKey = sridString + "_" + run.query(conn, "select max(\"Datum_Actualisatie\") || '_' || count(*) from wfs.\"DBK\"", new ScalarHandler<String>());
                 if(featuresCacheKey != null) {
                     if(currentCacheKey.equals(featuresCacheKey)) {
                         log.info("Returning cached features JSON (cache key: " + currentCacheKey + ")");
