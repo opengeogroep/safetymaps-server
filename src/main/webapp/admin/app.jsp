@@ -34,10 +34,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <tbody>
             <c:forEach var="s" items="${actionBean.settings}">
                 <tr>
-                    <td><c:out value="${s.name}"/></td>
+                    <td><c:out value="${s.key}"/></td>
                     <td>
-                        <c:if test="${s.type != 'text'}"><c:out value="${s.value}"/></c:if>
-                        <c:if test="${s.type == 'text'}">(lange waarde)</c:if>
+                        <c:out value="${s.value}"/>
                     </td>
                 </tr>
             </c:forEach>
