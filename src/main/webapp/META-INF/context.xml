@@ -17,7 +17,6 @@
         />
 
     -->
-  <Parameter name="dbk.media.path" override="false" value="/opt/dbk-data"/>
   <ResourceLink global="jdbc/safetymaps-server_a" name="jdbc/safetymaps-server" type="javax.sql.Datasource"/>
   
   <ResourceLink global="jdbc/filesetsync-server" name="jdbc/filesetsync-server" type="javax.sql.Datasource"/>

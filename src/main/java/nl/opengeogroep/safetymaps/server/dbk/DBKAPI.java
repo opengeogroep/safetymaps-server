@@ -16,11 +16,8 @@
  */
 package nl.opengeogroep.safetymaps.server.dbk;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -40,7 +37,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.apache.commons.io.IOUtils;
 
 /**
  *
@@ -53,7 +49,6 @@ public class DBKAPI extends HttpServlet {
     private static final String FEATURES = "features.json";
     private static final String OBJECT = "object/";
     private static final String GEBIED = "gebied/";
-    private static final String MEDIA = "media/";
     private static final String JSON = ".json";
 
     private static final String PARAMETER_SRID = "srid";
@@ -76,12 +71,10 @@ public class DBKAPI extends HttpServlet {
                 }
                 response.setContentType("application/json;charset=UTF-8");
                 out.write(output.toString().getBytes("UTF-8"));
-            } else if(method.contains(MEDIA)){
-                processMedia(method,request,response,out);
             }else{
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 output.put("success", Boolean.FALSE);
-                output.put("message", "Requested method not understood. Method was: " + method + " but expected are: " + FEATURES +", " + OBJECT + " or " +MEDIA);
+                output.put("message", "Requested path not understood. Path was: " + method + " but expected are: " + FEATURES +", " + OBJECT + " or " + GEBIED);
                 out.write(output.toString().getBytes());
             }
         }catch (IllegalArgumentException ex){
@@ -245,43 +238,6 @@ public class DBKAPI extends HttpServlet {
             DbUtils.close(conn);
         }
         return json;
-    }
-
-    /**
-     * Processes the request for retrieving the media belonging to a DBK.
-     * @param method The part of the url after /api/, containing the file name (and possible subdirectory)
-     * @param request The http request
-     * @param response The http response
-     * @param out The outputstream to which the file must be written.
-     * @throws IOException
-     */
-    private void processMedia( String method, HttpServletRequest request,HttpServletResponse response, OutputStream out) throws IOException {
-        FileInputStream fis = null;
-        File requestedFile = null;
-        String basePath = request.getServletContext().getInitParameter("dbk.media.path");
-        try {
-            String fileArgument = method.substring(method.indexOf(MEDIA) + MEDIA.length());
-            String totalPath = basePath + File.separatorChar + fileArgument;
-
-            totalPath = URLDecoder.decode(totalPath,response.getCharacterEncoding());
-            requestedFile = new File(totalPath);
-
-            fis = new FileInputStream(requestedFile);
-            response.setContentType(request.getServletContext().getMimeType(totalPath));
-            Long size = requestedFile.length();
-            response.setContentLength(size.intValue());
-            IOUtils.copy(fis, out);
-        } catch (IOException ex) {
-            log.error("Error retrieving media.", ex);
-            if (requestedFile != null) {
-                log.error("Cannot load media: " + requestedFile.getCanonicalPath() + " from basePath: " + basePath);
-            }
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        }finally{
-            if(fis != null){
-                fis.close();
-            }
-        }
     }
 
     private JSONObject processFeature(Map<String,Object> feature){
