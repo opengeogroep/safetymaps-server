@@ -13,43 +13,38 @@ function showPopup(e) {
 
     $("#popup .modal-title").html($.mustache("Details van <b>{{.}}</b>", clientId));
 
-    var startup = null;
-    var state = null;
-    $.each(window.data.startup, function(i, d) {
-        if(d.client_id === clientId) {
-            startup = d;
-            return false;
-        }
-    });
-    $.each(window.data.state, function(i, d) {
-        if(d.client_id === clientId) {
-            state = d;
+    var client = null;
+    $.each(window.clients, function(i, c) {
+        if(c.client_id === clientId) {
+            client = c;
             return false;
         }
     });
 
-    if(startup === null) {
+    if(client === null) {
         $("#os").text("-");
         $("#sync").text("-");
         $("#java").text("-");
     } else {
-        $("#os").html($.mustache("{{os.name}}, versie {{os.version}} {{os.arch}}, MAC adres: {{machine_id}}", startup));
+        var startup = client.start_report;
+        $("#os").html($.mustache("{{os.name}}, versie {{os.version}} {{os.arch}}", startup));
         $("#sync").html($.mustache("versie {{version}}, gebouwd op {{git_build_time}}<br>opgestart op {{startup}} ({{sinds}})", {
             version: startup.client.version,
             git_build_time: startup.client.git_build_time,
-            startup: moment(startup.start_time).format("LLLL"),
-            sinds: moment(startup.start_time).fromNow()
+            startup: moment(client.start_time).format("LLLL"),
+            sinds: moment(client.start_time).fromNow()
         }));
         $("#java").html($.mustache("{{vm_name}}, {{vm_version}}, {{name}}", startup.runtime));
     }
 
-    if(state === null) {
+    if(client.state === null) {
         $("#filesets_t").hide();
         $("#state").empty();
     } else {
+        var state = client.state;
         $("#filesets_t").show();
         $("#filesets_tb").empty();
-        $("#state").html("Status van taken zoals gerapporteerd op " + moment(state.report_time).format("LLLL"));
+        $("#state").html("Status van taken zoals gerapporteerd op " + moment(client.state_time).format("LLLL"));
 
         $.each(state.filesets, function(i, fs) {
             if(fs.schedule === "once") {
@@ -84,8 +79,8 @@ function update() {
         data: { json: "t" }
     })
     .done(function(data) {
-        window.data = data; // Useful for debugging
-        display(data.state, data.startup);
+        window.clients = data; // Useful for debugging
+        display(data);
     })
     .fail(function(jqXHR, textStatus, errorThrown) {
         $("#msg").text("Fout bij ophalen status: " + textStatus + ", " + jqXHR.responseText);
@@ -93,7 +88,7 @@ function update() {
     });
 }
 
-function display(stateReports, startupReports) {
+function display(clients) {
     var stats = {
         offline: 0,
         active: 0,
@@ -106,31 +101,36 @@ function display(stateReports, startupReports) {
 
     var activeRows = [];
 
-
-    $.each(stateReports, function(i, sr) {
+    $.each(clients, function(i, sr) {
         var cutoff = moment().subtract(24, 'hours');
-        var time = moment(sr.report_time);
+        var time = moment(sr.state_time);
+
+        if(sr.state === null) {
+            stats.offline++;
+            $("#offline_tb").append($.mustache("<tr><td>{{client_id}}</td><td colspan=\"2\">Geen status bekend</td></tr>", sr));
+            return;
+        }
 
         var view = {
             client_id: sr.client_id,
-            datetime: moment(sr.report_time).format("DD-MM-YYYY HH:mm:ss"),
-            time: moment(sr.report_time).format("LTS"),
-            fromNow: moment(sr.report_time).fromNow(),
-            mode: sr.mode
+            datetime: moment(sr.state_time).format("DD-MM-YYYY HH:mm:ss"),
+            time: moment(sr.state_time).format("LTS"),
+            fromNow: moment(sr.state_time).fromNow(),
+            mode: sr.state.mode
         };
 
         // check if earliest next_scheduled is before now minus 5 min delay
         var now = new Date().getTime();
         var filesetScheduledInPast = null;
-        $.each(sr.filesets, function(j, fs) {
-            if(fs.next_scheduled && fs.next_scheduled !== "ASAP" && fs.next_scheduled < sr.report_time && (fs.next_scheduled < now - (5*60000))) {
+        $.each(sr.state.filesets, function(j, fs) {
+            if(fs.next_scheduled && fs.next_scheduled !== "ASAP" && fs.next_scheduled < sr.state_time && (fs.next_scheduled < now - (5*60000))) {
                 if(filesetScheduledInPast === null || fs.next_scheduled < filesetScheduledInPast.next_scheduled) {
                     filesetScheduledInPast = fs;
                 }
             };
         });
 
-        if(time.isBefore(cutoff) || (!sr.current_fileset && filesetScheduledInPast)) {
+        if(time.isBefore(cutoff) || (!sr.state.current_fileset && filesetScheduledInPast)) {
             stats.offline++;
             if(time.isBefore(cutoff)) {
                 view.details = "Laatst gezien langer dan 24 uur geleden";
@@ -140,7 +140,7 @@ function display(stateReports, startupReports) {
             }
             $("#offline_tb").append($.mustache("<tr data-id=\"{{client_id}}\"><td>{{client_id}}</td><td>{{datetime}}, {{fromNow}}</td><td>{{details}}</td></tr>", view));
         } else {
-            if(sr.mode.indexOf("waiting") === 0) {
+            if(sr.state.mode.indexOf("waiting") === 0) {
                 stats.waiting++;
                 $("#waiting_tb").append($.mustache("<tr data-id=\"{{client_id}}\"><td>{{client_id}}</td><td>{{time}}</td><td>{{fromNow}}</td><td>{{mode}}</td></tr>", view));
             } else {
@@ -149,8 +149,8 @@ function display(stateReports, startupReports) {
                 view.fileset = sr.current_fileset;
 
                 var fileset = null;
-                $.each(sr.filesets, function(j, fs) {
-                    if(fs.name === sr.current_fileset) {
+                $.each(sr.state.filesets, function(j, fs) {
+                    if(fs.name === sr.state.current_fileset) {
                         fileset = fs;
                         return false;
                     }
@@ -171,7 +171,7 @@ function display(stateReports, startupReports) {
                 }
                 var row = $.mustache("<tr data-id=\"{{client_id}}\"><td>{{client_id}}</td><td>{{time}}</td><td>{{fromNow}}</td><td>{{fileset}}</td><td>{{action}}</td><td>{{progress}}</td></tr>", view);
                 activeRows.push({
-                    since: fileset && fileset.mode_since ? fileset.mode_since : sr.report_time,
+                    since: fileset && fileset.mode_since ? fileset.mode_since : sr.state_time,
                     row: row
                 });
             }
@@ -183,20 +183,6 @@ function display(stateReports, startupReports) {
     });
     $.each(activeRows, function(i, r) {
         $("#active_tb").append(r.row);
-    });
-
-    $.each(startupReports, function(i, sr) {
-        var hasState = false;
-        $.each(stateReports, function(j, stateReport) {
-            if(stateReport.client_id === sr.client_id && stateReport.machine_id === sr.machine_id) {
-                hasState = true;
-                return false;
-            }
-        });
-        if(!hasState) {
-            stats.offline++;
-            $("#offline_tb").append($.mustache("<tr><td>{{client_id}}</td><td colspan=\"2\">Geen status bekend</td></tr>", sr));
-        }
     });
 
     $("#offline").toggle(stats.offline !== 0);

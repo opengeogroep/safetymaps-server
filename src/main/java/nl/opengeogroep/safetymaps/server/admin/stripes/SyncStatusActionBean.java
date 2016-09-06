@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import javax.naming.NamingException;
 import net.sourceforge.stripes.action.*;
-import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -53,50 +52,27 @@ public class SyncStatusActionBean implements ActionBean {
         // From client_startup, report with latest startup_time
         List<Map<String, Object>> rows = qr().query("select * "
                  + " from "
-                 + "   (select *,row_number() over(partition by client_id,machine_id order by start_time desc) as rn "
+                 + "   (select *,row_number() over(partition by client_id order by start_time desc) as rn "
                  + "    from client_startup) r "
+                 + "left join client_state cs on (cs.client_id = r.client_id) "
                  + "where rn=1 "
                  + "order by start_time asc", new MapListHandler());
 
-        List<Map<String,Object>> stateRows = qr().query("select * from client_state order by report_time desc", new MapListHandler());
-
-        JSONArray stateA = new JSONArray();
-        JSONArray startupA = new JSONArray();
+        JSONArray clients = new JSONArray();
 
         for(Map<String,Object> row: rows) {
-            String clientId = (String)row.get("client_id");
-            String machineId = (String)row.get("machine_id");
-            JSONObject r = new JSONObject(row.get("report").toString());
-
-            r.put("client_id", clientId);
-            r.put("machine_id", machineId);
-            r.put("start_time", ((java.sql.Timestamp)row.get("start_time")).getTime());
-
-            for(Map<String,Object> stateRow: stateRows) {
-                if(clientId.equals(stateRow.get("client_id")) && machineId.equals(stateRow.get("machine_id"))) {
-                    JSONObject state = new JSONObject(stateRow.get("current_state").toString());
-                    state.put("report_time", ((java.sql.Timestamp)stateRow.get("report_time")).getTime());
-                    state.put("report_ip", stateRow.get("ip"));
-                    r.put("current_state", state);
-                    break;
-                }
-            }
-            startupA.put(r);
+            JSONObject j = new JSONObject();
+            j.put("client_id", (String)row.get("client_id"));
+            j.put("start_time", ((java.sql.Timestamp)row.get("start_time")).getTime());
+            j.put("start_report", new JSONObject(row.get("report").toString()));
+            Object reportTime = row.get("report_time");
+            j.put("state_time", reportTime == null ? null : ((java.sql.Timestamp)reportTime).getTime());
+            j.put("state_ip", (String)row.get("ip"));
+            Object currentState = row.get("current_state");
+            j.put("state", currentState == null ? null : new JSONObject(currentState.toString()));
+            clients.put(j);
         }
 
-        for(Map<String,Object> row: stateRows) {
-            JSONObject r = new JSONObject(row.get("current_state").toString());
-            r.put("client_id", row.get("client_id"));
-            r.put("machine_id", row.get("machine_id"));
-            r.put("report_time", ((java.sql.Timestamp)row.get("report_time")).getTime());
-            r.put("report_ip", row.get("ip"));
-            stateA.put(r);
-        }
-
-        JSONObject response = new JSONObject();
-        response.put("state", stateA);
-        response.put("startup", startupA);
-
-        return new ErrorMessageResolution(response);
+        return new StreamingResolution("application/json", clients.toString());
     }
 }
