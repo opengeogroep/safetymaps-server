@@ -97,7 +97,7 @@ public class StaticViewerActionBean implements ActionBean {
         // TODO check update flagfile option
 
         final List<String> commands = new ArrayList<>();
-        String s = (String)Cfg.getSetting("static_update_command");
+        String s = Cfg.getSetting("static_update_command");
         Matcher m = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(s);
         while(m.find()) {
             commands.add(m.group(1).replace("\"",""));

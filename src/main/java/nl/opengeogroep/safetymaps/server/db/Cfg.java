@@ -18,7 +18,7 @@ public class Cfg {
         qr().update("insert into safetymaps.settings (name, value) values(?, " + (sql != null ? sql : "?") + ")", name, value);
     }
 
-    public static final Object getSetting(String name) throws NamingException, SQLException {
+    public static final String getSetting(String name) throws NamingException, SQLException {
         return qr().query("select value from safetymaps.settings where name=?", new ScalarHandler<String>(), name);
     }
 

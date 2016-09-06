@@ -9,7 +9,7 @@
     <!DOCTYPE html>
     <html>
         <head>
-            <title>${pageTitle}${empty pageTitle ? '' : ' - '}<c:out value="${s.strings['title']}"/></title>
+            <title>${pageTitle}${empty pageTitle ? '' : ' - '}<c:out value="${s.settings['title']}"/></title>
             <meta charset="utf-8">
             <meta http-equiv="X-UA-Compatible" content="IE=edge">
             <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -50,12 +50,12 @@
                             <span class="icon-bar"></span>
                             <span class="icon-bar"></span>
                         </button>
-                        <a class="navbar-brand" href="${contextPath}/admin/index.jsp"><c:out value="${s.strings['title']}"/></a>
+                        <a class="navbar-brand" href="${contextPath}/admin/index.jsp"><c:out value="${s.settings['title']}"/></a>
                     </div>
                     <div id="navbar" class="navbar-collapse collapse">
                         <jsp:include page="/WEB-INF/jsp/admin/menu.jsp"/>
                         <ul class="nav navbar-nav navbar-right">
-                            <li><a href="<c:out value="${s.strings['static_url']}"/>" target="_blank">Open voertuigviewer</a></li>
+                            <li><a href="<c:out value="${s.settings['static_url']}"/>" target="_blank">Open voertuigviewer</a></li>
                             <li><a href="${contextPath}/about.jsp">Versie</a></li>
                             <%--li><a href=#">Ingelogd als: <span class="username"><c:out value="${pageContext.request.userPrincipal.name}"/></span></a></li--%>
                         </ul>
