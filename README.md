@@ -1,27 +1,40 @@
-# DBKBackend
+# Safetymaps-server
 
+Provides server-side functionality and configuration for online SafetyMaps DBK viewer and filesetsync-server
+monitoring.
 
-Backend voor de AJAX calls die gemaakt worden door het  DBKComponent van @escheper.
+## DBK functionality
 
-
-## Functionality
-Deze webapplicatie maakt de calls naar de Postgres database waarin de DBK objecten staan. Het ondersteund de volgende API-calls:
+Functionality for the features module:
 ```
 **/api/features.json**  
 ```
-Geeft GeoJSON terug met een featurecollection van alle DBK's. Mogelijke parameter is __srid__ (niet verplicht, defaults naar 28992).
+GeoJSON with all DBK's. Optional parameter is __srid__ (defaults to 28992).
 
 ```
 **/api/object/<id>.json**
 ```
-Geeft een JSON object terug met een DBKObject. Mogelijke parameter is __srid__ (niet verplicht, defaults naar 28992).
+JSON object with DBKObject. Optional parameter is __srid__ (defaults to 28992).
+
+Note the `/media/` path is not handled, configure webserver to map it to the media directory.
 
 ## Installation
-Om deze webapp te installeren moet je de tomcat vertellen hoe hij met de database kan connecten. Dit doe je door in tomcat/conf/server.xml het volgende blok onder <GlobalNamingResources> te zetten:
+
+Execute scripts db/safetymaps.sql to create the safetymaps schema. Edit the settings in safetymaps.settings table.
+
+|**Setting name** | **Description** |
+|:---------------:|:---------------:|
+| `title` | Instance title |
+| `static_url` | URL with link to online static viewer |
+| `static_mapserver_searchdirs` | Directory to search for mapfiles |
+| `static_outputdir` | Directory the update script updates |
+| `static_update_command` | Command to call script for updating static viewer |
+
+Add to tomcat/conf/server.xml the following under <GlobalNamingResources>:
 
 ```xml
  <Resource 
-    name="jdbc/dbk-api"
+    name="jdbc/safetymaps-server"
     auth="Container"
     type="javax.sql.DataSource"
     username="<dbuser>"
@@ -34,13 +47,23 @@ Om deze webapp te installeren moet je de tomcat vertellen hoe hij met de databas
     minEvictableIdleTimeMillis="5000"
 />
 ```
- 
-Hier moeten uiteraard de juiste gegevens worden ingevuld. Hierna moet de Postgres driver worden gedownload en worden gekopieerd in tomcat/lib. Deze kan gedownload worden van de volgende site:http://jdbc.postgresql.org/download.html.  
-Daarna moet de context.xml aangepast worden om te vertellen waar de mediabestenden worden geupload. Dit kan met de volgende contextparameter:
+Use the correct database settings and download the PostgreSQL JDBC driver (http://jdbc.postgresql.org/download.html) and put it in tomcat/lib.
+
+To display sync status from filesetsync-server, configure the following resource:
 
 ```xml
-  <Parameter name="dbk.media.path" value="<pad/naar/media>" override="false"/>
+<Resource
+   name="jdbc/filesetsync-server"
+   auth="Container"
+   type="javax.sql.DataSource"
+   username="<dbuser>"
+   password="<dbpassword>"
+   driverClassName="org.postgresql.Driver"
+   url="jdbc:postgresql://<server>:<port>/<dbname>?currentSchema=sync"
+   maxActive="40"
+   validationQuery="select 1"
+   timeBetweenEvictionRunsMillis="30000"
+   minEvictableIdleTimeMillis="5000"
+/>
 ```
-De context.xml kan aangepast worden in de .war file zelf, of hij kan - afhankelijk van de configuratie van tomcat - na deployen in /tomcat/conf/Catalina/localhost/dbk-api.xml (hij wordt door tomcat hernoemd).
-Hierna moet tomcat worden herstart en kan de applicatie worden gedeployed.
 
