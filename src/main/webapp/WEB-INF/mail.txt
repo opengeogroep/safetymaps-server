@@ -1,0 +1,14 @@
+Er is in de voertuigviewer een melding gedaan:
+
+Adres: ${address}
+Onderwerp: ${subject}
+Opmerkingen: ${remarks}
+
+---------
+Afzender: ${name}
+E-mail: ${email}
+Telefoon: ${phone}
+
+---------
+
+Link naar de melding: ${permalink}
