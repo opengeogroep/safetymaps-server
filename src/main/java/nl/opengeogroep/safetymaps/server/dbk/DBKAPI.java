@@ -47,6 +47,7 @@ public class DBKAPI extends HttpServlet {
     private static final Log log = LogFactory.getLog(DBKAPI.class);
     private static final String API_PART = "/api/";
     private static final String FEATURES = "features.json";
+    private static final String LIBRARY = "library.json";
     private static final String OBJECT = "object/";
     private static final String GEBIED = "gebied/";
     private static final String JSON = ".json";
@@ -61,12 +62,14 @@ public class DBKAPI extends HttpServlet {
             String requestedUri = request.getRequestURI();
             method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
             JSONObject output = new JSONObject();
-            if(method.contains(FEATURES)||method.contains(OBJECT) || method.contains(GEBIED)){
+            if(method.contains(FEATURES)||method.contains(OBJECT) || method.contains(GEBIED) || method.contains(LIBRARY)){
                 if(method.contains(FEATURES)){
                     output = processFeatureRequest(request);
                 }else if(method.contains(OBJECT)){
                     output = processObjectRequest(request,method);
-                }else {
+                }else if(method.contains(LIBRARY)) {
+                    output = processLibraryRequest(request);
+                } else {
                     output = processGebiedRequest(request,method);
                 }
                 response.setContentType("application/json;charset=UTF-8");
@@ -261,6 +264,22 @@ public class DBKAPI extends HttpServlet {
             properties.put(key, value);
         }
         return jsonFeature;
+    }
+
+    private JSONObject processLibraryRequest(HttpServletRequest request) throws Exception {
+        JSONArray a = new JSONArray();
+
+        List<Map<String,Object>> rows = DB.qr().query("select * from wfs.\"Bibliotheek\"", new MapListHandler());
+        for(Map<String,Object> r: rows) {
+            JSONObject j = new JSONObject();
+            for(Map.Entry<String,Object> entry: r.entrySet()) {
+                j.put(entry.getKey(), entry.getValue());
+            }
+            a.put(j);
+        }
+        JSONObject library = new JSONObject();
+        library.put("items", a);
+        return library;
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
