@@ -111,6 +111,10 @@ public class MailActionBean implements ActionBean {
             MimeMessage msg = new MimeMessage(session);
             msg.setFrom(from);
             msg.addRecipient(RecipientType.TO, new InternetAddress(to));
+            String sender = context.getRequest().getParameter("email");
+            if(sender != null) {
+                msg.addRecipient(RecipientType.CC, new InternetAddress(sender));
+            }
             msg.setSubject(subject);
             msg.setSentDate(new Date());
             msg.setContent(mail, "text/plain");
