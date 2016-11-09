@@ -105,7 +105,7 @@ function display(clients) {
         var cutoff = moment().subtract(24, 'hours');
         var time = moment(sr.state_time);
 
-        if(sr.state === null) {
+        if(typeof sr.state === 'undefined') {
             stats.offline++;
             $("#offline_tb").append($.mustache("<tr><td>{{client_id}}</td><td colspan=\"2\">Geen status bekend</td></tr>", sr));
             return;
