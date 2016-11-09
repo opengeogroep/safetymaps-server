@@ -269,7 +269,7 @@ public class DBKAPI extends HttpServlet {
     private JSONObject processLibraryRequest(HttpServletRequest request) throws Exception {
         JSONArray a = new JSONArray();
 
-        List<Map<String,Object>> rows = DB.qr().query("select * from wfs.\"Bibliotheek\"", new MapListHandler());
+        List<Map<String,Object>> rows = DB.qr().query("select * from wfs.\"Bibliotheek\" order by \"Omschrijving\"", new MapListHandler());
         for(Map<String,Object> r: rows) {
             JSONObject j = new JSONObject();
             for(Map.Entry<String,Object> entry: r.entrySet()) {
