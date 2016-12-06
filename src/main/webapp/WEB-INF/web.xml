@@ -91,6 +91,10 @@
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
+        <url-pattern>/api/edit/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>/admin/action/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
