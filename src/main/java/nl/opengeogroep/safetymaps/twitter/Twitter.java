@@ -52,7 +52,6 @@ public class Twitter {
                 @Override
                 public String handleResponse(HttpResponse hr) {
                     log.trace("< " + hr.getStatusLine());
-                    System.out.println(hr.getStatusLine());
                     if(hr.getStatusLine().getStatusCode() != SC_OK) {
                         exception.setValue(new IOException("HTTP error getting token: " + hr.getStatusLine()));
                         return null;
