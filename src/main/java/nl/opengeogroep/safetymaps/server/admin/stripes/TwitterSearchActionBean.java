@@ -46,7 +46,7 @@ public class TwitterSearchActionBean implements ActionBean {
     private String location;
 
     @Validate
-    private Double radius = 1.5;
+    private Double radius = 0.2;
 
     @Validate
     private String address;
@@ -155,7 +155,7 @@ public class TwitterSearchActionBean implements ActionBean {
                         .addParameter("geocode", location + "," + radius + "km")
                         .addParameter("q", "since:" + new SimpleDateFormat("yyyy-MM-dd").format(new Date(startTime*1000)))
                         .addParameter("lang", "nl")
-                        .addParameter("count", "20")
+                        .addParameter("count", "50")
                         .addParameter("include_entities", "false")
                         .build();
 
@@ -189,9 +189,9 @@ public class TwitterSearchActionBean implements ActionBean {
             }
 
             JSONArray tA = new JSONArray(terms);
-            terms = address + " OR ";
+            terms = address;
             for(int i = 0; i < tA.length() && i < 10; i++) {
-                terms += (i > 0 ? " OR " : "") + "\"" + tA.get(i) + "\"";
+                terms += (i == 0 ? " AND " : " OR ") + "\"" + tA.get(i) + "\"";
             }
             try(CloseableHttpClient client = Twitter.getClient()) {
                 String q = "since:" + new SimpleDateFormat("yyyy-MM-dd").format(new Date(startTime*1000)) + " " + terms;
