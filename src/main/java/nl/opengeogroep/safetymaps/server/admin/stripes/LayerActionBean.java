@@ -40,6 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -78,6 +79,9 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
     @Validate
     private boolean visible = true;
+
+    @Validate
+    private boolean hidefeatureinfo = true;
 
     @Validate
     private String params;
@@ -142,6 +146,14 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
     public void setVisible(boolean visible) {
         this.visible = visible;
+    }
+
+    public boolean isHidefeatureinfo() {
+        return hidefeatureinfo;
+    }
+
+    public void setHidefeatureinfo(boolean hidefeatureinfo) {
+        this.hidefeatureinfo = hidefeatureinfo;
     }
 
     public String getParams() {
@@ -259,11 +271,14 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
                 name = n;
             }
 
+            JSONObject options = null;
             try {
-                JSONObject options = new JSONObject(layer.getOptions());
-                visible = options.getBoolean("visibility");
-            } catch(Exception e) {
-                visible = false;
+                options = new JSONObject(layer.getOptions());
+            } catch(JSONException e) {
+            }
+            if(options != null) {
+                visible = options.optBoolean("visibility", visible);
+                hidefeatureinfo = options.optBoolean("hidefeatureinfo", false);
             }
 
             layerToggleKey = layer.getNotes();
@@ -319,6 +334,14 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         // XXX
         layer.setNotes(layerToggleKey);
 
+        JSONObject options = new JSONObject();
+        try {
+            options = new JSONObject(layer.getOptions());
+        } catch(JSONException e) {
+        }
+        options.put("visibility", visible);
+        options.put("hidefeatureinfo", hidefeatureinfo);
+
         Object[] qparams = new Object[] {
             name,
             layer.getUrl(),
@@ -326,7 +349,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
             layer.isEnabled(),
             layer.isBaselayer(),
             p.toString(),
-            "{ \"visibility\": " + visible + "}",
+            options.toString(),
             layer.isGetcapabilities(),
             layer.getParent(),
             layer.getPl(),

@@ -136,6 +136,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                             <label><stripes:checkbox name="visible"/>Standaard ingeschakeld</label>
                         </div>                        
                         <div class="checkbox">
+                            <label><stripes:checkbox name="hidefeatureinfo"/>Geen feature info weergeven</label>
+                        </div>
+                        <div class="checkbox">
                             <label><stripes:checkbox name="dpiConversionEnabled"/>ArcGIS naar MapServer DPI conversie</label>
                         </div>                        
                     </div>
