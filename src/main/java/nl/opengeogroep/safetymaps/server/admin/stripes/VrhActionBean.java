@@ -1,9 +1,20 @@
 package nl.opengeogroep.safetymaps.server.admin.stripes;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.*;
+import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.GeoJSONUtils.*;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -45,25 +56,73 @@ public class VrhActionBean implements ActionBean {
         this.id = id;
     }
 
-    @DefaultHandler
-    public Resolution wbbks() {
+    /**
+     * Create all data for static voertuigviewer
+     */
+    public Resolution staticData() throws IOException {
+        if(!"127.0.0.1".equals(getContext().getRequest().getRemoteAddr())) {
+            return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Access denied!");
+        }
+
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        ZipOutputStream out = new ZipOutputStream(b);
+        ZipEntry e = new ZipEntry("api/wbbks.json");
+        out.putNextEntry(e);
+        JSONObject wbbks = wbbksJson();
+        out.write(wbbks.toString(4).getBytes("UTF-8"));
+
+        JSONArray features = wbbks.getJSONObject("wbbk").getJSONArray("features");
+        for(int i = 0; i < features.length(); i++) {
+            int id = features.getJSONObject(i).getJSONObject("properties").getInt("id");
+            e = new ZipEntry("api/wbbk/" + id + ".json");
+            out.putNextEntry(e);
+            JSONObject wbbk = wbbkJson(id);
+            out.write(wbbk.toString(4).getBytes("UTF-8"));
+        }
+        out.flush();
+        out.close();
+
+        return new StreamingResolution("application/zip", new ByteArrayInputStream(b.toByteArray())).setFilename("wbbk-api.zip");
+    }
+
+    private static JSONObject wbbksJson() {
         JSONObject result = new JSONObject();
         result.put("success", false);
         try {
             List<Map<String,Object>> rows = DB.qr().query("select id, locatie, adres, plaatsnaam, st_xmin(geom)||','||st_ymin(geom)||','||st_xmax(geom)||','||st_ymax(geom) as bounds, st_asgeojson(st_centroid(geom)) as geometry from vrh.wdbk_waterbereikbaarheidskaart where locatie is not null order by locatie", new MapListHandler());
 
-            result.put("wbbk", rowsToGeoJSONFeatureCollection(rows));
+            // Deduplicate based on ID
+            List<Map<String,Object>> dedupRows = new ArrayList();
+            Set<BigDecimal> ids = new HashSet();
+            for(Map<String,Object> row: rows) {
+                BigDecimal thisId = (BigDecimal)row.get("id");
+                if(ids.contains(thisId)) {
+                    log.warn("Duplicate wbbk row for id " + thisId);
+                } else {
+                    ids.add(thisId);
+                    dedupRows.add(row);
+                }
+            }
+
+            result.put("wbbk", rowsToGeoJSONFeatureCollection(dedupRows));
             result.put("success", true);
         } catch(Exception e) {
             log.error("Error getting VRH wbbk data", e);
             result.put("error", "Fout ophalen WBBK data: " + e.getClass() + ": " + e.getMessage());
 
         }
+        return result;
+    }
+
+    @DefaultHandler
+    public Resolution wbbks() {
+        JSONObject result = wbbksJson();
         context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
         return new StreamingResolution("application/json", result.toString(4));
     }
 
-    public Resolution wbbk() {
+    private static JSONObject wbbkJson(Integer id) {
+
         JSONObject result = new JSONObject();
         result.put("success", false);
         try {
@@ -124,6 +183,11 @@ public class VrhActionBean implements ActionBean {
             result.put("error", "Fout ophalen WBBK data: " + e.getClass() + ": " + e.getMessage());
 
         }
+        return result;
+    }
+
+    public Resolution wbbk() {
+        JSONObject result = wbbkJson(id);
         context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
         return new StreamingResolution("application/json", result.toString(4));
     }
