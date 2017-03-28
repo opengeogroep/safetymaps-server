@@ -88,6 +88,9 @@ public class MailActionBean implements ActionBean {
 
             to = Cfg.getSetting("support_mail_to");
             from = Cfg.getSetting("support_mail_from");
+            if(from == null) {
+                from = context.getRequest().getParameter("name") + "<" + context.getRequest().getParameter("email") + ">";
+            }
             subject = Cfg.getSetting("support_mail_subject");
 
             if(to == null || from == null || subject == null) {
