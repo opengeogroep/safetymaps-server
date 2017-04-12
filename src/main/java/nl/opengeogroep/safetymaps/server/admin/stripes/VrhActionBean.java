@@ -71,14 +71,16 @@ public class VrhActionBean implements ActionBean {
         JSONObject wbbks = wbbksJson();
         out.write(wbbks.toString(4).getBytes("UTF-8"));
 
-        JSONArray features = wbbks.getJSONObject("wbbk").getJSONArray("features");
-        for(int i = 0; i < features.length(); i++) {
-            int id = features.getJSONObject(i).getJSONObject("properties").getInt("id");
-            e = new ZipEntry("api/wbbk/" + id + ".json");
-            out.putNextEntry(e);
-            JSONObject wbbk = wbbkJson(id);
-            out.write(wbbk.toString(4).getBytes("UTF-8"));
-        }
+        if(wbbks.has("wbbk")) {
+            JSONArray features = wbbks.getJSONObject("wbbk").getJSONArray("features");
+            for(int i = 0; i < features.length(); i++) {
+                int id = features.getJSONObject(i).getJSONObject("properties").getInt("id");
+                e = new ZipEntry("api/wbbk/" + id + ".json");
+                out.putNextEntry(e);
+                JSONObject wbbk = wbbkJson(id);
+                out.write(wbbk.toString(4).getBytes("UTF-8"));
+            }
+        } // else has "error"
         out.flush();
         out.close();
 
@@ -175,6 +177,9 @@ public class VrhActionBean implements ActionBean {
                 }
                 vlakkenFC.put("features", vlakken);
                 result.put("vlakken", vlakken);
+
+                rows = DB.qr().query("select objectid, tekst, hoek, st_asgeojson(geom) as geometry from vrh.teksten where dbk_object = ?", new MapListHandler(), id);
+                result.put("teksten", rowsToGeoJSONFeatureCollection(rows));
 
                 result.put("success", true);
             }
