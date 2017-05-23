@@ -91,7 +91,13 @@ public class VrhActionBean implements ActionBean {
         JSONObject result = new JSONObject();
         result.put("success", false);
         try {
-            List<Map<String,Object>> rows = DB.qr().query("select id, locatie, adres, plaatsnaam, st_xmin(geom)||','||st_ymin(geom)||','||st_xmax(geom)||','||st_ymax(geom) as bounds, st_asgeojson(st_centroid(geom)) as geometry from vrh.wdbk_waterbereikbaarheidskaart where locatie is not null order by locatie", new MapListHandler());
+            List<Map<String,Object>> rows = DB.qr().query("select id,locatie,adres,plaatsnaam,st_asgeojson(selectiekader) as selectiekader, st_xmin(geom)||','||st_ymin(geom)||','||st_xmax(geom)||','||st_ymax(geom) as bounds, st_asgeojson(st_centroid(geom)) as geometry "
+                    + "from"
+                    + "(select id, locatie, adres, plaatsnaam, coalesce(sk.geom,wdbk.geom) as geom, sk.geom as selectiekader "
+                    + " from vrh.wdbk_waterbereikbaarheidskaart wdbk "
+                    + " left join vrh.waterbereikbaarheidskaart_selectiekader sk on (sk.dbk_object = wdbk.id) "
+                    + " where locatie is not null "
+                    + " order by locatie) s", new MapListHandler());
 
             // Deduplicate based on ID
             List<Map<String,Object>> dedupRows = new ArrayList();

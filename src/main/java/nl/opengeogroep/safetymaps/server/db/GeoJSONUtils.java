@@ -25,9 +25,13 @@ public class GeoJSONUtils {
             for(Map.Entry<String,Object> column: row.entrySet()) {
                 if("geometry".equals(column.getKey())) {
                     JSONObject geometry = new JSONObject((String)column.getValue());
-                    feature.put("geometry", geometry);
+                    feature.put(column.getKey(), geometry);
                 } else {
-                    props.put(column.getKey(), column.getValue());
+                    if("selectiekader".equals(column.getKey()) && column.getValue() != null) {
+                        props.put(column.getKey(), new JSONObject((String)column.getValue()));
+                    } else {
+                        props.put(column.getKey(), column.getValue());
+                    }
                 }
             }
         }
