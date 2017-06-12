@@ -68,6 +68,6 @@ public class VrlnActionBean implements ActionBean {
 
         }
         context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
-        return new StreamingResolution("application/json", result.toString(4));
+        return new StreamingResolution("application/json", result.toString());
     }
 }
