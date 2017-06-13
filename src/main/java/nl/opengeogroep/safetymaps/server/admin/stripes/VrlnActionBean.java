@@ -57,10 +57,6 @@ public class VrlnActionBean implements ActionBean {
             List<Map<String,Object>> rows = DB.qr().query("select gid, nummer, soort, capaciteit, streng_id, st_asgeojson(geom) as geometry from vrln.brandkranen_wml" + boundsSql, new MapListHandler(), args);
 
             result.put("brandkranen_wml", rowsToGeoJSONFeatureCollection(rows));
-
-            rows = DB.qr().query("select gid, nominale_d, streng_id, st_asgeojson(geom) as geometry from vrln.leidingen_wml" + boundsSql, new MapListHandler(), args);
-
-            result.put("leidingen_wml", rowsToGeoJSONFeatureCollection(rows));
             result.put("success", true);
         } catch(Exception e) {
             log.error("Error getting VRLN brandkranen data", e);
