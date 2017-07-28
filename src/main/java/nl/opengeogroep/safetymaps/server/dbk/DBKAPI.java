@@ -51,6 +51,7 @@ public class DBKAPI extends HttpServlet {
     private static final String OBJECT = "object/";
     private static final String GEBIED = "gebied/";
     private static final String JSON = ".json";
+    private static final String VERSION = "version";
 
     private static final String PARAMETER_SRID = "srid";
 
@@ -135,11 +136,13 @@ public class DBKAPI extends HttpServlet {
                 geoJSON.put("type", "FeatureCollection");
                 geoJSON.put("features",jFeatures);
                 List<Map<String,Object>> features;
+                boolean version2 = "2".equals(request.getParameter(VERSION));
+                String from = version2 ? "dbk2.dbkfeatures_json" : " dbk.dbkfeatures_adres_json";
                 if(sridString != null){
                     Integer srid = Integer.parseInt(sridString);
-                    features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_adres_json(?)", h,srid);
+                    features = run.query(conn, "select \"feature\" from " + from + "(?)", h,srid);
                 }else{
-                    features = run.query(conn, "select \"feature\" from dbk.dbkfeatures_adres_json()", h);
+                    features = run.query(conn, "select \"feature\" from " + from + "()", h);
                 }
 
                 for (Map<String, Object> feature : features) {
@@ -183,12 +186,15 @@ public class DBKAPI extends HttpServlet {
         }
         try {
             Map<String, Object> feature;
+            boolean version2 = "2".equals(request.getParameter(VERSION));
+            String from = version2 ? "dbk2.dbkobject_json" : " dbk.dbkobject_json";
+
             if (hasSrid) {
                 String sridString = request.getParameter(PARAMETER_SRID);
                 Integer srid = Integer.parseInt(sridString);
-                feature = run.query(conn, "select \"DBKObject\" from dbk.dbkobject_json(?,?)", h, id, srid);
+                feature = run.query(conn, "select \"DBKObject\" from " + from + "(?,?)", h, id, srid);
             } else {
-                feature = run.query(conn, "select \"DBKObject\" from dbk.dbkobject_json(?)", h, id);
+                feature = run.query(conn, "select \"DBKObject\" from " + from + "(?)", h, id);
             }
             if(feature == null){
                 throw new IllegalArgumentException("Given id didn't yield any results.");
