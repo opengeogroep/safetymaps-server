@@ -54,7 +54,7 @@ public class VrlnActionBean implements ActionBean {
                 boundsSql = " where geom && st_setsrid(st_geomfromtext(?),28992)";
                 args = new Object[] { bounds };
             }
-            List<Map<String,Object>> rows = DB.qr().query("select gid, nummer, soort, capaciteit, streng_id, st_asgeojson(geom) as geometry from vrln.brandkranen_wml" + boundsSql, new MapListHandler(), args);
+            List<Map<String,Object>> rows = DB.qr().query("select gid, nummer, soort, capaciteit, streng_id, st_asgeojson(geom) as geometry,postcode, huisnummer from vrln.brandkranen_wml" + boundsSql, new MapListHandler(), args);
 
             result.put("brandkranen_wml", rowsToGeoJSONFeatureCollection(rows));
             result.put("success", true);
