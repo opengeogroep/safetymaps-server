@@ -47,6 +47,7 @@ public class DBKAPI extends HttpServlet {
     private static final Log log = LogFactory.getLog(DBKAPI.class);
     private static final String API_PART = "/api/";
     private static final String FEATURES = "features.json";
+    private static final String ORGANISATION = "organisation.json";
     private static final String LIBRARY = "library.json";
     private static final String OBJECT = "object/";
     private static final String GEBIED = "gebied/";
@@ -63,9 +64,11 @@ public class DBKAPI extends HttpServlet {
             String requestedUri = request.getRequestURI();
             method = requestedUri.substring(requestedUri.indexOf(API_PART)+ API_PART.length());
             JSONObject output = new JSONObject();
-            if(method.contains(FEATURES)||method.contains(OBJECT) || method.contains(GEBIED) || method.contains(LIBRARY)){
+            if(method.contains(FEATURES)||method.contains(OBJECT) || method.contains(GEBIED) || method.contains(LIBRARY) || method.contains(ORGANISATION)){
                 if(method.contains(FEATURES)){
                     output = processFeatureRequest(request);
+                }else if(method.contains(ORGANISATION)){
+                    output = processOrganisationRequest(request);
                 }else if(method.contains(OBJECT)){
                     output = processObjectRequest(request,method);
                 }else if(method.contains(LIBRARY)) {
@@ -286,6 +289,15 @@ public class DBKAPI extends HttpServlet {
         JSONObject library = new JSONObject();
         library.put("items", a);
         return library;
+    }
+
+    private JSONObject processOrganisationRequest(HttpServletRequest request) throws Exception {
+        JSONArray a = new JSONArray();
+
+        Object org = DB.qr().query("select \"organisation\" from organisation.organisation_nieuw_json(28992)", new ScalarHandler<>());
+        JSONObject j = new JSONObject();
+        j.put("organisation", new JSONObject(org.toString()));
+        return j;
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
