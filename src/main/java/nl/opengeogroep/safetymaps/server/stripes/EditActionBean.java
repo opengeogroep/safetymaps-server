@@ -1,4 +1,4 @@
-package nl.opengeogroep.safetymaps.server.admin.stripes;
+package nl.opengeogroep.safetymaps.server.stripes;
 
 import java.io.StringReader;
 import net.sourceforge.stripes.action.*;
