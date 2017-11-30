@@ -25,7 +25,7 @@
         <filter-class>net.sourceforge.stripes.controller.StripesFilter</filter-class>
         <init-param>
             <param-name>ActionResolver.Packages</param-name>
-            <param-value>nl.opengeogroep.safetymaps.server.admin.stripes</param-value>
+            <param-value>nl.opengeogroep.safetymaps.server.stripes,nl.opengeogroep.safetymaps.server.admin.stripes</param-value>
         </init-param>
         <!--init-param>
             <param-name>Extension.Packages</param-name>
@@ -91,7 +91,7 @@
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
-        <url-pattern>/api/edit/*</url-pattern>
+        <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
@@ -101,14 +101,6 @@
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>*.wait</url-pattern>
     </servlet-mapping>    
-    <servlet>
-        <servlet-name>Features</servlet-name>
-        <servlet-class>nl.opengeogroep.safetymaps.server.dbk.DBKAPI</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>Features</servlet-name>
-        <url-pattern>/api/*</url-pattern>
-    </servlet-mapping>
     <session-config>
         <session-timeout>
             30 

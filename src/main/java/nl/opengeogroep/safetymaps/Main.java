@@ -107,24 +107,23 @@ public class Main {
         new File("api").mkdir();
         try(FileOutputStream fos = new FileOutputStream("api/features.json")) {
             JSONObject o = new JSONObject();
-            boolean error = false;
+            boolean success = true;
             try {
                 JSONArray a = vde.getViewerObjectMapOverview();
                 o.put("results", a);
             } catch(Exception e) {
-                error = true;
-                o.put("exception", e.getClass());
-                String msg = e.getMessage();
+                success = true;
+                String msg = e.getClass() + ": " + e.getMessage();
                 if(e.getCause() != null) {
                     msg += ", " + e.getCause().getMessage();
                 }
-                o.put("message", msg);
+                o.put("error", msg);
                 System.err.println("Error writing viewer overview JSON");
                 e.printStackTrace();
             }
-            o.put("error", error);
+            o.put("success", success);
             fos.write(o.toString(indent).getBytes("UTF-8"));
-            System.exit(error ? 1 : 0);
+            System.exit(success ? 0 : 1);
         }
     }
 
