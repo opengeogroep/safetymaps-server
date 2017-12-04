@@ -41,6 +41,9 @@ public class Main {
         commands.addOption(Option.builder("exportobjects")
                     .desc("Write all objects JSON to 'api/object/<id>.json'")
                     .build());
+        commands.addOption(Option.builder("exportstyles")
+                    .desc("Write styles JSON to 'api/styles.json'")
+                    .build());
         commands.addOption(Option.builder("object")
                     .hasArg()
                     .argName("id")
@@ -90,6 +93,9 @@ public class Main {
         }
         if(cl.hasOption("exportobjects")) {
             cmdWriteObjects(vde, indent);
+        }
+        if(cl.hasOption("exportstyles")) {
+            cmdWriteStyles(vde, indent);
         }
         if(cl.hasOption("object")) {
             cmdWriteObject(vde, Integer.parseInt(cl.getOptionValue("object")), indent);
@@ -142,6 +148,20 @@ public class Main {
                 e.printStackTrace();
                 System.exit(1);
             }
+        }
+        System.exit(0);
+    }
+
+    private static void cmdWriteStyles(ViewerDataExporter vde, int indent) throws Exception {
+        JSONObject o = vde.getStyles();
+
+        String file = "api/styles.json";
+        try(FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(o.toString(indent).getBytes("UTF-8"));
+        } catch(Exception e) {
+            System.err.println("Error writing object JSON to " + file);
+            e.printStackTrace();
+            System.exit(1);
         }
         System.exit(0);
     }

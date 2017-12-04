@@ -42,6 +42,7 @@ public class ViewerApiActionBean implements ActionBean {
 
     private static final String FEATURES = "features.json";
     private static final String ORGANISATION = "organisation.json";
+    private static final String STYLES = "styles.json";
     private static final String LIBRARY = "library.json";
     private static final String OBJECT = "object/";
     private static final String AUTOCOMPLETE = "autocomplete/";
@@ -100,6 +101,9 @@ public class ViewerApiActionBean implements ActionBean {
                 }
                 if(ORGANISATION.equals(path)) {
                     return organisation(c);
+                }
+                if(STYLES.equals(path)) {
+                    return styles(c);
                 }
                 if(LIBRARY.equals(path)) {
                     return library(c);
@@ -205,6 +209,11 @@ public class ViewerApiActionBean implements ActionBean {
         library.put("success", true);
         library.put("items", a);
         return new StreamingResolution("application/json", library.toString(indent));
+    }
+
+    private Resolution styles(Connection c) throws Exception {
+        JSONObject o = new ViewerDataExporter(c).getStyles();
+        return new StreamingResolution("application/json", o.toString(indent));
     }
 
     private Resolution object(Connection c) throws Exception {

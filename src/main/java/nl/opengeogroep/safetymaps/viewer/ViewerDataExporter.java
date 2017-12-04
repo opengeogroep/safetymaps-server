@@ -166,4 +166,40 @@ public class ViewerDataExporter {
         }
         return result;
     }
+
+    /**
+     * Get styling information
+     */
+    public JSONObject getStyles() throws Exception {
+        JSONObject o = new JSONObject();
+
+        JSONObject compartments = new JSONObject();
+        o.put("compartments", compartments);
+        List<Map<String,Object>> rows = new QueryRunner().query(c, "select * from wfs.type_compartment", new MapListHandler());
+        for(Map<String,Object> row: rows) {
+            String code = (String)row.get("code");
+            JSONObject compartment = rowToJson(row, false, false);
+            compartments.put(code, compartment);
+        }
+
+        JSONObject lines = new JSONObject();
+        o.put("custom_lines", lines);
+        rows = new QueryRunner().query(c, "select * from wfs.type_custom_line", new MapListHandler());
+        for(Map<String,Object> row: rows) {
+            String code = (String)row.get("code");
+            JSONObject line = rowToJson(row, false, false);
+            lines.put(code, line);
+        }
+
+        JSONObject polygons = new JSONObject();
+        o.put("custom_polygons", polygons);
+        rows = new QueryRunner().query(c, "select * from wfs.type_custom_polygon", new MapListHandler());
+        for(Map<String,Object> row: rows) {
+            String code = (String)row.get("code");
+            JSONObject polygon = rowToJson(row, false, false);
+            polygons.put(code, polygon);
+        }
+
+        return o;
+    }
 }
