@@ -58,6 +58,9 @@ public class ViewerApiActionBean implements ActionBean {
     @Validate
     private int indent = 0;
 
+    @Validate
+    private int srid = 28992;
+
     @Override
     public ActionBeanContext getContext() {
         return context;
@@ -90,6 +93,14 @@ public class ViewerApiActionBean implements ActionBean {
 
     public void setIndent(int indent) {
         this.indent = indent;
+    }
+
+    public int getSrid() {
+        return srid;
+    }
+
+    public void setSrid(int srid) {
+        this.srid = srid;
     }
 
     public Resolution api() {
@@ -161,7 +172,7 @@ public class ViewerApiActionBean implements ActionBean {
         o.put("features", ja);
         boolean version2 = version == 2;
         String from = version2 ? "dbk2.dbkfeatures_json" : " dbk.dbkfeatures_adres_json";
-        List rows = (List)new QueryRunner().query(c, "select \"feature\" from " + from + "(28992)", new ColumnListHandler());
+        List rows = (List)new QueryRunner().query(c, "select \"feature\" from " + from + "(" + srid + ")", new ColumnListHandler());
         for (Object row: rows) {
             JSONObject d = new JSONObject(row.toString());
             JSONObject j = new JSONObject();
@@ -188,7 +199,7 @@ public class ViewerApiActionBean implements ActionBean {
     }
 
     private Resolution organisation(Connection c) throws Exception {
-        Object org = new QueryRunner().query(c, "select \"organisation\" from organisation.organisation_nieuw_json(28992)", new ScalarHandler<>());
+        Object org = new QueryRunner().query(c, "select \"organisation\" from organisation.organisation_nieuw_json(" + srid + ")", new ScalarHandler<>());
         JSONObject j = new JSONObject();
         j.put("organisation", new JSONObject(org.toString()));
         return new StreamingResolution("application/json", j.toString(indent));
