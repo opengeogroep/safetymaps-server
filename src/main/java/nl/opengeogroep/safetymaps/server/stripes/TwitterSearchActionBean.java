@@ -34,7 +34,7 @@ public class TwitterSearchActionBean implements ActionBean {
     private ActionBeanContext context;
 
     @Validate(required=true)
-    private int incidentId;
+    private long incidentId;
 
     @Validate(required=true)
     private long startTime;
@@ -65,11 +65,11 @@ public class TwitterSearchActionBean implements ActionBean {
         this.context = context;
     }
 
-    public int getIncidentId() {
+    public long getIncidentId() {
         return incidentId;
     }
 
-    public void setIncidentId(int incidentId) {
+    public void setIncidentId(long incidentId) {
         this.incidentId = incidentId;
     }
 
