@@ -10,7 +10,7 @@ import nl.opengeogroep.safetymaps.server.db.Cfg;
  * @author Matthijs Laan
  */
 @StrictBinding
-@UrlBinding("/action/api/edit")
+@UrlBinding("/api/edit")
 public class EditActionBean  implements ActionBean {
     private ActionBeanContext context;
 
