@@ -153,6 +153,9 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
             return ww;
         }
 
+        dist = Math.min(dist, MAX_DISTANCE);
+        count = Math.min(count, MAX_COUNT);
+
         List<Map<String,Object>> rows = DB.qr().query("select st_distance(geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(geom) as x, st_y(geom) as y, * "
                 + "from "
                 + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'NB' as info from vrh.brandkranen_eigen_terrein "
