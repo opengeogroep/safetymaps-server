@@ -153,20 +153,27 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
             return ww;
         }
 
-        List<Map<String,Object>> rows = DB.qr().query("select st_distance(geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(geom) as x, st_y(geom) as y, * from vrh.brandkranen_eigen_terrein "
-                + "where 1 < ? "
-                + "order by 1 asc limit ?", new MapListHandler(), x, y, srid, dist, count);
+        List<Map<String,Object>> rows = DB.qr().query("select st_distance(geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(geom) as x, st_y(geom) as y, * "
+                + "from "
+                + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'NB' as info from vrh.brandkranen_eigen_terrein "
+                + "  union all "
+                + "  select geom, 'brandkranen_dunea' as tabel, lower(producttyp) as \"type\", 'NB' as info from vrh.brandkranen_dunea "
+                + "  union all "
+                + "  select geom, 'brandkranen_evides' as tabel, 'ondergronds' as \"type\", 'Nominale druk: ' || nominale_d as info from vrh.brandkranen_evides "
+                + "  union all "
+                + "  select geom, 'brandkranen_oasen' as tabel, case when lower(ondergrnds) = 'nee' then 'bovengronds' else 'ondergronds' end as \"type\", omschr_lok as info from vrh.brandkranen_oasen) b "
+                + "where st_distance(geom, st_setsrid(st_point(?, ?),?)) < ? "
+                + "order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, dist, count);
         
-        log.info("Waterwinning results " + getContext().getRequest().getRequestURI() + ": " + rows);
+        log.info("Waterwinning results " + getContext().getRequest().getRequestURI() + "?" + getContext().getRequest().getQueryString() + ": " + rows);
 
         for(Map<String,Object> row: rows) {
             JSONObject o = new JSONObject();
-            String soort = "Ondergronds".equals(row.get("producttyp")) ? "Tb4.002blau.png" : "Tb4.001blau.png";
-            o.put("soort", soort);
-            o.put("afstand", row.get("distance"));
-            o.put("x", row.get("x"));
-            o.put("y", row.get("y"));
-            o.put("extra_info", "NB");
+            for(String key: row.keySet()) {
+                if(!"geom".equals(key)) {
+                    o.put(key, row.get(key));
+                }
+            }
             ww.put(o);
         }
         
