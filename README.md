@@ -66,4 +66,36 @@ To display sync status from filesetsync-server, configure the following resource
    minEvictableIdleTimeMillis="5000"
 />
 ```
+## Mailing functionality
 
+Add to Tomcat server.xml:
+
+```xml
+    <Resource name="mail/session" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />
+```
+Add settings to safetymaps.settings table as follows:
+
+```sql
+-- Customized mail template, if this setting is not configured the default /WEB-INF/mail.txt template 
+-- is used. Put template contents in here, not a filename of a template.
+-- In the template, "${param}" will be replaced with the URL-parameter "param". See the support module
+-- or the default template for the URL params sent.
+--insert into safetymaps.settings(name,value) values ('support_mail_template', 'put customized contents of /WEB-INF/mail.txt here');
+
+-- Use the next parameters to replace a link to the onboard viewer to an online version
+-- (`permalink` parameter).
+-- The example values will replace URL's like http://10.0.0.1/safetymaps-viewer/?params-with-notice-details
+-- with the part before the query path changed to https://online-viewer.yourcompany.com/ so the link in the
+-- mail works in an online viewer instead of only working in the onboard viewer environment.
+-- Regular expression to match the part to replace
+insert into safetymaps.settings(name,value) values ('support_mail_replace_search', 'https?://.*/safetymaps-viewer(.*)');
+-- Replacement for the match in the link to the viewer
+insert into safetymaps.settings(name,value) values ('support_mail_replacement', 'https://online-viewer.yourcompany.com/safetymaps-viewer$1');
+
+-- Mail address to send the e-mail to
+insert into safetymaps.settings(name,value) values ('support_mail_to', 'you@yourfiredepartment.com');
+-- From address in the mail
+insert into safetymaps.settings(name,value) values ('support_mail_from', 'noreply@yourfiredepartment.com');
+-- Mail subject line
+insert into safetymaps.settings(name,value) values ('support_mail_subject', 'Notice from SafetyMaps Viewer');
+```
