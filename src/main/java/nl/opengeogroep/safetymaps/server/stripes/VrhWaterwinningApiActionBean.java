@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.Validate;
 import nl.opengeogroep.safetymaps.server.db.DB;
@@ -196,6 +198,31 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
             ww.put(o);
         }
         
+        rows = DB.qr().query("select st_astext(st_closestpoint(geom, st_setsrid(st_point(?, ?), ?))) as punt, st_distance(geom, st_setsrid(st_point(?, ?), ?)) as distance, naamnl_csv as info, 'Functie: ' || coalesce(functie, '-') || ', type: ' || typewater as tabel "
+                + " from vrh.openwater_vlakken "
+                + " where st_distance(geom, st_setsrid(st_point(?, ?), ?)) < ? "
+                + " order by 2 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, x, y, srid, dist, count);
+
+        for(Map<String,Object> row: rows) {
+            JSONObject o = new JSONObject();
+            o.put("soort", "open_water");
+            for(String key: row.keySet()) {
+                if("punt".equals(key)) {
+                    log.info("open water" + rows);
+                    Pattern p = Pattern.compile("([0-9\\.]+) ([0-9\\.]+)");
+                    Matcher m = p.matcher(row.get(key).toString());
+                    m.find();
+                    Double px = Double.parseDouble(m.group(1));
+                    Double py = Double.parseDouble(m.group(2));
+                    o.put("x", px);
+                    o.put("y", py);
+                } else {
+                    o.put(key, row.get(key));
+                }
+            }
+            ww.put(o);
+        }
+
         return ww;
     }
     
