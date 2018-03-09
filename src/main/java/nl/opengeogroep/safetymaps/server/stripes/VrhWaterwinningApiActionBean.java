@@ -184,16 +184,13 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 Integer diameter = DB.qr().query("select artikel_d2 from vrh.hoofdleidingen_dunea order by st_distance(geom, st_setsrid(st_point(?, ?),?)) limit 1", new ScalarHandler<Integer>(), row.get("x"), row.get("y"), srid);
                 log.info(String.format("Leiding voor Dunea brandkraan op %s, %s is %s", row.get("x"), row.get("y"), diameter));
                 int opbrengst = 500;
-                if(diameter > 70) {
+                if(diameter > 90) {
                     opbrengst = 1000;
                 }
-                if(diameter > 120) {
+                if(diameter > 190) {
                     opbrengst = 1500;
                 }
-                if(diameter > 160) {
-                    opbrengst = 2000;
-                }
-                o.put("info", opbrengst + " &#8467;/min (diameter leiding: " + diameter + " mm)");
+                o.put("info", "&plusmn; " + opbrengst + " &#8467;/min"); // (diameter leiding: " + diameter + " mm)");
             }
             ww.put(o);
         }
