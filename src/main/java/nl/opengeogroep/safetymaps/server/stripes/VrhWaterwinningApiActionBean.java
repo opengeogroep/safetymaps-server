@@ -28,10 +28,14 @@ import org.json.JSONObject;
 public class VrhWaterwinningApiActionBean implements ActionBean {
     private static final Log log = LogFactory.getLog(ViewerApiActionBean.class);
     
-    private static final int MAX_DISTANCE = 10000;
-    private static final int DEFAULT_DISTANCE = 2500;
-    private static final int MAX_COUNT = 25;
-    private static final int DEFAULT_COUNT = 3;
+    private static final int PRIMARY_MAX_DISTANCE = 10000;
+    private static final int PRIMARY_DEFAULT_DISTANCE = 500;
+    private static final int PRIMARY_MAX_COUNT = 25;
+    private static final int PRIMARY_DEFAULT_COUNT = 3;
+    private static final int SECONDARY_MAX_DISTANCE = 10000;
+    private static final int SECONDARY_DEFAULT_DISTANCE = 3000;
+    private static final int SECONDARY_MAX_COUNT = 25;
+    private static final int SECONDARY_DEFAULT_COUNT = 3;
     
     private ActionBeanContext context;
 
@@ -42,17 +46,29 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     private Double y;
     
     /**
-     * Distance in meters around location to search for waterwinning.
+     * Distance in meters around location to search for primary waterwinning.
      */
     @Validate
-    private int dist = DEFAULT_DISTANCE;
+    private int primaryDist = PRIMARY_DEFAULT_DISTANCE;
     
     /**
-     * Max count of waterwinningen per type
+     * Max number of primary waterwinningen
      */
     @Validate 
-    private int count = DEFAULT_COUNT;
+    private int primaryCount = PRIMARY_DEFAULT_COUNT;
     
+    /**
+     * Distance in meters around location to search for secondary waterwinning.
+     */
+    @Validate
+    private int secondaryDist = SECONDARY_DEFAULT_DISTANCE;
+
+    /**
+     * Max number of secondary waterwinningen
+     */
+    @Validate
+    private int secondaryCount = SECONDARY_DEFAULT_COUNT;
+
     @Validate
     private int indent = 0;  
     
@@ -85,21 +101,37 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     public void setY(Double y) {
         this.y = y;
     }
-    
-    public int getDist() {
-        return dist;
+
+    public int getPrimaryDist() {
+        return primaryDist;
     }
-    
-    public void setDist(int dist) {
-        this.dist = dist;
+
+    public void setPrimaryDist(int primaryDist) {
+        this.primaryDist = primaryDist;
     }
-    
-    public int getCount() {
-        return count;
+
+    public int getPrimaryCount() {
+        return primaryCount;
     }
-    
-    public void setCount(int count) {
-        this.count = count;
+
+    public void setPrimaryCount(int primaryCount) {
+        this.primaryCount = primaryCount;
+    }
+
+    public int getSecondaryDist() {
+        return secondaryDist;
+    }
+
+    public void setSecondaryDist(int secondaryDist) {
+        this.secondaryDist = secondaryDist;
+    }
+
+    public int getSecondaryCount() {
+        return secondaryCount;
+    }
+
+    public void setSecondaryCount(int secondaryCount) {
+        this.secondaryCount = secondaryCount;
     }
 
     public int getIndent() {
@@ -122,11 +154,11 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     @DefaultHandler
     public Resolution waterwinning() {
         try(Connection c = DB.getConnection()) {
-            JSONArray waterwinningen;
+            JSONObject waterwinningInfo;
             boolean retryCachedPlanChange = false;
             do {
                 try {
-                    waterwinningen = findWaterwinning();
+                    waterwinningInfo = findWaterwinning();
                 } catch(SQLException sqle) {
                     String ss = sqle.getSQLState();
                     //if(ss.equals(/* INSERT CORRECT SQL STATE HERE */"Cached plan must not change result type") && !retryCachedDDLChange) {
@@ -143,38 +175,45 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
             
             JSONObject r = new JSONObject();
             r.put("success", true);
-            r.put("values", waterwinningen);
+            r.put("value", waterwinningInfo);
             return new StreamingResolution("application/json", r.toString(indent));
         } catch(Exception e) {
             return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + getContext().getRequest().getRequestURI(), e).toString(indent));
         }
     }
     
-    private JSONArray findWaterwinning() throws Exception {
-        JSONArray ww = new JSONArray();
+    private JSONObject findWaterwinning() throws Exception {
+        JSONObject ww = new JSONObject();
         if(x == null || y == null) {
             return ww;
         }
 
-        dist = Math.min(dist, MAX_DISTANCE);
-        count = Math.min(count, MAX_COUNT);
+        primaryDist = Math.min(primaryDist, PRIMARY_MAX_DISTANCE);
+        primaryCount = Math.min(primaryCount, PRIMARY_MAX_COUNT);
+        secondaryDist = Math.min(secondaryDist, SECONDARY_MAX_DISTANCE);
+        secondaryCount = Math.min(secondaryCount, SECONDARY_MAX_COUNT);
 
         List<Map<String,Object>> rows = DB.qr().query("select st_distance(b.geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(geom) as x, st_y(geom) as y, * "
                 + "from "
-                + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'NB' as info from vrh.brandkranen_eigen_terrein "
+                + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'Voordruk aanwezig: ' || coalesce(initcap(voordruk),'NB') || ', druk ' || coalesce(bar, 'NB') || ' bar' as info from vrh.brandkranen_eigen_terrein "
                 + "  union all "
-                + "  select geom, 'brandkranen_dunea' as tabel, lower(producttyp) as \"type\", 'NB' as info from vrh.brandkranen_dunea "
+                + "  select geom, 'brandkranen_dunea' as tabel, lower(producttyp) as \"type\", '' as info from vrh.brandkranen_dunea "
                 + "  union all "
-                + "  select geom, 'brandkranen_evides' as tabel, 'ondergronds' as \"type\", 'Nominale druk: ' || nominale_d as info from vrh.brandkranen_evides "
+                + "  select geom, 'brandkranen_evides' as tabel, 'ondergronds' as \"type\", '' as info from vrh.brandkranen_evides "
                 + "  union all "
-                + "  select geom, 'brandkranen_oasen' as tabel, case when lower(ondergrnds) = 'nee' then 'bovengronds' else 'ondergronds' end as \"type\", omschr_lok as info from vrh.brandkranen_oasen) b "
+                + "  select geom, 'brandkranen_oasen' as tabel, case when lower(ondergrnds) = 'nee' then 'bovengronds' else 'ondergronds' end as \"type\", '' as info from vrh.brandkranen_oasen "
+                + "  union all "
+                + "  select geom, 'geboorde_putten' as tabel, 'geboorde_put' as \"type\", overige_in as info from vrh.geboorde_putten) b "
                 + "where st_distance(b.geom, st_setsrid(st_point(?, ?),?)) < ? "
-                + "order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, dist, count);
+                + "order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, primaryDist, primaryCount);
         
-        log.info("Waterwinning results " + getContext().getRequest().getRequestURI() + "?" + getContext().getRequest().getQueryString() + ": " + rows);
+        log.info("Waterwinning primary results " + getContext().getRequest().getRequestURI() + "?" + getContext().getRequest().getQueryString() + ": " + rows);
 
+        JSONArray a = new JSONArray();
+        ww.put("primary", a);
         for(Map<String,Object> row: rows) {
             JSONObject o = new JSONObject();
+
             for(String key: row.keySet()) {
                 if(!"geom".equals(key)) {
                     o.put(key, row.get(key));
@@ -190,16 +229,21 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 if(diameter > 190) {
                     opbrengst = 1500;
                 }
-                o.put("info", "&plusmn; " + opbrengst + " &#8467;/min"); // (diameter leiding: " + diameter + " mm)");
+                o.put("info", "&plusmn; " + opbrengst + " &#8467;/min");
             }
-            ww.put(o);
+            a.put(o);
         }
         
-        rows = DB.qr().query("select st_astext(st_closestpoint(geom, st_setsrid(st_point(?, ?), ?))) as punt, st_distance(geom, st_setsrid(st_point(?, ?), ?)) as distance, naamnl_csv as info, 'Functie: ' || coalesce(functie, '-') || ', type: ' || typewater as tabel "
-                + " from vrh.openwater_vlakken "
-                + " where st_distance(geom, st_setsrid(st_point(?, ?), ?)) < ? "
-                + " order by 2 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, x, y, srid, dist, count);
+        rows = DB.qr().query("select st_distance(b.geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(point) as x, st_y(point) as y, type, info "
+                + "from "
+                + " (select geom, st_closestpoint(geom, st_setsrid(st_point(?, ?), ?)) as point, 'open_water' as \"type\", '' as info from vrh.openwater_vlakken "
+                + "  union all "
+                + "  select geom, geom as point, 'bluswaterriool' as \"type\", overige_in as info from vrh.bluswaterriool) b "
+                + " where st_distance(b.geom, st_setsrid(st_point(?, ?), ?)) < ? "
+                + " order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, x, y, srid, secondaryDist, secondaryCount);
 
+        a = new JSONArray();
+        ww.put("secondary", a);
         for(Map<String,Object> row: rows) {
             JSONObject o = new JSONObject();
             o.put("soort", "open_water");
@@ -217,7 +261,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                     o.put(key, row.get(key));
                 }
             }
-            ww.put(o);
+            a.put(o);
         }
 
         return ww;
