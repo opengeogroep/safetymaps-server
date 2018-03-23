@@ -8,6 +8,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.Validate;
+import nl.opengeogroep.safetymaps.routing.*;
+import nl.opengeogroep.safetymaps.server.db.Cfg;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.logExceptionAndReturnJSONObject;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -32,10 +34,14 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     private static final int PRIMARY_DEFAULT_DISTANCE = 500;
     private static final int PRIMARY_MAX_COUNT = 25;
     private static final int PRIMARY_DEFAULT_COUNT = 3;
+    private static final double PRIMARY_PREROUTING_COUNT_FACTOR = 2.0;
+    private static final double PRIMARY_PREROUTING_DISTANCE_FACTOR = 2.0;
     private static final int SECONDARY_MAX_DISTANCE = 10000;
     private static final int SECONDARY_DEFAULT_DISTANCE = 3000;
     private static final int SECONDARY_MAX_COUNT = 25;
     private static final int SECONDARY_DEFAULT_COUNT = 3;
+    private static final double SECONDARY_PREROUTING_COUNT_FACTOR = 1.0;
+    private static final double SECONDARY_PREROUTING_DISTANCE_FACTOR = 2.0;
     
     private ActionBeanContext context;
 
@@ -74,6 +80,9 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     
     @Validate
     private int srid = 28992;    
+    
+    @Validate
+    private boolean routing = true;
     
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
@@ -149,6 +158,14 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     public void setSrid(int srid) {
         this.srid = srid;
     }
+
+    public boolean isRouting() {
+        return routing;
+    }
+
+    public void setRouting(boolean routing) {
+        this.routing = routing;
+    }
     // </editor-fold>
     
     @DefaultHandler
@@ -182,17 +199,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
         }
     }
     
-    private JSONObject findWaterwinning() throws Exception {
-        JSONObject ww = new JSONObject();
-        if(x == null || y == null) {
-            return ww;
-        }
-
-        primaryDist = Math.min(primaryDist, PRIMARY_MAX_DISTANCE);
-        primaryCount = Math.min(primaryCount, PRIMARY_MAX_COUNT);
-        secondaryDist = Math.min(secondaryDist, SECONDARY_MAX_DISTANCE);
-        secondaryCount = Math.min(secondaryCount, SECONDARY_MAX_COUNT);
-
+    private JSONArray findPrimaryWaterwinning(double x, double y, int srid, int distance, int count) throws Exception {
         List<Map<String,Object>> rows = DB.qr().query("select st_distance(b.geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(geom) as x, st_y(geom) as y, * "
                 + "from "
                 + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'Voordruk aanwezig: ' || coalesce(initcap(voordruk),'NB') || ', druk ' || coalesce(bar, 'NB') || ' bar' as info from vrh.brandkranen_eigen_terrein "
@@ -205,12 +212,11 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 + "  union all "
                 + "  select geom, 'geboorde_putten' as tabel, 'geboorde_put' as \"type\", overige_in as info from vrh.geboorde_putten) b "
                 + "where st_distance(b.geom, st_setsrid(st_point(?, ?),?)) < ? "
-                + "order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, primaryDist, primaryCount);
+                + "order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, distance, count);
         
         log.info("Waterwinning primary results " + getContext().getRequest().getRequestURI() + "?" + getContext().getRequest().getQueryString() + ": " + rows);
 
         JSONArray a = new JSONArray();
-        ww.put("primary", a);
         for(Map<String,Object> row: rows) {
             JSONObject o = new JSONObject();
 
@@ -233,17 +239,20 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
             }
             a.put(o);
         }
+        return a;
+    }
+    
+    private JSONArray findSecondaryWaterwinning(double x, double y, int srid, int distance, int count) throws Exception {
         
-        rows = DB.qr().query("select st_distance(b.geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(point) as x, st_y(point) as y, type, info "
+        List<Map<String,Object>> rows = DB.qr().query("select st_distance(b.geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(point) as x, st_y(point) as y, type, info "
                 + "from "
                 + " (select geom, st_closestpoint(geom, st_setsrid(st_point(?, ?), ?)) as point, 'open_water' as \"type\", '' as info from vrh.openwater_vlakken "
                 + "  union all "
                 + "  select geom, geom as point, 'bluswaterriool' as \"type\", overige_in as info from vrh.bluswaterriool) b "
                 + " where st_distance(b.geom, st_setsrid(st_point(?, ?), ?)) < ? "
-                + " order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, x, y, srid, secondaryDist, secondaryCount);
+                + " order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, x, y, srid, distance, count);
 
-        a = new JSONArray();
-        ww.put("secondary", a);
+        JSONArray a = new JSONArray();
         for(Map<String,Object> row: rows) {
             JSONObject o = new JSONObject();
             o.put("soort", "open_water");
@@ -262,6 +271,65 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 }
             }
             a.put(o);
+        }
+        return a;
+    }
+    
+    private JSONObject sortAndLimitWaterwinningOnRoutingDistance(double x, double y, int srid, JSONArray primaryRouted, JSONArray secondaryRouted) {
+        return null;
+    }
+    
+    private JSONArray calculateRoutes(JSONArray input) throws Exception {
+        RoutingService engine = RoutingFactory.getRoutingService();
+        
+        for(int i = 0; i < input.length(); i++) {
+            JSONObject wwPunt = input.getJSONObject(i);
+            double toX = wwPunt.getDouble("x");
+            double toY = wwPunt.getDouble("y");
+            RoutingResult result = engine.getRoute(new RoutingRequest(x, y, toX, toY, srid));
+            JSONObject route = new JSONObject();
+            wwPunt.put("route", route);
+            if(result.isSuccess()) {
+                route.put("success", true);
+                route.put("distance", result.getDistance());
+                route.put("data", result.getRoute());
+            } else {
+                route.put("success", false);
+                route.put("error", result.getError());
+            }
+        }
+        return input;
+    }
+    
+    private JSONObject findWaterwinning() throws Exception {
+        JSONObject ww = new JSONObject();
+        if(x == null || y == null) {
+            return ww;
+        }
+
+        primaryDist = Math.min(primaryDist, PRIMARY_MAX_DISTANCE);
+        primaryCount = Math.min(primaryCount, PRIMARY_MAX_COUNT);
+        secondaryDist = Math.min(secondaryDist, SECONDARY_MAX_DISTANCE);
+        secondaryCount = Math.min(secondaryCount, SECONDARY_MAX_COUNT);
+        
+        if(!routing) {
+            ww.put("primary", findPrimaryWaterwinning(x, y, srid, primaryDist, primaryCount));
+            ww.put("secondary", findSecondaryWaterwinning(x, y, srid, secondaryDist, secondaryCount));
+        } else {
+            double primaryDistanceFactor = Double.parseDouble(Cfg.getSetting("ww_prerouting_primary_distance_factor", PRIMARY_PREROUTING_DISTANCE_FACTOR + ""));
+            double primaryCountFactor = Double.parseDouble(Cfg.getSetting("ww_prerouting_primary_count_factor", PRIMARY_PREROUTING_COUNT_FACTOR + ""));
+            
+            JSONArray routingInput = findPrimaryWaterwinning(x, y, srid, (int)Math.ceil(primaryDist * primaryDistanceFactor), (int)Math.ceil(primaryCount * primaryCountFactor));
+            JSONArray routed = calculateRoutes(routingInput);
+            ww.put("primary", routed);
+            
+            double secondaryDistanceFactor = Double.parseDouble(Cfg.getSetting("ww_prerouting_secondary_distance_factor", SECONDARY_PREROUTING_DISTANCE_FACTOR + ""));
+            double secondaryCountFactor = Double.parseDouble(Cfg.getSetting("ww_prerouting_secondary_count_factor", SECONDARY_PREROUTING_COUNT_FACTOR + ""));
+
+            routingInput = findSecondaryWaterwinning(x, y, srid, (int)Math.ceil(secondaryDist * secondaryDistanceFactor), (int)Math.ceil(secondaryCount * secondaryCountFactor));
+            routed = calculateRoutes(routingInput);
+            ww.put("secondary", routed);
+            
         }
 
         return ww;

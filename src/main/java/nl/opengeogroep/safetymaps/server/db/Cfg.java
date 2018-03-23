@@ -22,6 +22,11 @@ public class Cfg {
         return qr().query("select value from safetymaps.settings where name=?", new ScalarHandler<String>(), name);
     }
 
+    public static final String getSetting(String name, String defaultValue) throws NamingException, SQLException {
+        String s = getSetting(name);
+        return s == null ? defaultValue : s;
+    }
+
     public static final File getPath(String name) throws NamingException, SQLException {
         String v = (String)getSetting(name);
         if(v == null) {
