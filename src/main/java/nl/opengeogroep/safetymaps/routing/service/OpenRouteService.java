@@ -6,10 +6,14 @@
 package nl.opengeogroep.safetymaps.routing.service;
 
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import nl.opengeogroep.safetymaps.routing.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -20,13 +24,14 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.SSLContextBuilder;
+import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.geotools.geometry.GeometryBuilder;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.CRS;
-import org.geotools.referencing.ReferencingFactoryFinder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
@@ -63,7 +68,6 @@ public class OpenRouteService implements RoutingService {
         
         RoutingResult result;
         try {
-            //CoordinateReferenceSystem crs = ReferencingFactoryFinder.getCRSAuthorityFactory("EPSG",null).createCoordinateReferenceSystem(request.getSrid() + "");        
             CoordinateReferenceSystem crs = CRS.decode("epsg:28992");
             CoordinateReferenceSystem serviceCrs = CRS.decode("epsg:4326");
             MathTransform transform = CRS.findMathTransform(crs, serviceCrs, true);
@@ -84,7 +88,7 @@ public class OpenRouteService implements RoutingService {
                         .setUri("https://api.openrouteservice.org/directions")
                         .addHeader("Accept", "text/json; charset=utf-8")
                         .addParameter("api_key", apiKey)
-                        .addParameter("coordinates", fromTransformed.getX() + "," + fromTransformed.getY() + "|" + toTransformed.getX() + "," + toTransformed.getY())
+                        .addParameter("coordinates", fromTransformed.getY() + "," + fromTransformed.getX() + "|" + toTransformed.getY() + "," + toTransformed.getX())
                         .addParameter("profile", profile)
                         .addParameter("preference", preference)
                         .addParameter("format", "geojson")
@@ -141,8 +145,15 @@ public class OpenRouteService implements RoutingService {
         return distance;
     }
     
-    private static final CloseableHttpClient getClient() {
+    private static final CloseableHttpClient getClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         return HttpClients.custom()
+            .setHostnameVerifier(new AllowAllHostnameVerifier())
+            .setSslcontext(new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy(){
+                @Override
+                public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                    return true;
+                }
+            }).build())
             .setDefaultRequestConfig(RequestConfig.custom()
                     .setConnectTimeout(5 * 1000)
                     .setSocketTimeout(10 * 1000)
