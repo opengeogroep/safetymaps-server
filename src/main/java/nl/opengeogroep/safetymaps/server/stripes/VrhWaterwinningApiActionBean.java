@@ -289,10 +289,6 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
         return a;
     }
     
-    private JSONObject sortAndLimitWaterwinningOnRoutingDistance(double x, double y, int srid, JSONArray primaryRouted, JSONArray secondaryRouted) {
-        return null;
-    }
-    
     private JSONArray calculateRoutes(JSONArray input) throws Exception {
         RoutingService engine = RoutingFactory.getRoutingService();
         
@@ -315,10 +311,19 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
         return input;
     }
     
-    private JSONArray sortAndTrimRouted(JSONArray input, int maxCount) throws Exception {
+    private JSONArray sortAndTrimRouted(JSONArray input, int maxDistance, int maxCount) throws Exception {
         List<JSONObject> l = new ArrayList(input.length());
         for(int i = 0; i < input.length(); i++) {
-            l.add(input.getJSONObject(i));
+            JSONObject o = input.getJSONObject(i);
+            double distance = o.getDouble("distance");
+            if(o.getJSONObject("route").getBoolean("success")) {
+                distance = o.getJSONObject("route").getDouble("distance");
+            }
+            if(Math.floor(distance) <= maxDistance) {
+                l.add(o);
+            } else {
+                log.debug("Throwing out point because routed distance farther than limit of " + maxDistance + ": " + o);
+            }
         }
         log.debug("Sorting on routing distance and trimming to max " + maxCount + " items: " + input.toString());
         Collections.sort(l, new Comparator<JSONObject>() {
@@ -366,7 +371,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
             JSONArray routingInput = findPrimaryWaterwinning(x, y, srid, (int)Math.ceil(primaryDist * primaryDistanceFactor), (int)Math.ceil(primaryCount * primaryCountFactor));
             JSONArray routed = calculateRoutes(routingInput);
             if(!noRouteTrim) {
-                routed = sortAndTrimRouted(routed, primaryCount);
+                routed = sortAndTrimRouted(routed, primaryDist, primaryCount);
             }
             ww.put("primary", routed);
             
@@ -376,7 +381,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
             routingInput = findSecondaryWaterwinning(x, y, srid, (int)Math.ceil(secondaryDist * secondaryDistanceFactor), (int)Math.ceil(secondaryCount * secondaryCountFactor));
             routed = calculateRoutes(routingInput);
             if(!noRouteTrim) {
-                routed = sortAndTrimRouted(routed, secondaryCount);
+                routed = sortAndTrimRouted(routed, secondaryDist, secondaryCount);
             }
             ww.put("secondary", routed);
             
