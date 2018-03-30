@@ -2,6 +2,9 @@ package nl.opengeogroep.safetymaps.server.stripes;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -84,6 +87,9 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     @Validate
     private boolean routing = true;
     
+    @Validate
+    private boolean noRouteTrim = false;
+
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
     public ActionBeanContext getContext() {
@@ -165,6 +171,14 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
 
     public void setRouting(boolean routing) {
         this.routing = routing;
+    }
+
+    public boolean isNoRouteTrim() {
+        return noRouteTrim;
+    }
+
+    public void setNoRouteTrim(boolean noRouteTrim) {
+        this.noRouteTrim = noRouteTrim;
     }
     // </editor-fold>
     
@@ -301,6 +315,36 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
         return input;
     }
     
+    private JSONArray sortAndTrimRouted(JSONArray input, int maxCount) throws Exception {
+        List<JSONObject> l = new ArrayList(input.length());
+        for(int i = 0; i < input.length(); i++) {
+            l.add(input.getJSONObject(i));
+        }
+        log.debug("Sorting on routing distance and trimming to max " + maxCount + " items: " + input.toString());
+        Collections.sort(l, new Comparator<JSONObject>() {
+            @Override
+            public int compare(JSONObject lhs, JSONObject rhs) {
+                double ld = lhs.getDouble("distance");
+                JSONObject r = lhs.getJSONObject("route");
+                if(r.getBoolean("success")) {
+                    ld = r.getDouble("distance");
+                }
+                double rd = rhs.getDouble("distance");
+                r = rhs.getJSONObject("route");
+                if(r.getBoolean("success")) {
+                    rd = r.getDouble("distance");
+                }
+                return ld - rd < 0.0 ? -1 : 1;
+            }
+        });
+        JSONArray result = new JSONArray();
+        for(int i = 0; i < l.size () && i < maxCount; i++) {
+            result.put(l.get(i));
+        }
+        log.debug("Sorted on routing distance and trimmed to max " + maxCount + " items: " + result.toString());
+        return result;
+    }
+
     private JSONObject findWaterwinning() throws Exception {
         JSONObject ww = new JSONObject();
         if(x == null || y == null) {
@@ -321,6 +365,9 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
             
             JSONArray routingInput = findPrimaryWaterwinning(x, y, srid, (int)Math.ceil(primaryDist * primaryDistanceFactor), (int)Math.ceil(primaryCount * primaryCountFactor));
             JSONArray routed = calculateRoutes(routingInput);
+            if(!noRouteTrim) {
+                routed = sortAndTrimRouted(routed, primaryCount);
+            }
             ww.put("primary", routed);
             
             double secondaryDistanceFactor = Double.parseDouble(Cfg.getSetting("ww_prerouting_secondary_distance_factor", SECONDARY_PREROUTING_DISTANCE_FACTOR + ""));
@@ -328,6 +375,9 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
 
             routingInput = findSecondaryWaterwinning(x, y, srid, (int)Math.ceil(secondaryDist * secondaryDistanceFactor), (int)Math.ceil(secondaryCount * secondaryCountFactor));
             routed = calculateRoutes(routingInput);
+            if(!noRouteTrim) {
+                routed = sortAndTrimRouted(routed, secondaryCount);
+            }
             ww.put("secondary", routed);
             
         }
