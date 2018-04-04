@@ -64,6 +64,7 @@ public class OpenRouteService implements RoutingService {
         }
     }
     
+    @Override
     public RoutingResult getRoute(RoutingRequest request) throws RoutingException {
         
         RoutingResult result;
@@ -145,7 +146,7 @@ public class OpenRouteService implements RoutingService {
         return distance;
     }
     
-    private static final CloseableHttpClient getClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    private static CloseableHttpClient getClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         return HttpClients.custom()
             .setHostnameVerifier(new AllowAllHostnameVerifier())
             .setSslcontext(new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy(){
