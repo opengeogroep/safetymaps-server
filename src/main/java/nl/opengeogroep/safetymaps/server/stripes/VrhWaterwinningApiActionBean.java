@@ -7,8 +7,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.Validate;
 import nl.opengeogroep.safetymaps.routing.*;
@@ -31,7 +29,7 @@ import org.json.JSONObject;
 @StrictBinding
 @UrlBinding("/api/vrh/waterwinning.json")
 public class VrhWaterwinningApiActionBean implements ActionBean {
-    private static final Log log = LogFactory.getLog(ViewerApiActionBean.class);
+    private static final Log log = LogFactory.getLog(VrhWaterwinningApiActionBean.class);
     
     private static final int PRIMARY_MAX_DISTANCE = 10000;
     private static final int PRIMARY_DEFAULT_DISTANCE = 500;
@@ -45,6 +43,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     private static final int SECONDARY_DEFAULT_COUNT = 3;
     private static final double SECONDARY_PREROUTING_COUNT_FACTOR = 1.0;
     private static final double SECONDARY_PREROUTING_DISTANCE_FACTOR = 2.0;
+    private static final int SECONDARY_DEFAULT_MINIMUM_SPACING = 50;
     
     private ActionBeanContext context;
 
@@ -89,6 +88,9 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     
     @Validate
     private boolean noRouteTrim = false;
+
+    @Validate
+    private Integer secondaryMinimumSpacing;
 
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
@@ -180,6 +182,14 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     public void setNoRouteTrim(boolean noRouteTrim) {
         this.noRouteTrim = noRouteTrim;
     }
+
+    public Integer getSecondaryMinimumSpacing() {
+        return secondaryMinimumSpacing;
+    }
+
+    public void setSecondaryMinimumSpacing(Integer secondaryMinimumSpacing) {
+        this.secondaryMinimumSpacing = secondaryMinimumSpacing;
+    }
     // </editor-fold>
     
     @DefaultHandler
@@ -256,7 +266,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
         return a;
     }
     
-    private JSONArray findSecondaryWaterwinning(double x, double y, int srid, int distance, int count) throws Exception {
+    private JSONArray findSecondaryWaterwinning(double x, double y, int srid, int distance, int count, int minSpacing) throws Exception {
         
         List<Map<String,Object>> rows = DB.qr().query("select st_distance(b.geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(point) as x, st_y(point) as y, type, info "
                 + "from "
@@ -266,25 +276,36 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 + " where st_distance(b.geom, st_setsrid(st_point(?, ?), ?)) < ? "
                 + " order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, x, y, srid, distance, count);
 
+        log.info("Waterwinning secondary results " + getContext().getRequest().getRequestURI() + "?" + getContext().getRequest().getQueryString() + ": " + rows);
+
         JSONArray a = new JSONArray();
         for(Map<String,Object> row: rows) {
             JSONObject o = new JSONObject();
-            o.put("soort", "open_water");
             for(String key: row.keySet()) {
-                if("punt".equals(key)) {
-                    log.info("open water" + rows);
-                    Pattern p = Pattern.compile("([0-9\\.]+) ([0-9\\.]+)");
-                    Matcher m = p.matcher(row.get(key).toString());
-                    m.find();
-                    Double px = Double.parseDouble(m.group(1));
-                    Double py = Double.parseDouble(m.group(2));
-                    o.put("x", px);
-                    o.put("y", py);
-                } else {
-                    o.put(key, row.get(key));
-                }
+                o.put(key, row.get(key));
             }
-            a.put(o);
+            double px = o.getDouble("x");
+            double py = o.getDouble("y");
+            if(minSpacing > 0 && a.length() > 0) {
+                boolean tooClose = false;
+                for(int i = 0; i < a.length(); i++) {
+                    double ex = a.getJSONObject(i).getDouble("x");
+                    double ey = a.getJSONObject(i).getDouble("y");
+                    double distanceFromPoint = Math.hypot(px-ex, py-ey);
+                    String msg = String.format("Secondary waterwinning point at %f, %f is %f m from existing point #%d at %f, %f",
+                        px, py, distanceFromPoint, i, ex, ey);
+                    if(distanceFromPoint < (double)minSpacing) {
+                        log.info(msg + ", too close according to minimum spacing limit " + minSpacing + "m, excluding from result");
+                        tooClose = true;
+                        break;
+                    }
+                }
+                if(!tooClose) {
+                    a.put(o);
+                }
+            } else {
+                a.put(o);
+            }
         }
         return a;
     }
@@ -361,9 +382,13 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
         secondaryDist = Math.min(secondaryDist, SECONDARY_MAX_DISTANCE);
         secondaryCount = Math.min(secondaryCount, SECONDARY_MAX_COUNT);
         
+        if(secondaryMinimumSpacing == null) {
+            secondaryMinimumSpacing = SECONDARY_DEFAULT_MINIMUM_SPACING;
+        }
+
         if(!routing) {
             ww.put("primary", findPrimaryWaterwinning(x, y, srid, primaryDist, primaryCount));
-            ww.put("secondary", findSecondaryWaterwinning(x, y, srid, secondaryDist, secondaryCount));
+            ww.put("secondary", findSecondaryWaterwinning(x, y, srid, secondaryDist, secondaryCount, secondaryMinimumSpacing));
         } else {
             double primaryDistanceFactor = Double.parseDouble(Cfg.getSetting("ww_prerouting_primary_distance_factor", PRIMARY_PREROUTING_DISTANCE_FACTOR + ""));
             double primaryCountFactor = Double.parseDouble(Cfg.getSetting("ww_prerouting_primary_count_factor", PRIMARY_PREROUTING_COUNT_FACTOR + ""));
@@ -378,7 +403,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
             double secondaryDistanceFactor = Double.parseDouble(Cfg.getSetting("ww_prerouting_secondary_distance_factor", SECONDARY_PREROUTING_DISTANCE_FACTOR + ""));
             double secondaryCountFactor = Double.parseDouble(Cfg.getSetting("ww_prerouting_secondary_count_factor", SECONDARY_PREROUTING_COUNT_FACTOR + ""));
 
-            routingInput = findSecondaryWaterwinning(x, y, srid, (int)Math.ceil(secondaryDist * secondaryDistanceFactor), (int)Math.ceil(secondaryCount * secondaryCountFactor));
+            routingInput = findSecondaryWaterwinning(x, y, srid, (int)Math.ceil(secondaryDist * secondaryDistanceFactor), (int)Math.ceil(secondaryCount * secondaryCountFactor), secondaryMinimumSpacing);
             routed = calculateRoutes(routingInput);
             if(!noRouteTrim) {
                 routed = sortAndTrimRouted(routed, secondaryDist, secondaryCount);
