@@ -216,7 +216,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     private JSONArray findPrimaryWaterwinning(double x, double y, int srid, int distance, int count) throws Exception {
         List<Map<String,Object>> rows = DB.qr().query("select st_distance(b.geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(geom) as x, st_y(geom) as y, * "
                 + "from "
-                + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'Voordruk aanwezig: ' || coalesce(initcap(voordruk),'NB') || ', druk ' || coalesce(bar, 'NB') || ' bar' as info from vrh.brandkranen_eigen_terrein "
+                + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'Voordruk aanwezig: ' || coalesce(initcap(voordruk),'Niet bekend') || coalesce(', ' || bar || ' bar', '') as info from vrh.brandkranen_eigen_terrein "
                 + "  union all "
                 + "  select geom, 'brandkranen_dunea' as tabel, lower(producttyp) as \"type\", '' as info from vrh.brandkranen_dunea "
                 + "  union all "
