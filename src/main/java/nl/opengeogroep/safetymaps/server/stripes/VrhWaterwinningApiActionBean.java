@@ -35,14 +35,14 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     private static final int PRIMARY_DEFAULT_DISTANCE = 500;
     private static final int PRIMARY_MAX_COUNT = 25;
     private static final int PRIMARY_DEFAULT_COUNT = 3;
-    private static final double PRIMARY_PREROUTING_COUNT_FACTOR = 2.0;
-    private static final double PRIMARY_PREROUTING_DISTANCE_FACTOR = 2.0;
+    private static final double PRIMARY_PREROUTING_COUNT_FACTOR = 3.0;
+    private static final double PRIMARY_PREROUTING_DISTANCE_FACTOR = 1.0;
     private static final int SECONDARY_MAX_DISTANCE = 10000;
     private static final int SECONDARY_DEFAULT_DISTANCE = 3000;
     private static final int SECONDARY_MAX_COUNT = 25;
     private static final int SECONDARY_DEFAULT_COUNT = 3;
-    private static final double SECONDARY_PREROUTING_COUNT_FACTOR = 1.0;
-    private static final double SECONDARY_PREROUTING_DISTANCE_FACTOR = 2.0;
+    private static final double SECONDARY_PREROUTING_COUNT_FACTOR = 2.0;
+    private static final double SECONDARY_PREROUTING_DISTANCE_FACTOR = 1.0;
     private static final int SECONDARY_DEFAULT_MINIMUM_SPACING = 50;
     
     private ActionBeanContext context;
