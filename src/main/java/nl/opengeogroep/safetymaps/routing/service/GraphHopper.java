@@ -70,6 +70,8 @@ public class GraphHopper implements RoutingService {
                     
             log.info("Reprojected destination point to service CRS: " + toTransformed);
             
+            // TODO: maybe use https://github.com/graphhopper/directions-api-clients/tree/master/java
+
             try(CloseableHttpClient client = getClient()) {
                 HttpUriRequest get = RequestBuilder.get()
                         .setUri(URL)
