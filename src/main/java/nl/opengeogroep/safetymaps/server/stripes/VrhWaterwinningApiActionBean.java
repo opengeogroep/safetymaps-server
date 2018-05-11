@@ -230,7 +230,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 + "  union all "
                 + "  select geom, 'brandkranen_dunea' as tabel, lower(producttyp) as \"type\", '' as info from vrh.brandkranen_dunea "
                 + "  union all "
-                + "  select geom, 'brandkranen_evides' as tabel, 'ondergronds' as \"type\", '' as info from vrh.brandkranen_evides "
+                + "  select geom, 'brandkranen_evides' as tabel, case when id_brandkr = 'BB' then 'bovengronds' else 'ondergronds' end as \"type\", '' as info from vrh.brandkranen_evides "
                 + "  union all "
                 + "  select geom, 'brandkranen_oasen' as tabel, case when lower(ondergrnds) = 'nee' then 'bovengronds' else 'ondergronds' end as \"type\", '' as info from vrh.brandkranen_oasen "
                 + "  union all "
