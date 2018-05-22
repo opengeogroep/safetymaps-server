@@ -226,9 +226,9 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     private JSONArray findPrimaryWaterwinning(double x, double y, int srid, int distance, int count) throws Exception {
         List<Map<String,Object>> rows = DB.qr().query("select st_distance(b.geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(geom) as x, st_y(geom) as y, * "
                 + "from "
-                + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'Voordruk aanwezig: ' || coalesce(initcap(voordruk),'Niet bekend') || coalesce(', ' || bar || ' bar', '') as info from vrh.brandkranen_eigen_terrein "
+                + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'Voordruk aanwezig: ' || coalesce(initcap(voordruk),'Niet bekend') || coalesce(', ' || bar || ' bar', '') as info from vrh.brandkranen_eigen_terrein where lower(\"type\") <> 'afsluiter omloopleiding' "
                 + "  union all "
-                + "  select geom, 'brandkranen_dunea' as tabel, lower(producttyp) as \"type\", '' as info from vrh.brandkranen_dunea "
+                + "  select geom, 'brandkranen_dunea' as tabel, lower(producttyp) || case when lower(verbinding) = 'draadstuk' then ' schroef' else '' end as \"type\", '' as info from vrh.brandkranen_dunea "
                 + "  union all "
                 + "  select geom, 'brandkranen_evides' as tabel, case when id_brandkr = 'BB' then 'bovengronds' else 'ondergronds' end as \"type\", '' as info from vrh.brandkranen_evides "
                 + "  union all "
