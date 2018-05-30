@@ -111,8 +111,8 @@ public class MailActionBean implements ActionBean {
         }
 
         try {
-            MimeMessage msg = new MimeMessage(session);
-            msg.setFrom(from);
+            javax.mail.Message msg = new MimeMessage(session);
+            msg.setFrom(new InternetAddress(from));
             msg.addRecipient(RecipientType.TO, new InternetAddress(to));
             String sender = context.getRequest().getParameter("email");
             if(sender != null) {
