@@ -17,6 +17,7 @@ public class DB {
     private static final Log log = LogFactory.getLog("db");
 
     private static final String JNDI_NAME = "java:/comp/env/jdbc/safetymaps-server";
+    private static final String JNDI_NAME_BAG = "java:/comp/env/jdbc/nlextract-bag";
 
     public static final DataSource getDataSource(String jndiName) throws NamingException {
         InitialContext cxt = new InitialContext();
@@ -34,5 +35,9 @@ public class DB {
 
     public static final QueryRunner qr() throws NamingException {
         return new QueryRunner(getDataSource(JNDI_NAME));
+    }
+
+    public static final QueryRunner bagQr() throws NamingException {
+        return new QueryRunner(getDataSource(JNDI_NAME_BAG));
     }
 }

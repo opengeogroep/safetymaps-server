@@ -66,6 +66,25 @@ To display sync status from filesetsync-server, configure the following resource
    minEvictableIdleTimeMillis="5000"
 />
 ```
+
+For searching for addresses in the NLExtract BAG database using the API path `/api/autocomplete/`, configure the following resource:
+
+```xml
+<Resource
+   name="jdbc/nlextract-bag"
+   auth="Container"
+   type="javax.sql.DataSource"
+   username="<dbuser>"
+   password="<dbpassword>"
+   driverClassName="org.postgresql.Driver"
+   url="jdbc:postgresql://<server>:<port>/bag"
+   maxActive="40"
+   validationQuery="select 1"
+   timeBetweenEvictionRunsMillis="30000"
+   minEvictableIdleTimeMillis="5000"
+/>
+```
+
 ## Mailing functionality
 
 Add to Tomcat server.xml:
