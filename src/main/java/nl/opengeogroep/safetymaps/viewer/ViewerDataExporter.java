@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
@@ -43,48 +44,6 @@ public class ViewerDataExporter {
         } else {
             return key;
         }
-    }
-
-    private static JSONObject rowToJson(Map<String, Object> row, boolean skipNull, boolean skipEmptyString) throws Exception {
-        JSONObject o = new JSONObject();
-        for(Map.Entry<String,Object> e: row.entrySet()) {
-            /* do not put null or empty string properties in result */
-
-            if(e.getValue() == null) {
-                if(!skipNull) {
-                    o.put(e.getKey(), (Object)null);
-                }
-                continue;
-            }
-
-            if("".equals(e.getValue())) {
-                if(!skipEmptyString) {
-                    o.put(e.getKey(), "");
-                }
-                continue;
-            }
-
-            /* JSON objects are returned as org.postgresql.util.PGobject,
-             * compare classname by string ignoring package
-             */
-            if(e.getValue().getClass().getName().endsWith("PGobject")) {
-                try {
-                    String json = e.getValue().toString();
-                    Object pgj;
-                    if(json.startsWith("[")) {
-                        pgj = new JSONArray(json);
-                    } else {
-                        pgj = new JSONObject(json);
-                    }
-                    o.put(e.getKey(), pgj);
-                } catch(JSONException ex) {
-                    throw new Exception("Error parsing PostgreSQL JSON for property " + e.getKey() + ": " + ex.getMessage() + ", JSON=" + e.getValue());
-                }
-            } else {
-                o.put(e.getKey(), e.getValue());
-            }
-        }
-        return o;
     }
 
     /**
