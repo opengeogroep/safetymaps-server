@@ -4,19 +4,25 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.naming.NamingException;
 import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.*;
 import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.GeoJSONUtils.*;
+import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.logExceptionAndReturnJSONObject;
+import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,7 +34,7 @@ import org.json.JSONObject;
  * @author Matthijs Laan
  */
 @StrictBinding
-@UrlBinding("/action/vrh")
+@UrlBinding("/api/vrh")
 public class VrhActionBean implements ActionBean {
     private ActionBeanContext context;
 
@@ -37,6 +43,10 @@ public class VrhActionBean implements ActionBean {
     @Validate
     private Integer id;
 
+    @Validate
+    private int indent = 0;
+
+    // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
     public ActionBeanContext getContext() {
         return context;
@@ -47,7 +57,6 @@ public class VrhActionBean implements ActionBean {
         this.context = context;
     }
 
-
     public Integer getId() {
         return id;
     }
@@ -56,8 +65,17 @@ public class VrhActionBean implements ActionBean {
         this.id = id;
     }
 
+    public int getIndent() {
+        return indent;
+    }
+
+    public void setIndent(int indent) {
+        this.indent = indent;
+    }
+    // </editor-fold>
+
     /**
-     * Create all data for static voertuigviewer
+     * Create all data for static viewer
      */
     public Resolution staticData() throws IOException {
         if(!"127.0.0.1".equals(getContext().getRequest().getRemoteAddr())) {
@@ -81,6 +99,11 @@ public class VrhActionBean implements ActionBean {
                 out.write(wbbk.toString(4).getBytes("UTF-8"));
             }
         } // else has "error"
+
+        // TODO dbk features
+
+        // TODO evenement features
+
         out.flush();
         out.close();
 
@@ -126,15 +149,16 @@ public class VrhActionBean implements ActionBean {
     public Resolution wbbks() {
         JSONObject result = wbbksJson();
         context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
-        return new StreamingResolution("application/json", result.toString(4));
+        return new StreamingResolution("application/json", result.toString(indent));
     }
 
     private static JSONObject wbbkJson(Integer id) {
 
         JSONObject result = new JSONObject();
         result.put("success", false);
-        try {
-            List<Map<String,Object>> rows = DB.qr().query("select *, st_asgeojson(geom) as geometry from vrh.wdbk_waterbereikbaarheidskaart where id = ?", new MapListHandler(), id);
+        QueryRunner qr = new QueryRunner();
+        try(Connection c = DB.getConnection()) {
+            List<Map<String,Object>> rows = qr.query(c, "select *, st_asgeojson(geom) as geometry from vrh.wdbk_waterbereikbaarheidskaart where id = ?", new MapListHandler(), id);
             if(rows.isEmpty()) {
                 result.put("error", "WBBK met ID " + id + " niet gevonden");
             } else {
@@ -157,13 +181,13 @@ public class VrhActionBean implements ActionBean {
                     }
                 }
 
-                rows = DB.qr().query("select id, symboolcod, symboolgro, bijzonderh, st_asgeojson(geom) as geometry from vrh.voorzieningen_water where dbk_object = ?", new MapListHandler(), id);
+                rows = qr.query(c, "select id, symboolcod, symboolgro, bijzonderh, st_asgeojson(geom) as geometry from vrh.voorzieningen_water where dbk_object = ?", new MapListHandler(), id);
                 result.put("symbolen", rowsToGeoJSONFeatureCollection(rows));
 
-                rows = DB.qr().query("select id, type, bijzonderh, opmerkinge, st_asgeojson(geom) as geometry from vrh.overige_lijnen where dbk_object = ?", new MapListHandler(), id);
+                rows = qr.query(c, "select id, type, bijzonderh, opmerkinge, st_asgeojson(geom) as geometry from vrh.overige_lijnen where dbk_object = ?", new MapListHandler(), id);
                 result.put("lijnen", rowsToGeoJSONFeatureCollection(rows));
 
-                rows = DB.qr().query("select id, type, bijzonderh, st_asgeojson(geom) as geometry from vrh.overige_vlakken where dbk_object = ? order by \n" +
+                rows = qr.query(c, "select id, type, bijzonderh, st_asgeojson(geom) as geometry from vrh.overige_vlakken where dbk_object = ? order by \n" +
                     "   case type \n" +
                     "   when 'Dieptevlak 4 tot 9 meter' then -3 \n" +
                     "   when 'Dieptevlak 9 tot 15 meter' then -2\n" +
@@ -184,7 +208,7 @@ public class VrhActionBean implements ActionBean {
                 vlakkenFC.put("features", vlakken);
                 result.put("vlakken", vlakken);
 
-                rows = DB.qr().query("select objectid, tekst, hoek, st_asgeojson(geom) as geometry from vrh.teksten where dbk_object = ?", new MapListHandler(), id);
+                rows = qr.query(c, "select objectid, tekst, hoek, st_asgeojson(geom) as geometry from vrh.teksten where dbk_object = ?", new MapListHandler(), id);
                 result.put("teksten", rowsToGeoJSONFeatureCollection(rows));
 
                 result.put("success", true);
@@ -192,7 +216,6 @@ public class VrhActionBean implements ActionBean {
         } catch(Exception e) {
             log.error("Error getting VRH wbbk data", e);
             result.put("error", "Fout ophalen WBBK data: " + e.getClass() + ": " + e.getMessage());
-
         }
         return result;
     }
@@ -201,5 +224,71 @@ public class VrhActionBean implements ActionBean {
         JSONObject result = wbbkJson(id);
         context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
         return new StreamingResolution("application/json", result.toString(4));
+    }
+
+    private static JSONArray dbksJson() throws NamingException, SQLException {
+        QueryRunner qr = new QueryRunner();
+        try(Connection c = DB.getConnection()) {
+            JSONArray objects = new JSONArray();
+
+            List<Map<String,Object>> rows = qr.query(c, "select o.id, naam, oms_nummer, straatnaam, huisnummer, huisletter, toevoeging, postcode, plaats, " +
+                    "st_astext(st_centroid(o.geom)) as pand_centroid, st_astext(st_envelope(o.geom)) as extent " +
+                    "from vrh.dbk_object o " +
+                    "left join vrh.pand p on (p.dbk_object = o.id) " +
+                    "where p.hoofd_sub='Hoofdpand'", new MapListHandler());
+
+            List<Map<String,Object>> adressen = qr.query(c, "select dbk_object as id, " +
+                    "        (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "         from (select na.postcode as pc, na.woonplaats as pl, na.straatnaam as sn,  " +
+                    "                array_to_json(array_agg(distinct na.huisnummer || case when na.huisletter <> '' or na.toevoeging <> '' then '|' || coalesce(na.huisletter,'') || '|' || coalesce(na.toevoeging,'') else '' end)) as nrs " +
+                    "                from vrh.nevendbkadres na " +
+                    "                where na.dbk_object = t.dbk_object " +
+                    "                group by na.postcode, na.woonplaats, na.straatnaam) r " +
+                    "        ) as selectieadressen " +
+                    "    from (select distinct dbk_object from vrh.nevendbkadres where huisletter is not null) t", new MapListHandler());
+
+            Map<Object,String> selectieadressenById = new HashMap();
+            for(Map<String,Object> row: adressen) {
+                selectieadressenById.put(row.get("id"), row.get("selectieadressen").toString());
+            }
+
+            Set objectIds = new HashSet();
+
+            for(Map<String,Object> row: rows) {
+                JSONObject o = new JSONObject();
+
+                Object id = row.get("id");
+                if(objectIds.contains(id)) {
+                    // Duplicate hoofdpand pand row
+                    continue;
+                }
+                objectIds.add(id);
+
+                for(String key: row.keySet()) {
+                    o.put(key, row.get(key));
+                }
+
+                String selectieadressen = selectieadressenById.get(id);
+                if(selectieadressen != null) {
+                    o.put("selectieadressen", new JSONArray(selectieadressen));
+                }
+                objects.put(o);
+            }
+            return objects;
+        }
+    }
+
+    public Resolution dbks() {
+
+        // TODO caching, controlled by shapefile import script executing query
+
+        try {
+            JSONObject r = new JSONObject();
+            r.put("success", true);
+            r.put("results", dbksJson());
+            return new StreamingResolution("application/json", r.toString(indent));
+        } catch(Exception e) {
+            return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + getContext().getRequest().getRequestURI(), e).toString(indent));
+        }
     }
 }
