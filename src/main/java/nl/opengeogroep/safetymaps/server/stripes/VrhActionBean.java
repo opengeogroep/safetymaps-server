@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,13 +13,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import javax.naming.NamingException;
 import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.*;
 import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.GeoJSONUtils.*;
+import nl.opengeogroep.safetymaps.server.db.JSONUtils;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.logExceptionAndReturnJSONObject;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -41,7 +40,7 @@ public class VrhActionBean implements ActionBean {
     private static final Log log = LogFactory.getLog(VrhActionBean.class);
 
     @Validate
-    private Integer id;
+    private String id;
 
     @Validate
     private int indent = 0;
@@ -57,11 +56,11 @@ public class VrhActionBean implements ActionBean {
         this.context = context;
     }
 
-    public Integer getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -221,18 +220,18 @@ public class VrhActionBean implements ActionBean {
     }
 
     public Resolution wbbk() {
-        JSONObject result = wbbkJson(id);
+        JSONObject result = wbbkJson(Integer.parseInt(id));
         context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
         return new StreamingResolution("application/json", result.toString(4));
     }
 
-    private static JSONArray dbksJson() throws NamingException, SQLException {
+    private static JSONArray dbksJson() throws Exception {
         QueryRunner qr = new QueryRunner();
         try(Connection c = DB.getConnection()) {
             JSONArray objects = new JSONArray();
 
             List<Map<String,Object>> rows = qr.query(c, "select o.id, naam, oms_nummer, straatnaam, huisnummer, huisletter, toevoeging, postcode, plaats, " +
-                    "st_astext(st_centroid(o.geom)) as pand_centroid, st_astext(st_envelope(o.geom)) as extent " +
+                    "st_astext(st_centroid(o.geom)) as pand_centroid, box2d(o.geom)::varchar as extent " +
                     "from vrh.dbk_object o " +
                     "left join vrh.pand p on (p.dbk_object = o.id) " +
                     "where p.hoofd_sub='Hoofdpand'", new MapListHandler());
@@ -255,7 +254,7 @@ public class VrhActionBean implements ActionBean {
             Set objectIds = new HashSet();
 
             for(Map<String,Object> row: rows) {
-                JSONObject o = new JSONObject();
+                JSONObject o = JSONUtils.rowToJson(row, true, true);
 
                 Object id = row.get("id");
                 if(objectIds.contains(id)) {
@@ -263,10 +262,6 @@ public class VrhActionBean implements ActionBean {
                     continue;
                 }
                 objectIds.add(id);
-
-                for(String key: row.keySet()) {
-                    o.put(key, row.get(key));
-                }
 
                 String selectieadressen = selectieadressenById.get(id);
                 if(selectieadressen != null) {
@@ -291,4 +286,66 @@ public class VrhActionBean implements ActionBean {
             return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + getContext().getRequest().getRequestURI(), e).toString(indent));
         }
     }
+
+    private JSONArray evenementenJson() throws Exception {
+        QueryRunner qr = new QueryRunner();
+        try(Connection c = DB.getConnection()) {
+            JSONArray objects = new JSONArray();
+
+            List<Map<String,Object>> rows = qr.query(c, "select objectid as id, evnaam, evstatus, sbegin, titel, st_astext(st_centroid(geom)) as centroid, box2d(geom)::varchar as extent, st_astext(geom) as selectiekader from vrh.evenementen_index", new MapListHandler());
+
+            for(Map<String,Object> row: rows) {
+                objects.put(JSONUtils.rowToJson(row, true, true));
+            }
+            return objects;
+        }
+    }
+
+    public Resolution evenementen() {
+        try {
+            JSONObject r = new JSONObject();
+            r.put("success", true);
+            r.put("results", evenementenJson());
+            return new StreamingResolution("application/json", r.toString(indent));
+        } catch(Exception e) {
+            return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + getContext().getRequest().getRequestURI(), e).toString(indent));
+        }
+    }
+
+    private JSONObject evenementJson(String name) throws Exception {
+        QueryRunner qr = new QueryRunner();
+        try(Connection c = DB.getConnection()) {
+            JSONObject o = new JSONObject();
+
+            o.put("teksten", rowsToJSONArray(qr.query(c, "select tekstreeks, teksthoek, tekstgroot, st_x(geom) as x, st_y(geom) as y from vrh.evenementen_tekst where evnaam = ?", new MapListHandler(), name)));
+            o.put("locatie_punt", rowsToJSONArray(qr.query(c, "select evenemento as type, ballonteks, hoek, st_x(geom) as x, st_y(geom) as y from vrh.evlocatiepuntobj where evnaam = ?", new MapListHandler(), name)));
+            o.put("locatie_vlak", rowsToJSONArray(qr.query(c, "select vlaksoort, omschrijvi, st_astext(geom) as geom from vrh.evlocatievlakobj where evnaam = ?", new MapListHandler(), name)));
+            o.put("locatie_lijn", rowsToJSONArray(qr.query(c, "select lijnsoort, lijnbeschr, st_astext(geom) as geom from vrh.evlocatielijnobj where evnaam = ?", new MapListHandler(), name)));
+            o.put("route_punt", rowsToJSONArray(qr.query(c, "select routepunts as soort, ballonteks, hoek, c077e6f4 as hoek2, st_x(geom) as x, st_y(geom) as y from vrh.evroutepuntobj where evnaam = ?", new MapListHandler(), name)));
+            o.put("route_vlak", rowsToJSONArray(qr.query(c, "select vlaksoort, vlakomschr, st_astext(geom) as geom from vrh.evroutevlakobj where evnaam = ?", new MapListHandler(), name)));
+            o.put("route_lijn", rowsToJSONArray(qr.query(c, "select routetype, routebesch, st_astext(geom) as geom from vrh.evroutelijnobj where evnaam = ?", new MapListHandler(), name)));
+
+            return o;
+        }
+    }
+
+    private static JSONArray rowsToJSONArray(List<Map<String,Object>> rows) throws Exception {
+        JSONArray a = new JSONArray();
+        for(Map<String,Object> row: rows) {
+            a.put(JSONUtils.rowToJson(row, true, true));
+        }
+        return a;
+    }
+
+    public Resolution evenement() {
+        try {
+            JSONObject r = new JSONObject();
+            r.put("success", true);
+            r.put("results", evenementJson(id));
+            return new StreamingResolution("application/json", r.toString(indent));
+        } catch(Exception e) {
+            return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + getContext().getRequest().getRequestURI(), e).toString(indent));
+        }
+    }
+
 }
