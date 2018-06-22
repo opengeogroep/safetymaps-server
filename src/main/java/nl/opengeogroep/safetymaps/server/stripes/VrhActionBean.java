@@ -292,7 +292,7 @@ public class VrhActionBean implements ActionBean {
         try(Connection c = DB.getConnection()) {
             JSONArray objects = new JSONArray();
 
-            List<Map<String,Object>> rows = qr.query(c, "select objectid as id, evnaam, evstatus, sbegin, titel, st_astext(st_centroid(geom)) as centroid, box2d(geom)::varchar as extent, st_astext(geom) as selectiekader from vrh.evenementen_index", new MapListHandler());
+            List<Map<String,Object>> rows = qr.query(c, "select objectid as id, evnaam, evstatus, sbegin, st_astext(st_centroid(geom)) as centroid, box2d(geom)::varchar as extent, st_astext(geom) as selectiekader from vrh.evterreinvrhobj", new MapListHandler());
 
             for(Map<String,Object> row: rows) {
                 objects.put(JSONUtils.rowToJson(row, true, true));
@@ -317,6 +317,8 @@ public class VrhActionBean implements ActionBean {
         try(Connection c = DB.getConnection()) {
             JSONObject o = new JSONObject();
 
+            JSONArray t = rowsToJSONArray(qr.query(c, "select *, st_astext(geom) as geom from vrh.evterreinvrhobj where evnaam = ?", new MapListHandler(), name));
+            o.put("terrein", t.getJSONObject(0));
             o.put("teksten", rowsToJSONArray(qr.query(c, "select tekstreeks, teksthoek, tekstgroot, st_x(geom) as x, st_y(geom) as y from vrh.evenementen_tekst where evnaam = ?", new MapListHandler(), name)));
             o.put("locatie_punt", rowsToJSONArray(qr.query(c, "select evenemento as type, ballonteks, hoek, st_x(geom) as x, st_y(geom) as y from vrh.evlocatiepuntobj where evnaam = ?", new MapListHandler(), name)));
             o.put("locatie_vlak", rowsToJSONArray(qr.query(c, "select vlaksoort, omschrijvi, st_astext(geom) as geom from vrh.evlocatievlakobj where evnaam = ?", new MapListHandler(), name)));

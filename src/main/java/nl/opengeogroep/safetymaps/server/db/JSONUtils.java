@@ -38,8 +38,11 @@ public class JSONUtils {
                     Object pgj;
                     if(json.startsWith("[")) {
                         pgj = new JSONArray(json);
-                    } else {
+                    } else if(json.startsWith("{")) {
                         pgj = new JSONObject(json);
+                    } else {
+                        // Just the toString()
+                        pgj = json;
                     }
                     o.put(e.getKey(), pgj);
                 } catch(JSONException ex) {
