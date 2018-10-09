@@ -250,7 +250,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 }
             }
             if("brandkranen_dunea".equals(row.get("tabel"))) {
-                Integer diameter = DB.qr().query("select artikel_d2 from vrh.hoofdleidingen_dunea order by st_distance(geom, st_setsrid(st_point(?, ?),?)) limit 1", new ScalarHandler<Integer>(), row.get("x"), row.get("y"), srid);
+                Integer diameter = DB.qr().query("select artikel_d2::integer from vrh.hoofdleidingen_dunea order by st_distance(geom, st_setsrid(st_point(?, ?),?)) limit 1", new ScalarHandler<Integer>(), row.get("x"), row.get("y"), srid);
                 log.info(String.format("Leiding voor Dunea brandkraan op %s, %s is %s", row.get("x"), row.get("y"), diameter));
                 int opbrengst = 500;
                 if(diameter > 90) {
