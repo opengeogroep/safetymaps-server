@@ -39,7 +39,7 @@ public class VrhActionBean implements ActionBean {
 
     private static final Log log = LogFactory.getLog(VrhActionBean.class);
 
-    @Validate
+    @Validate(required = true, on = {"wbbk", "dbk", "evenement"})
     private String id;
 
     @Validate
@@ -145,6 +145,13 @@ public class VrhActionBean implements ActionBean {
     }
 
     @DefaultHandler
+    public Resolution def() {
+        JSONObject result = new JSONObject();
+        result.put("error", "No handler specified");
+        result.put("success", false);
+        return new StreamingResolution("application/json", result.toString(indent));
+    }
+
     public Resolution wbbks() {
         JSONObject result = wbbksJson();
         context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
@@ -234,7 +241,8 @@ public class VrhActionBean implements ActionBean {
                     "st_astext(st_centroid(o.geom)) as pand_centroid, box2d(o.geom)::varchar as extent " +
                     "from vrh.dbk_object o " +
                     "left join vrh.pand p on (p.dbk_object = o.id) " +
-                    "where p.hoofd_sub='Hoofdpand'", new MapListHandler());
+                    "where p.hoofd_sub='Hoofdpand' " +
+                    "and naam is not null", new MapListHandler());
 
             List<Map<String,Object>> adressen = qr.query(c, "select dbk_object as id, " +
                     "        (select array_to_json(array_agg(row_to_json(r.*))) " +
