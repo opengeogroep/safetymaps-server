@@ -20,6 +20,7 @@ import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.GeoJSONUtils.*;
 import nl.opengeogroep.safetymaps.server.db.JSONUtils;
+import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.logExceptionAndReturnJSONObject;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -292,6 +293,126 @@ public class VrhActionBean implements ActionBean {
             return new StreamingResolution("application/json", r.toString(indent));
         } catch(Exception e) {
             return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + getContext().getRequest().getRequestURI(), e).toString(indent));
+        }
+    }
+
+    private static JSONObject dbkJson(int id) throws Exception {
+        QueryRunner qr = new QueryRunner();
+        try(Connection c = DB.getConnection()) {
+            List<Map<String,Object>> rows = new QueryRunner().query(c, "select " +
+                    "    o.*, " +
+                    "    st_asgeojson(o.geom) as geometry, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.pand t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as pand, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.compartimentering t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as compartimentering, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.brandweervoorziening t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as brandweervoorziening, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.opstelplaats t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as opstelplaats, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.toegang_pand t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as toegang_pand, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.toegang_terrein t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as toegang_terrein, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.gevaren t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as gevaren, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.hellingbaan t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as hellingbaan, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.gevaarlijke_stoffen t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as gevaarlijke_stoffen, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.overige_lijnen t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as overige_lijnen, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.slagboom t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as slagboom, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.aanpijling t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as aanpijling, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.teksten t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as teksten, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.aanrijroute t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as aanrijroute, " +
+
+                    "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "         from vrh.nevendbkadres t " +
+                    "         where t.dbk_object = o.id) r " +
+                    "    ) as nevendbkadres " +
+
+                    "from vrh.dbk_object o " +
+                    "where o.id = ?", new MapListHandler(), id);
+
+            if(rows.isEmpty()) {
+                throw new IllegalArgumentException("DBK met ID " + id + " niet gevonden");
+            }
+
+            return rowToJson(rows.get(0), true, true);
+        }
+    }
+
+    public Resolution dbk() {
+        JSONObject result = new JSONObject();
+        result.put("success", false);
+        try {
+            result.put("results", dbkJson(Integer.parseInt(id)));
+            result.put("success", true);
+            return new StreamingResolution("application/json", result.toString(indent));
+        } catch(Exception e) {
+            return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Fout ophalen DBK data voor ID  " + id, e).toString(indent));
         }
     }
 
