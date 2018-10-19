@@ -100,6 +100,7 @@ function display(clients) {
     $("#waiting_tb").empty();
 
     var activeRows = [];
+    var waitingRows = [];
 
     $.each(clients, function(i, sr) {
         var cutoff = moment().subtract(24, 'hours');
@@ -142,11 +143,15 @@ function display(clients) {
         } else {
             if(sr.state.mode.indexOf("waiting") === 0) {
                 stats.waiting++;
-                $("#waiting_tb").append($.mustache("<tr data-id=\"{{client_id}}\"><td>{{client_id}}</td><td>{{time}}</td><td>{{fromNow}}</td><td>{{mode}}</td></tr>", view));
+                var row = $.mustache("<tr data-id=\"{{client_id}}\"><td>{{client_id}}</td><td>{{time}}</td><td>{{fromNow}}</td><td>{{mode}}</td></tr>", view);
+                waitingRows.push({
+                    view: view,
+                    row: row
+                });
             } else {
                 stats.active++;
 
-                view.fileset = sr.current_fileset;
+                view.fileset = sr.state.current_fileset;
 
                 var fileset = null;
                 $.each(sr.state.filesets, function(j, fs) {
@@ -157,7 +162,7 @@ function display(clients) {
                 });
                 if(fileset && fileset.state) {
                     var state = fileset.state;
-                    view.action = state.action + ", sinds " + moment(state.action_since).fromNow();
+                    view.action = (state.action || state.last_finished_details);// + ", sinds " + moment(state.action_since || state.last_finished).fromNow();
                     var progress = {
                         count: state.progress_count,
                         total: state.progress_count_total,
@@ -169,9 +174,10 @@ function display(clients) {
                     view.progress = $.mustache("{{count}} {{#total}}van {{.}}{{#percent}} ({{.}}%){{/percent}}{{/total}}{{#size}}, {{.}}{{/size}}", progress);
 
                 }
-                var row = $.mustache("<tr data-id=\"{{client_id}}\"><td>{{client_id}}</td><td>{{time}}</td><td>{{fromNow}}</td><td>{{fileset}}</td><td>{{action}}</td><td>{{progress}}</td></tr>", view);
+                var row = $.mustache("<tr data-id=\"{{client_id}}\"><td>{{client_id}}</td><td>{{time}}</td><td></td><td>{{fileset}}</td><td>{{action}}</td><td>{{progress}}</td></tr>", view);
                 activeRows.push({
                     since: fileset && fileset.mode_since ? fileset.mode_since : sr.state_time,
+                    view: view,
                     row: row
                 });
             }
@@ -179,10 +185,17 @@ function display(clients) {
     });
 
     activeRows.sort(function(lhs, rhs) {
-        return lhs.since - rhs.since;
+        return lhs.view.client_id.localeCompare(rhs.view.client_id);
     });
     $.each(activeRows, function(i, r) {
         $("#active_tb").append(r.row);
+    });
+
+    waitingRows.sort(function(lhs, rhs) {
+        return lhs.view.client_id.localeCompare(rhs.view.client_id);
+    });
+    $.each(waitingRows, function(i, r) {
+        $("#waiting_tb").append(r.row);
     });
 
     $("#offline").toggle(stats.offline !== 0);
