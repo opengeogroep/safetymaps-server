@@ -301,94 +301,94 @@ public class VrhActionBean implements ActionBean {
         try(Connection c = DB.getConnection()) {
             List<Map<String,Object>> rows = new QueryRunner().query(c, "select " +
                     "    o.*, " +
-                    "    st_asgeojson(o.geom) as geometry, " +
+                    "    st_astext(o.geom) as geometry, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.pand t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as pand, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.compartimentering t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as compartimentering, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.brandweervoorziening t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as brandweervoorziening, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.opstelplaats t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as opstelplaats, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.toegang_pand t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as toegang_pand, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.toegang_terrein t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as toegang_terrein, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.gevaren t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as gevaren, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.hellingbaan t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as hellingbaan, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.gevaarlijke_stoffen t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as gevaarlijke_stoffen, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.overige_lijnen t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as overige_lijnen, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.slagboom t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as slagboom, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.aanpijling t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as aanpijling, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.teksten t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as teksten, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.aanrijroute t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as aanrijroute, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_asgeojson(t.geom) as geometry " +
+                    "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.nevendbkadres t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as nevendbkadres " +
