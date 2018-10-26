@@ -316,7 +316,7 @@ public class VrhActionBean implements ActionBean {
                     "    ) as compartimentering, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "    from (select *, st_astext(t.geom) as geometry " +
+                    "    from (select objectid, symboolcod, symboolhoe, symboolgro, omschrijvi, bijzonderh, st_astext(t.geom) as geometry " +
                     "         from vrh.brandweervoorziening t " +
                     "         where t.dbk_object = o.id) r " +
                     "    ) as brandweervoorziening, " +
@@ -354,7 +354,8 @@ public class VrhActionBean implements ActionBean {
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                     "    from (select *, st_astext(t.geom) as geometry " +
                     "         from vrh.gevaarlijke_stoffen t " +
-                    "         where t.dbk_object = o.id) r " +
+                    "         where t.dbk_object = o.id " +
+                    "         order by volgnummer) r " +
                     "    ) as gevaarlijke_stoffen, " +
 
                     "    (select array_to_json(array_agg(row_to_json(r.*))) " +
