@@ -3,16 +3,21 @@ package nl.opengeogroep.safetymaps.server.stripes;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.*;
@@ -24,6 +29,8 @@ import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.logExceptionAndReturnJSONObject;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapListHandler;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
@@ -233,71 +240,94 @@ public class VrhActionBean implements ActionBean {
         return new StreamingResolution("application/json", result.toString(4));
     }
 
-    private static JSONArray dbksJson() throws Exception {
+    private static JSONArray dbksJson(Connection c) throws Exception {
         QueryRunner qr = new QueryRunner();
-        try(Connection c = DB.getConnection()) {
-            JSONArray objects = new JSONArray();
+        JSONArray objects = new JSONArray();
 
-            List<Map<String,Object>> rows = qr.query(c, "select o.id, naam, oms_nummer, straatnaam, huisnummer, huisletter, toevoeging, postcode, plaats, " +
-                    "st_astext(st_centroid(o.geom)) as pand_centroid, box2d(o.geom)::varchar as extent " +
-                    "from vrh.dbk_object o " +
-                    "left join vrh.pand p on (p.dbk_object = o.id) " +
-                    "where p.hoofd_sub='Hoofdpand' " +
-                    "and naam is not null", new MapListHandler());
+        List<Map<String,Object>> rows = qr.query(c, "select o.id, naam, oms_nummer, straatnaam, huisnummer, huisletter, toevoeging, postcode, plaats, " +
+                "st_astext(st_centroid(o.geom)) as pand_centroid, box2d(o.geom)::varchar as extent " +
+                "from vrh.dbk_object o " +
+                "left join vrh.pand p on (p.dbk_object = o.id) " +
+                "where p.hoofd_sub='Hoofdpand' " +
+                "and naam is not null", new MapListHandler());
 
-            List<Map<String,Object>> adressen = qr.query(c, "select dbk_object as id, " +
-                    "        (select array_to_json(array_agg(row_to_json(r.*))) " +
-                    "         from (select na.postcode as pc, na.woonplaats as pl, na.straatnaam as sn,  " +
-                    "                array_to_json(array_agg(distinct na.huisnummer || case when na.huisletter <> '' or na.toevoeging <> '' then '|' || coalesce(na.huisletter,'') || '|' || coalesce(na.toevoeging,'') else '' end)) as nrs " +
-                    "                from vrh.nevendbkadres na " +
-                    "                where na.dbk_object = t.dbk_object " +
-                    "                group by na.postcode, na.woonplaats, na.straatnaam) r " +
-                    "        ) as selectieadressen " +
-                    "    from (select distinct dbk_object from vrh.nevendbkadres where huisletter is not null) t", new MapListHandler());
+        List<Map<String,Object>> adressen = qr.query(c, "select dbk_object as id, " +
+                "        (select array_to_json(array_agg(row_to_json(r.*))) " +
+                "         from (select na.postcode as pc, na.woonplaats as pl, na.straatnaam as sn,  " +
+                "                array_to_json(array_agg(distinct na.huisnummer || case when na.huisletter <> '' or na.toevoeging <> '' then '|' || coalesce(na.huisletter,'') || '|' || coalesce(na.toevoeging,'') else '' end)) as nrs " +
+                "                from vrh.nevendbkadres na " +
+                "                where na.dbk_object = t.dbk_object " +
+                "                group by na.postcode, na.woonplaats, na.straatnaam) r " +
+                "        ) as selectieadressen " +
+                "    from (select distinct dbk_object from vrh.nevendbkadres) t", new MapListHandler());
 
-            Map<Object,String> selectieadressenById = new HashMap();
-            for(Map<String,Object> row: adressen) {
-                selectieadressenById.put(row.get("id"), row.get("selectieadressen").toString());
-            }
-
-            Set objectIds = new HashSet();
-
-            for(Map<String,Object> row: rows) {
-                JSONObject o = JSONUtils.rowToJson(row, true, true);
-
-                Object id = row.get("id");
-                if(objectIds.contains(id)) {
-                    // Duplicate hoofdpand pand row
-                    continue;
-                }
-                objectIds.add(id);
-
-                String selectieadressen = selectieadressenById.get(id);
-                if(selectieadressen != null) {
-                    o.put("selectieadressen", new JSONArray(selectieadressen));
-                }
-                objects.put(o);
-            }
-            return objects;
+        Map<Object,String> selectieadressenById = new HashMap();
+        for(Map<String,Object> row: adressen) {
+            selectieadressenById.put(row.get("id"), row.get("selectieadressen").toString());
         }
+
+        Set objectIds = new HashSet();
+
+        for(Map<String,Object> row: rows) {
+            JSONObject o = JSONUtils.rowToJson(row, true, true);
+
+            Object id = row.get("id");
+            if(objectIds.contains(id)) {
+                // Duplicate hoofdpand pand row
+                continue;
+            }
+            objectIds.add(id);
+
+            String selectieadressen = selectieadressenById.get(id);
+            if(selectieadressen != null) {
+                o.put("selectieadressen", new JSONArray(selectieadressen));
+            }
+            objects.put(o);
+        }
+        return objects;
     }
 
     public Resolution dbks() {
 
-        // TODO caching, controlled by shapefile import script executing query
+        try(Connection c = DB.getConnection()) {
+            final long lastModified = new QueryRunner().query(c, "select time from vrh.import_metadata limit 1", new ScalarHandler<Timestamp>()).getTime() / 1000;
+            long ifModifiedSince = getContext().getRequest().getDateHeader("If-Modified-Since") / 1000;
 
-        try {
-            JSONObject r = new JSONObject();
+            if(ifModifiedSince >= lastModified) {
+                return new ErrorResolution(HttpServletResponse.SC_NOT_MODIFIED);
+            }
+
+            final JSONObject r = new JSONObject();
             r.put("success", true);
-            r.put("results", dbksJson());
-            return new StreamingResolution("application/json", r.toString(indent));
+            r.put("results", dbksJson(c));
+
+            return new Resolution() {
+                @Override
+                public void execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
+                    String encoding = "UTF-8";
+                    response.setCharacterEncoding(encoding);
+                    response.setContentType("application/json");
+                    response.addDateHeader("Last-Modified", lastModified * 1000);
+
+                    OutputStream out;
+                    String acceptEncoding = request.getHeader("Accept-Encoding");
+                    if(acceptEncoding != null && acceptEncoding.contains("gzip")) {
+                        response.setHeader("Content-Encoding", "gzip");
+                        out = new GZIPOutputStream(response.getOutputStream(), true);
+                    } else {
+                        out = response.getOutputStream();
+                    }
+                    IOUtils.copy(new StringReader(r.toString(indent)), out, encoding);
+                    out.flush();
+                    out.close();
+                }
+            };
         } catch(Exception e) {
             return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + getContext().getRequest().getRequestURI(), e).toString(indent));
         }
     }
 
     private static JSONObject dbkJson(int id) throws Exception {
-        QueryRunner qr = new QueryRunner();
         try(Connection c = DB.getConnection()) {
             List<Map<String,Object>> rows = new QueryRunner().query(c, "select " +
                     "    o.*, " +
