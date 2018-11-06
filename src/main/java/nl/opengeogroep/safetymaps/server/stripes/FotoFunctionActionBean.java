@@ -183,7 +183,7 @@ public class FotoFunctionActionBean implements ActionBean {
     public List<Map<String, Object>> getFromDb() throws Exception {
         QueryRunner qr = DB.qr();
 
-        List<Map<String, Object>> rows = qr.query("SELECT \"filename\", \"omschrijving\" from wfs."+TABLE+" where incident_nummer = '" + incidentNummer + "'", new MapListHandler());
+        List<Map<String, Object>> rows = qr.query("SELECT \"filename\", \"omschrijving\" from wfs."+TABLE+" where incident_nummer =?", new MapListHandler(),incidentNummer);
 
         return rows;
     }
