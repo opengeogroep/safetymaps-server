@@ -82,7 +82,7 @@ public class FotoActionBean implements ActionBean {
         if (filename != null) {
             try {
                 deleteFromFileSystem(filename);
-                DB.qr().update("delete from wfs."+TABLE+" where filename ='" + filename + "'");
+                DB.qr().update("delete from wfs." + TABLE + " where filename =?", filename);
                 getContext().getMessages().add(new SimpleMessage("Foto verwijderd."));
             } catch (Exception e) {
                 log.error(e);
