@@ -140,7 +140,8 @@ public class FotoFunctionActionBean implements ActionBean {
             if (incidentNummer == null) {
                 incidentNummer = "N.V.T.";
             }
-
+            
+            fileName = fileName.replace('/','_');
             insertIntoDb();
             final File file = new File(PATH + fileName);
             picture.save(file);
