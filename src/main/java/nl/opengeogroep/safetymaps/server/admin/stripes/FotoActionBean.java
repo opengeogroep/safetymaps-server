@@ -6,12 +6,9 @@
 package nl.opengeogroep.safetymaps.server.admin.stripes;
 
 import java.awt.Image;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import static java.lang.Math.log;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,12 +22,14 @@ import net.sourceforge.stripes.action.ActionBean;
 import net.sourceforge.stripes.action.ActionBeanContext;
 import net.sourceforge.stripes.action.DefaultHandler;
 import net.sourceforge.stripes.action.DontValidate;
+import net.sourceforge.stripes.action.ErrorResolution;
 import net.sourceforge.stripes.action.ForwardResolution;
 import net.sourceforge.stripes.action.Resolution;
 import net.sourceforge.stripes.action.SimpleMessage;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import org.apache.commons.dbutils.handlers.MapListHandler;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -94,39 +93,36 @@ public class FotoActionBean implements ActionBean {
         return new ForwardResolution(JSP);
     }
 
-    @DontValidate
+@DontValidate
     public Resolution downloadFoto() throws Exception {
         String filename = context.getRequest().getParameter("filename");
-        String location = context.getRequest().getParameter("location");
-        System.out.println("downloading: " + location);
-        File file = new File(location);
-        Path source = Paths.get(location);
-        context.getResponse().setBufferSize(DEFAULT_BUFFER_SIZE);
-        context.getResponse().setContentType(Files.probeContentType(source));
-        context.getResponse().setHeader("Content-Length", String.valueOf(file.length()));
-        context.getResponse().addHeader("content-disposition", "attachment; filename=" + filename);
-        
-        FileInputStream fis = null;
-        BufferedInputStream input = null;
-        BufferedOutputStream output = null;
+        String location = Cfg.getSetting("fotofunctie");
+        String path = location + filename;
+        log.info("downloading: " + path);
+        File file = new File(path);
+        Image image = ImageIO.read(file);
+        if (image != null && file.exists()) {
+            Path source = Paths.get(path);
+            context.getResponse().setBufferSize(DEFAULT_BUFFER_SIZE);
+            context.getResponse().setContentType(Files.probeContentType(source));
+            context.getResponse().setHeader("Content-Length", String.valueOf(file.length()));
+            context.getResponse().addHeader("content-disposition", "attachment; filename=" + filename);
 
-        try {
-            fis = new FileInputStream(file);
-            input = new BufferedInputStream(fis, DEFAULT_BUFFER_SIZE);
-            output = new BufferedOutputStream(context.getResponse().getOutputStream(), DEFAULT_BUFFER_SIZE);
+            FileInputStream fis = null;
 
-            
-            byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
-            int length;
-            while ((length = input.read(buffer)) > 0) {
-                output.write(buffer, 0, length);
+            try {
+                fis = new FileInputStream(file);
+
+                IOUtils.copy(fis, context.getResponse().getOutputStream());
+            }catch(Exception e){
+                log.error(e);
+                return new ErrorResolution(500);
             }
-        } finally {
-            
-            output.close();
-            input.close();
+            return null;
+        } else {
+            log.debug("The requested file" + path + "could not be opened , it is not an image or does not exists");
+            return new ErrorResolution(404);
         }
-        return null;
     }
     
     @DontValidate
