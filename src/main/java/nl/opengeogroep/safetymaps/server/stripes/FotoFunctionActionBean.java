@@ -145,31 +145,12 @@ public class FotoFunctionActionBean implements ActionBean {
             insertIntoDb();
             final File file = new File(PATH + fileName);
             picture.save(file);
-            setPermissions();
             response.put("message", "Foto is opgeslagen met bestandsnaam: " + fileName);
             response.put("result", true);
         } catch (Exception e) {
             response.put("message", "Error met fout " + e.getMessage());
         }
         return new StreamingResolution("application/json", response.toString());
-    }
-
-    public void setPermissions() throws IOException {
-        Set<PosixFilePermission> perms = new HashSet<PosixFilePermission>();
-        //add owners permission
-        perms.add(PosixFilePermission.OWNER_READ);
-        perms.add(PosixFilePermission.OWNER_WRITE);
-        perms.add(PosixFilePermission.OWNER_EXECUTE);
-        //add group permissions
-        perms.add(PosixFilePermission.GROUP_READ);
-        perms.add(PosixFilePermission.GROUP_WRITE);
-        perms.add(PosixFilePermission.GROUP_EXECUTE);
-        //add others permissions
-        perms.add(PosixFilePermission.OTHERS_READ);
-        perms.add(PosixFilePermission.OTHERS_WRITE);
-        perms.add(PosixFilePermission.OTHERS_EXECUTE);
-
-        Files.setPosixFilePermissions(Paths.get(PATH + fileName), perms);
     }
 
     public Resolution fotoForIncident() throws Exception {
