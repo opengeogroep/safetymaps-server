@@ -28,7 +28,6 @@
                 <c:forEach var="p" items="${actionBean.fotos}">
                     <stripes:url var="downloadLink" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.FotoActionBean" event="downloadFoto">
                         <stripes:param name="filename" value="${p.filename}"/>
-                        <stripes:param name="location" value="${p.location}"/>
                     </stripes:url>
                     <tr>
                         <td style="cursor: pointer" onclick="window.location.href='${downloadLink}'"><c:out value="${p.filename}"/></td>
@@ -40,7 +39,6 @@
                         <td class="table-actions">
                             <stripes:link class="remove-item" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.FotoActionBean" event="delete" title="Verwijderen">
                                 <stripes:param name="filename" value="${p.filename}"/>
-                                <stripes:param name="location" value="${p.location}"/>
                                 <span class="glyphicon glyphicon-remove"></span>
                             </stripes:link>
                         </td>
