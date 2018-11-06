@@ -168,8 +168,16 @@ public class FotoFunctionActionBean implements ActionBean {
     public void insertIntoDb() throws Exception {
         Calendar calendar = Calendar.getInstance();
         java.sql.Date date = new java.sql.Date(calendar.getTime().getTime());
+        Object[] qparams = new Object[] {
+            fileName,
+            type,
+            voertuigNummer,
+            incidentNummer,
+            date,
+            extraInfo
+        };
         QueryRunner qr = DB.qr();
-        qr.insert("insert into wfs."+TABLE+" (filename, datatype, voertuig_nummer, incident_nummer,location, date, omschrijving) values('" + fileName + "','" + type + "','" + voertuigNummer + "','" + incidentNummer + "','" + PATH + fileName + "','" + date + "','" + extraInfo + "') ", new MapListHandler());
+        qr.insert("insert into wfs."+TABLE+" (filename, datatype, voertuig_nummer, incident_nummer, date, omschrijving) values(?,?,?,?,?,?)", new MapListHandler(),qparams);
     }
 
     public List<Map<String, Object>> getFromDb() throws Exception {
