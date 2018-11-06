@@ -125,22 +125,6 @@ public class FotoActionBean implements ActionBean {
         }
     }
     
-    @DontValidate
-    public byte[] getImage(String fileName) {
-        byte[] result = null;
-        String fileLocation = fileName;
-        File f = new File(fileLocation);
-        result = new byte[(int) f.length()];
-        try {
-            FileInputStream in = new FileInputStream(fileLocation);
-            in.read(result);
-        } catch (Exception ex) {
-            System.out.println("GET IMAGE PROBLEM :: " + ex);
-            ex.printStackTrace();
-        }
-        return result;
-    }
-    
     public void deleteFromFileSystem(String filename) throws NamingException, SQLException {
         String path = Cfg.getSetting("fotofunctie") + filename;
         try {
