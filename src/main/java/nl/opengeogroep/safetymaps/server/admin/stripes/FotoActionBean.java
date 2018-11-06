@@ -132,7 +132,7 @@ public class FotoActionBean implements ActionBean {
             Image image = ImageIO.read(file);
             if (image != null && file.exists()) {
                 if (file.delete()) {
-                    log.debug(file.getName() + " is deleted!");                    
+                    log.info(file.getName() + " is deleted!");                    
                 } else {
                     log.debug("Delete operation failed.");
                     throw new Error("Delete operation failed");
