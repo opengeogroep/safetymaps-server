@@ -125,7 +125,7 @@ public class FotoActionBean implements ActionBean {
         }
     }
     
-    public void deleteFromFileSystem(String filename) throws NamingException, SQLException {
+    public void deleteFromFileSystem(String filename) throws NamingException, SQLException, Exception {
         String path = Cfg.getSetting("fotofunctie") + filename;
         try {
             File file = new File(path);
@@ -135,11 +135,11 @@ public class FotoActionBean implements ActionBean {
                     log.info(file.getName() + " is deleted!");                    
                 } else {
                     log.debug("Delete operation failed.");
-                    throw new Error("Delete operation failed");
+                    throw new Exception("Delete operation failed");
                 }
             } else {
                 log.debug("The file" + path + "could not be deleted , it is not an image or does nor exist");
-                throw new Error("The file" + path + "could not be deleted , it is not an image or does nor exist");
+                throw new Exception("The file" + path + "could not be deleted , it is not an image or does nor exist");
             }
         } catch (IOException e) {
             log.error(e);
