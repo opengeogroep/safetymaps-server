@@ -142,9 +142,13 @@ public class FotoFunctionActionBean implements ActionBean {
             }
             
             fileName = fileName.replace('/','_');
-            insertIntoDb();
             final File file = new File(PATH + fileName);
-            picture.save(file);
+            try {
+                picture.save(file);
+                insertIntoDb();
+            } catch (Exception e) {
+                log.error(e);
+            }
             response.put("message", "Foto is opgeslagen met bestandsnaam: " + fileName);
             response.put("result", true);
         } catch (Exception e) {
@@ -176,8 +180,12 @@ public class FotoFunctionActionBean implements ActionBean {
             date,
             extraInfo
         };
-        QueryRunner qr = DB.qr();
-        qr.insert("insert into wfs."+TABLE+" (filename, datatype, voertuig_nummer, incident_nummer, date, omschrijving) values(?,?,?,?,?,?)", new MapListHandler(),qparams);
+        try {
+            QueryRunner qr = DB.qr();
+            qr.insert("insert into wfs." + TABLE + " (filename, datatype, voertuig_nummer, incident_nummer, date, omschrijving) values(?,?,?,?,?,?)", new MapListHandler(), qparams);
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     public List<Map<String, Object>> getFromDb() throws Exception {
