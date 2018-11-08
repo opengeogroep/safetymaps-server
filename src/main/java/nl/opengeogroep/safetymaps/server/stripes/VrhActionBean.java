@@ -249,7 +249,8 @@ public class VrhActionBean implements ActionBean {
                 "from vrh.dbk_object o " +
                 "left join vrh.pand p on (p.dbk_object = o.id) " +
                 "where p.hoofd_sub='Hoofdpand' " +
-                "and naam is not null", new MapListHandler());
+                "and naam is not null " +
+                "order by naam", new MapListHandler());
 
         List<Map<String,Object>> adressen = qr.query(c, "select dbk_object as id, " +
                 "        (select array_to_json(array_agg(row_to_json(r.*))) " +
@@ -452,7 +453,7 @@ public class VrhActionBean implements ActionBean {
         try(Connection c = DB.getConnection()) {
             JSONArray objects = new JSONArray();
 
-            List<Map<String,Object>> rows = qr.query(c, "select objectid as id, evnaam, evstatus, sbegin, st_astext(st_centroid(geom)) as centroid, box2d(geom)::varchar as extent, st_astext(geom) as selectiekader from vrh.evterreinvrhobj", new MapListHandler());
+            List<Map<String,Object>> rows = qr.query(c, "select objectid as id, evnaam, evstatus, sbegin, st_astext(st_centroid(geom)) as centroid, box2d(geom)::varchar as extent, st_astext(geom) as selectiekader from vrh.evterreinvrhobj order by evnaam", new MapListHandler());
 
             for(Map<String,Object> row: rows) {
                 objects.put(JSONUtils.rowToJson(row, true, true));
