@@ -37,7 +37,7 @@ public class ViewerDataExporter {
      * count, to use as caching ETag.
      */
     public String getObjectsETag() throws Exception {
-        String key = new QueryRunner().query(c, "select max(\"Datum_Actualisatie\") || '_' || count(*) from wfs.\"DBK\"", new ScalarHandler<String>());
+        String key = new QueryRunner().query(c, "select max(datum_actualisatie) || '_' || count(*) from viewer.viewer_object", new ScalarHandler<String>());
         key += "_v" + new QueryRunner().query(c, "select max(value) from viewer.schema_version", new ScalarHandler<>());
         if(key == null) {
             return "empty_db";
