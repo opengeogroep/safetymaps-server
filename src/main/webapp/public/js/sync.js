@@ -192,7 +192,7 @@ function display(clients) {
 
         // fileset stats
         $.each(sr.state.filesets, function(i, fs) {
-            if(fs.next_scheduled === "ASAP") {
+            if(fs.schedule === "once") {
                 return true;
             }
 
@@ -231,7 +231,10 @@ function display(clients) {
     var allFinishedStates = [];
     $.each(filesetStats, function(fileset, filesetStat) {
         filesetStat.missing = 0;
-        if(filesetStat.schedule !== "ASAP" && filesetStat.schedule !== "hourly") {
+        if(filesetStat.schedule === "once") {
+            return true;
+        }
+        if(filesetStat.schedule !== "hourly") {
             notHourlyFilesets.push(fileset);
         }
         $.each(clients, function(i, sr) {
@@ -239,7 +242,7 @@ function display(clients) {
             // fileset missing stats
             if(sr.state) {
                 $.each(sr.state.filesets, function(i, fs) {
-                    if(fs.next_scheduled === "ASAP") {
+                    if(fs.schedule === "once") {
                         return true;
                     }
 
@@ -310,13 +313,13 @@ function display(clients) {
             }
             if(stat.notFinished) {
                 stat.notFinished.sort();
-                row = $("<tr class='missing' style='display: " + (showMissing ? "table-row" : "none") + "'><td></td><td colspan='" + (2+allStates.length+allFinishedStates.length) + "'>Niet gelukt: " + stat.notFinished.join(", ") + "</td></tr>");
+                row = $("<tr class='missing' style='display: " + (showMissing ? "table-row" : "none") + "'><td></td><td colspan='" + (2+allStates.length+allFinishedStates.length) + "'>Niet voltooid: " + stat.notFinished.join(", ") + "</td></tr>");
                 $("#fs_stats_tb").append(row);
             }
         });
     }
 
-    console.log("total: " + total + ", all states: " + allStates + ", filesetStats", filesetStats);
+    //console.log("total: " + total + ", all states: " + allStates + ", filesetStats", filesetStats);
 
     activeRows.sort(function(lhs, rhs) {
         return lhs.view.client_id.localeCompare(rhs.view.client_id);
@@ -347,5 +350,5 @@ function display(clients) {
         $("#msg").text("Status op " + moment().format("LLLL"));
     }
 
-    window.setTimeout(update, stats.active > 0 ? 2000 : 5000);
+    window.setTimeout(update, stats.active > 0 ? 3000 : 8000);
 }

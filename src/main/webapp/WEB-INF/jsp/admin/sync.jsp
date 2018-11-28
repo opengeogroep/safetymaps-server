@@ -99,7 +99,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <h2>Taakstatistieken (totaal aantal clients: <span id="clients_total"></span>)</h2>
                 <table class="table">
                     <thead>
-                        <tr><th rowspan="2">Naam</th><th rowspan="2">Aantal clients</th><th rowspan="2">Aantal voltooid</th><th id="states_th" style="text-align: center">Online status</th><th id="finished_states_th" style="text-align: center">Laatst be&euml;indige status</th></tr>
+                        <tr><th rowspan="2">Naam</th><th rowspan="2">Aantal clients</th><th rowspan="2">Aantal voltooid</th><th id="states_th">Online status</th><th id="finished_states_th">Laatst be&euml;indige status</th></tr>
                         <tr id="states_tr"></tr>
                     </thead>
                     <tbody id="fs_stats_tb">
