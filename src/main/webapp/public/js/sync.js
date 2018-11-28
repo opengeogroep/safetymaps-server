@@ -95,6 +95,9 @@ function display(clients) {
         waiting: 0
     };
 
+    var filesetStats = {};
+    var allClients = {};
+
     $("#offline_tb").empty();
     $("#active_tb").empty();
     $("#waiting_tb").empty();
@@ -103,11 +106,14 @@ function display(clients) {
     var waitingRows = [];
 
     $.each(clients, function(i, sr) {
+        allClients[sr.client_id] = true;
+
         var cutoff = moment().subtract(24, 'hours');
         var time = moment(sr.state_time);
 
         if(typeof sr.state === 'undefined') {
             stats.offline++;
+            sr.offline = true;
             $("#offline_tb").append($.mustache("<tr><td>{{client_id}}</td><td colspan=\"2\">Geen status bekend</td></tr>", sr));
             return;
         }
@@ -133,6 +139,7 @@ function display(clients) {
 
         if(time.isBefore(cutoff) || (!sr.state.current_fileset && filesetScheduledInPast)) {
             stats.offline++;
+            sr.offline = true;
             if(time.isBefore(cutoff)) {
                 view.details = "Laatst gezien langer dan 24 uur geleden";
             } else {
@@ -182,7 +189,134 @@ function display(clients) {
                 });
             }
         }
+
+        // fileset stats
+        $.each(sr.state.filesets, function(i, fs) {
+            if(fs.next_scheduled === "ASAP") {
+                return true;
+            }
+
+            var stat = filesetStats[fs.name] || {};
+            stat.schedule = fs.schedule;
+
+            // TODO: succeeded since fileset was updated...
+
+            stat.count = 1 + (stat.count || 0);
+            stat.succeededCount = (fs.state && fs.state.last_succeeded ? 1: 0) + (stat.succeededCount || 0);
+            var state;
+            if(!sr.offline) {
+                stat.stateCount = stat.stateCount || {};
+                state = fs.state && fs.state.state ? fs.state.state : "unknown";
+                stat.stateCount[state] = 1 + (stat.stateCount[state] || 0);
+                if(state !== "completed" && state !== "waiting") {
+                    stat.stateCount[state + "_clients"] = (stat.stateCount[state + "_clients"] || []).concat(sr.client_id);
+                }
+            }
+            stat.lastFinishedStateCount = stat.lastFinishedStateCount || {};
+            state = fs.state && fs.state.last_finished_state ? fs.state.last_finished_state : "none";
+            stat.lastFinishedStateCount[state] = 1 + (stat.lastFinishedStateCount[state] || 0);
+            if(state !== "completed") {
+                stat.lastFinishedStateCount[state + "_clients"] = (stat.lastFinishedStateCount[state + "_clients"] || []).concat(sr.client_id);
+            }
+            if(state === "none") {
+                stat.notFinished = (stat.notFinished || []).concat(sr.client_id);
+            }
+
+            filesetStats[fs.name] = stat;
+        });
     });
+
+    var notHourlyFilesets = [];
+    var allStates = [];
+    var allFinishedStates = [];
+    $.each(filesetStats, function(fileset, filesetStat) {
+        filesetStat.missing = 0;
+        if(filesetStat.schedule !== "ASAP" && filesetStat.schedule !== "hourly") {
+            notHourlyFilesets.push(fileset);
+        }
+        $.each(clients, function(i, sr) {
+            var found = false;
+            // fileset missing stats
+            if(sr.state) {
+                $.each(sr.state.filesets, function(i, fs) {
+                    if(fs.next_scheduled === "ASAP") {
+                        return true;
+                    }
+
+                    var state = fs.state.state || "unknown";
+                    if(allStates.indexOf(state) === -1) {
+                        allStates.push(state);
+                    }
+                    state = fs.state.last_finished_state || "none";
+                    if(allFinishedStates.indexOf(state) === -1) {
+                        allFinishedStates.push(state);
+                    }
+
+                    if(fs.name === fileset) {
+                        found = true;
+                        return false;
+                    }
+                });
+                if(!found) {
+                    filesetStat.missing++;
+                    filesetStat.missing_clients = (filesetStat.missing_clients || []).concat(sr.client_id);
+                }
+            }
+        });
+    });
+    allStates.sort();
+    notHourlyFilesets.sort();
+    var total = stats.offline + stats.active + stats.waiting;
+    $("#clients_total").text(total);
+// For only not hourly filesets use next line...
+//    if(notHourlyFilesets.length === 0) {
+    if(filesetStats.length === 0) {
+        $("#fs_stats").hide();
+    } else {
+        $("#fs_stats").show();
+        $("#fs_stats_tb").empty();
+
+        $("#states_tr").empty();
+        $("#states_tr").append("<td>" + allStates.join("</td><td>") + "</td>");
+        $("#states_tr").append("<td>" + allFinishedStates.join("</td><td>") + "</td>");
+        $("#states_th").attr("colspan", allStates.length);
+        $("#finished_states_th").attr("colspan", allFinishedStates.length);
+
+// For only not hourly filesets use next two lines...
+//        $.each(notHourlyFilesets, function(i, fs) {
+//            var stat = filesetStats[fs];
+        $.each(filesetStats, function(fs, stat) {
+            stat.name = fs;
+            stat.countPercent = (stat.count / total * 100).toFixed(1);
+            stat.succeededPercent = (stat.succeededCount / total * 100).toFixed(1);
+            var states = "";
+            var finishedStates = "";
+            $.each(allStates, function(j, s) {
+                var title = (stat.stateCount[s + "_clients"] || []).join(", ");
+                states += "<td title='" + title + "'>" + (stat.stateCount[s] || 0) + "</td>";
+            });
+            $.each(allFinishedStates, function(j, s) {
+                var title = (stat.lastFinishedStateCount[s + "_clients"] || []).join(", ");
+                finishedStates += "<td title='" + title + "'>" + (stat.lastFinishedStateCount[s] || 0) + "</td>";
+            });
+
+            var row = $.mustache("<tr><td>{{name}}</td><td>{{count}} ({{countPercent}}%)</td><td>{{succeededCount}} ({{succeededPercent}}%)</td>" + states + finishedStates + "</tr>", stat);
+
+            $("#fs_stats_tb").append(row);
+            if(stat.missing > 0) {
+                stat.missing_clients.sort();
+                row = $("<tr class='missing' style='display: " + (showMissing ? "table-row" : "none") + "'><td></td><td colspan='" + (2+allStates.length+allFinishedStates.length) + "'>Ontbrekend: " + stat.missing_clients.join(", ") + "</td></tr>");
+                $("#fs_stats_tb").append(row);
+            }
+            if(stat.notFinished) {
+                stat.notFinished.sort();
+                row = $("<tr class='missing' style='display: " + (showMissing ? "table-row" : "none") + "'><td></td><td colspan='" + (2+allStates.length+allFinishedStates.length) + "'>Niet gelukt: " + stat.notFinished.join(", ") + "</td></tr>");
+                $("#fs_stats_tb").append(row);
+            }
+        });
+    }
+
+    console.log("total: " + total + ", all states: " + allStates + ", filesetStats", filesetStats);
 
     activeRows.sort(function(lhs, rhs) {
         return lhs.view.client_id.localeCompare(rhs.view.client_id);
@@ -213,5 +347,5 @@ function display(clients) {
         $("#msg").text("Status op " + moment().format("LLLL"));
     }
 
-    window.setTimeout(update, stats.active > 0 ? 1000 : 5000);
+    window.setTimeout(update, stats.active > 0 ? 2000 : 5000);
 }
