@@ -53,6 +53,9 @@ public class VrhActionBean implements ActionBean {
     @Validate
     private int indent = 0;
 
+    @Validate
+    private boolean wkt = false;
+
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
     public ActionBeanContext getContext() {
@@ -79,6 +82,14 @@ public class VrhActionBean implements ActionBean {
     public void setIndent(int indent) {
         this.indent = indent;
     }
+
+    public boolean isWkt() {
+        return wkt;
+    }
+
+    public void setWkt(boolean wkt) {
+        this.wkt = wkt;
+    }
     // </editor-fold>
 
     /**
@@ -93,7 +104,7 @@ public class VrhActionBean implements ActionBean {
         ZipOutputStream out = new ZipOutputStream(b);
         ZipEntry e = new ZipEntry("api/wbbks.json");
         out.putNextEntry(e);
-        JSONObject wbbks = wbbksJson();
+        JSONObject wbbks = wbbksJson(false);
         out.write(wbbks.toString(4).getBytes("UTF-8"));
 
         if(wbbks.has("wbbk")) {
@@ -102,7 +113,7 @@ public class VrhActionBean implements ActionBean {
                 int id = features.getJSONObject(i).getJSONObject("properties").getInt("id");
                 e = new ZipEntry("api/wbbk/" + id + ".json");
                 out.putNextEntry(e);
-                JSONObject wbbk = wbbkJson(id);
+                JSONObject wbbk = wbbkJson(id, false);
                 out.write(wbbk.toString(4).getBytes("UTF-8"));
             }
         } // else has "error"
@@ -117,17 +128,29 @@ public class VrhActionBean implements ActionBean {
         return new StreamingResolution("application/zip", new ByteArrayInputStream(b.toByteArray())).setFilename("wbbk-api.zip");
     }
 
-    private static JSONObject wbbksJson() {
+    private static JSONObject wbbksJson(boolean wkt) {
         JSONObject result = new JSONObject();
         result.put("success", false);
         try {
-            List<Map<String,Object>> rows = DB.qr().query("select id,locatie,adres,plaatsnaam,st_asgeojson(selectiekader) as selectiekader, st_xmin(geom)||','||st_ymin(geom)||','||st_xmax(geom)||','||st_ymax(geom) as bounds, st_asgeojson(st_centroid(geom)) as geometry "
+            String sql;
+            if(wkt) {
+                sql = "select id,locatie,adres,plaatsnaam,st_astext(selectiekader) as selectiekader, box2d(geom)::varchar as extent, st_astext(st_centroid(geom)) as geometry "
                     + "from"
                     + "(select id, locatie, adres, plaatsnaam, coalesce(sk.geom,wdbk.geom) as geom, sk.geom as selectiekader "
                     + " from vrh.wdbk_waterbereikbaarheidskaart wdbk "
                     + " left join vrh.waterbereikbaarheidskaart_selectiekader sk on (sk.dbk_object = wdbk.id) "
                     + " where locatie is not null "
-                    + " order by locatie) s", new MapListHandler());
+                    + " order by locatie) s";
+            } else {
+                sql = "select id,locatie,adres,plaatsnaam,st_asgeojson(selectiekader) as selectiekader, st_xmin(geom)||','||st_ymin(geom)||','||st_xmax(geom)||','||st_ymax(geom) as bounds, st_asgeojson(st_centroid(geom)) as geometry "
+                    + "from"
+                    + "(select id, locatie, adres, plaatsnaam, coalesce(sk.geom,wdbk.geom) as geom, sk.geom as selectiekader "
+                    + " from vrh.wdbk_waterbereikbaarheidskaart wdbk "
+                    + " left join vrh.waterbereikbaarheidskaart_selectiekader sk on (sk.dbk_object = wdbk.id) "
+                    + " where locatie is not null "
+                    + " order by locatie) s";
+            }
+            List<Map<String,Object>> rows = DB.qr().query(sql, new MapListHandler());
 
             // Deduplicate based on ID
             List<Map<String,Object>> dedupRows = new ArrayList();
@@ -142,7 +165,11 @@ public class VrhActionBean implements ActionBean {
                 }
             }
 
-            result.put("wbbk", rowsToGeoJSONFeatureCollection(dedupRows));
+            if(wkt) {
+                result.put("results", rowsToJSONArray(dedupRows));
+            } else {
+                result.put("wbbk", rowsToGeoJSONFeatureCollection(dedupRows));
+            }
             result.put("success", true);
         } catch(Exception e) {
             log.error("Error getting VRH wbbk data", e);
@@ -161,18 +188,19 @@ public class VrhActionBean implements ActionBean {
     }
 
     public Resolution wbbks() {
-        JSONObject result = wbbksJson();
+        JSONObject result = wbbksJson(wkt);
         context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
         return new StreamingResolution("application/json", result.toString(indent));
     }
 
-    private static JSONObject wbbkJson(Integer id) {
+    private static JSONObject wbbkJson(Integer id, boolean wkt) {
 
         JSONObject result = new JSONObject();
         result.put("success", false);
         QueryRunner qr = new QueryRunner();
         try(Connection c = DB.getConnection()) {
-            List<Map<String,Object>> rows = qr.query(c, "select *, st_asgeojson(geom) as geometry from vrh.wdbk_waterbereikbaarheidskaart where id = ?", new MapListHandler(), id);
+            String geomFunction = (wkt ? "st_astext" : "st_asgeojson");
+            List<Map<String,Object>> rows = qr.query(c, "select *, " + geomFunction + "(geom) as geometry from vrh.wdbk_waterbereikbaarheidskaart where id = ?", new MapListHandler(), id);
             if(rows.isEmpty()) {
                 result.put("error", "WBBK met ID " + id + " niet gevonden");
             } else {
@@ -180,28 +208,37 @@ public class VrhActionBean implements ActionBean {
                 result.put("attributes", attributes);
 
                 JSONObject wbbkVlak = new JSONObject();
-                wbbkVlak.put("type", "Feature");
-                JSONObject props = new JSONObject();
-                wbbkVlak.put("properties", props);
-                props.put("id", "wbbk_" + id);
-                props.put("type", "Dieptevlak tot 4 meter");
+                if(wkt) {
+                    wbbkVlak.put("id", "wbbk_" + id);
+                    wbbkVlak.put("type", "Dieptevlak tot 4 meter");
+                } else {
+                    wbbkVlak.put("type", "Feature");
+                    JSONObject props = new JSONObject();
+                    wbbkVlak.put("properties", props);
+                    props.put("id", "wbbk_" + id);
+                    props.put("type", "Dieptevlak tot 4 meter");
+                }
 
                 Map<String,Object> row = rows.get(0);
                 for(Map.Entry<String,Object> column: row.entrySet()) {
                     if("geometry".equals(column.getKey())) {
-                        wbbkVlak.put("geometry", new JSONObject((String)column.getValue()));
+                        if(wkt) {
+                            wbbkVlak.put("geometry", column.getValue());
+                        } else {
+                            wbbkVlak.put("geometry", new JSONObject((String)column.getValue()));
+                        }
                     } else if(!"geom".equals(column.getKey())) {
                         attributes.put(column.getKey(), column.getValue());
                     }
                 }
 
-                rows = qr.query(c, "select id, symboolcod, symboolgro, bijzonderh, st_asgeojson(geom) as geometry from vrh.voorzieningen_water where dbk_object = ?", new MapListHandler(), id);
-                result.put("symbolen", rowsToGeoJSONFeatureCollection(rows));
+                rows = qr.query(c, "select id, symboolcod, symboolgro, bijzonderh, " + geomFunction + "(geom) as geometry from vrh.voorzieningen_water where dbk_object = ?", new MapListHandler(), id);
+                result.put("symbolen", wkt ? rowsToJSONArray(rows) : rowsToGeoJSONFeatureCollection(rows));
 
-                rows = qr.query(c, "select id, type, bijzonderh, opmerkinge, st_asgeojson(geom) as geometry from vrh.overige_lijnen where dbk_object = ?", new MapListHandler(), id);
-                result.put("lijnen", rowsToGeoJSONFeatureCollection(rows));
+                rows = qr.query(c, "select id, type, bijzonderh, opmerkinge, " + geomFunction + "(geom) as geometry from vrh.overige_lijnen where dbk_object = ?", new MapListHandler(), id);
+                result.put("lijnen", wkt ? rowsToJSONArray(rows) : rowsToGeoJSONFeatureCollection(rows));
 
-                rows = qr.query(c, "select id, type, bijzonderh, st_asgeojson(geom) as geometry from vrh.overige_vlakken where dbk_object = ? order by \n" +
+                rows = qr.query(c, "select id, type, bijzonderh, " + geomFunction + "(geom) as geometry from vrh.overige_vlakken where dbk_object = ? order by \n" +
                     "   case type \n" +
                     "   when 'Dieptevlak 4 tot 9 meter' then -3 \n" +
                     "   when 'Dieptevlak 9 tot 15 meter' then -2\n" +
@@ -209,21 +246,30 @@ public class VrhActionBean implements ActionBean {
                     "   else id\n" +
                     "   end asc", new MapListHandler(), id);
 
-                JSONObject vlakken = new JSONObject();
-                vlakken.put("type", "FeatureCollection");
-                JSONArray vlakkenFeatures = new JSONArray();
-                vlakken.put("features", vlakkenFeatures);
-                vlakkenFeatures.put(wbbkVlak);
-                JSONObject vlakkenFC = rowsToGeoJSONFeatureCollection(rows);
-                JSONArray features = vlakkenFC.getJSONArray("features");
-                for(int i = 0; i < features.length(); i++) {
-                    vlakkenFeatures.put(features.get(i));
+                if(wkt) {
+                    JSONArray vlakken = new JSONArray();
+                    vlakken.put(wbbkVlak);
+                    for(Map<String,Object> r: rows) {
+                        vlakken.put(JSONUtils.rowToJson(r, true, true));
+                    }
+                    result.put("vlakken", vlakken);
+                } else {
+                    JSONObject vlakken = new JSONObject();
+                    vlakken.put("type", "FeatureCollection");
+                    JSONArray vlakkenFeatures = new JSONArray();
+                    vlakken.put("features", vlakkenFeatures);
+                    vlakkenFeatures.put(wbbkVlak);
+                    JSONObject vlakkenFC = rowsToGeoJSONFeatureCollection(rows);
+                    JSONArray features = vlakkenFC.getJSONArray("features");
+                    for(int i = 0; i < features.length(); i++) {
+                        vlakkenFeatures.put(features.get(i));
+                    }
+                    vlakkenFC.put("features", vlakken);
+                    result.put("vlakken", vlakken);
                 }
-                vlakkenFC.put("features", vlakken);
-                result.put("vlakken", vlakken);
 
-                rows = qr.query(c, "select objectid, tekst, hoek, st_asgeojson(geom) as geometry from vrh.teksten where dbk_object = ?", new MapListHandler(), id);
-                result.put("teksten", rowsToGeoJSONFeatureCollection(rows));
+                rows = qr.query(c, "select objectid, tekst, hoek, " + geomFunction + "(geom) as geometry from vrh.teksten where dbk_object = ?", new MapListHandler(), id);
+                result.put("teksten", wkt ? rowsToJSONArray(rows) : rowsToGeoJSONFeatureCollection(rows));
 
                 result.put("success", true);
             }
@@ -235,9 +281,9 @@ public class VrhActionBean implements ActionBean {
     }
 
     public Resolution wbbk() {
-        JSONObject result = wbbkJson(Integer.parseInt(id));
+        JSONObject result = wbbkJson(Integer.parseInt(id), wkt);
         context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
-        return new StreamingResolution("application/json", result.toString(4));
+        return new StreamingResolution("application/json", result.toString(indent));
     }
 
     private static JSONArray dbksJson(Connection c) throws Exception {
