@@ -281,9 +281,19 @@ public class VrhActionBean implements ActionBean {
     }
 
     public Resolution wbbk() {
-        JSONObject result = wbbkJson(Integer.parseInt(id), wkt);
-        context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
-        return new StreamingResolution("application/json", result.toString(indent));
+        if(wkt) {
+            try {
+                JSONObject r = new JSONObject();
+                r.put("success", true);
+                r.put("results",  wbbkJson(Integer.parseInt(id), wkt));
+                return new StreamingResolution("application/json", r.toString(indent));
+            } catch(Exception e) {
+                return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + getContext().getRequest().getRequestURI(), e).toString(indent));
+            }
+        } else {
+            JSONObject result = wbbkJson(Integer.parseInt(id), wkt);
+            return new StreamingResolution("application/json", result.toString(indent));
+        }
     }
 
     private static JSONArray dbksJson(Connection c) throws Exception {
