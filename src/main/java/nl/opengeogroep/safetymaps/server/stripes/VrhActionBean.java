@@ -189,7 +189,6 @@ public class VrhActionBean implements ActionBean {
 
     public Resolution wbbks() {
         JSONObject result = wbbksJson(wkt);
-        context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
         return new StreamingResolution("application/json", result.toString(indent));
     }
 
