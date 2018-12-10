@@ -337,7 +337,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         JSONObject options = new JSONObject();
         try {
             options = new JSONObject(layer.getOptions());
-        } catch(JSONException e) {
+        } catch(Exception e) {
         }
         options.put("visibility", visible);
         options.put("hidefeatureinfo", hidefeatureinfo);
