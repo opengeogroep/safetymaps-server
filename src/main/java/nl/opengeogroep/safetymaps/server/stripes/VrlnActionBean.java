@@ -17,7 +17,7 @@ import org.json.JSONObject;
  * @author Matthijs Laan
  */
 @StrictBinding
-@UrlBinding("/action/vrln")
+@UrlBinding("/api/vrln/brandkranen.json")
 public class VrlnActionBean implements ActionBean {
     private ActionBeanContext context;
 
