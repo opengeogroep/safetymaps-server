@@ -140,7 +140,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         </div>
                         <div class="checkbox">
                             <label><stripes:checkbox name="dpiConversionEnabled"/>ArcGIS naar MapServer DPI conversie</label>
-                        </div>                        
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-2" style="padding-top: 5px">Pixel radius voor feature info:</div>
+                            <div class="col-sm-10"><stripes-dynattr:text name="featureInfoRadius" class="form-control input-sm" type="number"/></div>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">

@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package nl.opengeogroep.safetymaps.server.admin.stripes;
 
 import java.io.File;
@@ -82,6 +81,9 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
     @Validate
     private boolean hidefeatureinfo = true;
+
+    @Validate
+    private Integer featureInfoRadius = null;
 
     @Validate
     private String params;
@@ -154,6 +156,14 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
     public void setHidefeatureinfo(boolean hidefeatureinfo) {
         this.hidefeatureinfo = hidefeatureinfo;
+    }
+
+    public Integer getFeatureInfoRadius() {
+        return featureInfoRadius;
+    }
+
+    public void setFeatureInfoRadius(Integer featureInfoRadius) {
+        this.featureInfoRadius = featureInfoRadius;
     }
 
     public String getParams() {
@@ -279,6 +289,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
             if(options != null) {
                 visible = options.optBoolean("visibility", visible);
                 hidefeatureinfo = options.optBoolean("hidefeatureinfo", false);
+                featureInfoRadius = options.has("featureInfoRadius") ? options.getInt("featureInfoRadius") : null;
             }
 
             layerToggleKey = layer.getNotes();
@@ -341,6 +352,9 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         }
         options.put("visibility", visible);
         options.put("hidefeatureinfo", hidefeatureinfo);
+        if(featureInfoRadius != null) {
+            options.put("featureInfoRadius", featureInfoRadius);
+        }
 
         Object[] qparams = new Object[] {
             name,
