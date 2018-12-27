@@ -354,6 +354,8 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         options.put("hidefeatureinfo", hidefeatureinfo);
         if(featureInfoRadius != null) {
             options.put("featureInfoRadius", featureInfoRadius);
+        } else {
+            options.remove("featureInfoRadius");
         }
 
         Object[] qparams = new Object[] {
