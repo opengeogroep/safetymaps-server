@@ -1,6 +1,5 @@
 package nl.opengeogroep.safetymaps.server.stripes;
 
-import nl.opengeogroep.safetymaps.server.stripes.VrhActionBean;
 import java.util.List;
 import java.util.Map;
 import net.sourceforge.stripes.action.*;
