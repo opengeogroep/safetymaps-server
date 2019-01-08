@@ -157,7 +157,7 @@ public class VrhActionBean implements ActionBean {
         }
     }
 
-    private static JSONArray dbksJson(Connection c) throws Exception {
+    public static JSONArray dbksJson(Connection c) throws Exception {
         QueryRunner qr = new QueryRunner();
         JSONArray objects = new JSONArray();
 
@@ -240,16 +240,25 @@ public class VrhActionBean implements ActionBean {
         };
     }
 
-    private static JSONObject dbkJson(Connection c, int id) throws Exception {
+    public static JSONObject dbkJson(Connection c, int id) throws Exception {
         List<Map<String,Object>> rows = new QueryRunner().query(c, "select " +
                 "    o.*, " +
                 "    st_astext(o.geom) as geometry, " +
 
-                "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                "    (select row_to_json(r.*) " +
                 "    from (select *, st_astext(t.geom) as geometry " +
                 "         from vrh.pand t " +
-                "         where t.dbk_object = o.id) r " +
-                "    ) as pand, " +
+                "         where t.dbk_object = o.id" +
+                "         and hoofd_sub = 'Hoofdpand'" +
+                "         limit 1) r " +
+                "    ) as hoofdpand, " +
+
+                "    (select array_to_json(array_agg(row_to_json(r.*))) " +
+                "    from (select objectid, st_astext(t.geom) as geometry " +
+                "         from vrh.pand t " +
+                "         where t.dbk_object = o.id" +
+                "         and hoofd_sub = 'Subpand') r " +
+                "    ) as subpanden, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select *, st_astext(t.geom) as geometry " +
@@ -270,7 +279,7 @@ public class VrhActionBean implements ActionBean {
                 "    ) as opstelplaats, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                "    from (select *, st_astext(t.geom) as geometry " +
+                "    from (select objectid, symboolcod, symboolgro, omschrijvi, bijzonderh, symboolhoe, st_astext(t.geom) as geometry " +
                 "         from vrh.toegang_pand t " +
                 "         where t.dbk_object = o.id) r " +
                 "    ) as toegang_pand, " +
@@ -282,7 +291,7 @@ public class VrhActionBean implements ActionBean {
                 "    ) as toegang_terrein, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                "    from (select *, st_astext(t.geom) as geometry " +
+                "    from (select objectid, symboolcod, symboolgro, bijzonderh, soort_geva, locatie, st_astext(t.geom) as geometry " +
                 "         from vrh.gevaren t " +
                 "         where t.dbk_object = o.id) r " +
                 "    ) as gevaren, " +
@@ -301,7 +310,7 @@ public class VrhActionBean implements ActionBean {
                 "    ) as gevaarlijke_stoffen, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                "    from (select *, st_astext(t.geom) as geometry " +
+                "    from (select objectid, type, bijzonderh, st_astext(t.geom) as geometry " +
                 "         from vrh.overige_lijnen t " +
                 "         where t.dbk_object = o.id) r " +
                 "    ) as overige_lijnen, " +
@@ -319,7 +328,7 @@ public class VrhActionBean implements ActionBean {
                 "    ) as aanpijling, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                "    from (select *, st_astext(t.geom) as geometry " +
+                "    from (select objectid, tekst, symboolgro, symboolhoe, st_astext(t.geom) as geometry " +
                 "         from vrh.teksten t " +
                 "         where t.dbk_object = o.id) r " +
                 "    ) as teksten, " +
@@ -328,13 +337,7 @@ public class VrhActionBean implements ActionBean {
                 "    from (select *, st_astext(t.geom) as geometry " +
                 "         from vrh.aanrijroute t " +
                 "         where t.dbk_object = o.id) r " +
-                "    ) as aanrijroute, " +
-
-                "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                "    from (select *, st_astext(t.geom) as geometry " +
-                "         from vrh.nevendbkadres t " +
-                "         where t.dbk_object = o.id) r " +
-                "    ) as nevendbkadres " +
+                "    ) as aanrijroute " +
 
                 "from vrh.dbk_object o " +
                 "where o.id = ?", new MapListHandler(), id);
