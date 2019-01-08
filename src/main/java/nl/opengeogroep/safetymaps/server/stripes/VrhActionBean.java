@@ -349,7 +349,7 @@ public class VrhActionBean implements ActionBean {
         return rowToJson(rows.get(0), true, true);
     }
 
-    private static JSONArray waterongevallenJson(Connection c) throws Exception {
+    public static JSONArray waterongevallenJson(Connection c) throws Exception {
         String sql;
         sql = "select id,locatie,adres,plaatsnaam,st_astext(selectiekader) as selectiekader, box2d(geom)::varchar as extent, st_astext(st_centroid(geom)) as geometry "
             + "from"
@@ -376,7 +376,7 @@ public class VrhActionBean implements ActionBean {
         return rowsToJSONArray(dedupRows);
     }
 
-    private static JSONObject waterongevallenkaartJson(Connection c, Integer id) throws Exception {
+    public static JSONObject waterongevallenkaartJson(Connection c, Integer id) throws Exception {
         JSONObject result = new JSONObject();
         result.put("success", true);
         QueryRunner qr = new QueryRunner();
@@ -428,7 +428,7 @@ public class VrhActionBean implements ActionBean {
         return result;
     }
 
-    private JSONArray evenementenJson(Connection c) throws Exception {
+    public static JSONArray evenementenJson(Connection c) throws Exception {
         List<Map<String,Object>> rows = new QueryRunner().query(c, "select objectid as id, evnaam, evstatus, sbegin, st_astext(st_centroid(geom)) as centroid, box2d(geom)::varchar as extent, st_astext(geom) as selectiekader from vrh.evterreinvrhobj order by evnaam", new MapListHandler());
 
         JSONArray objects = new JSONArray();
@@ -438,7 +438,7 @@ public class VrhActionBean implements ActionBean {
         return objects;
     }
 
-    private JSONObject evenementJson(Connection c, int id) throws Exception {
+    public static JSONObject evenementJson(Connection c, int id) throws Exception {
         QueryRunner qr = new QueryRunner();
         JSONObject o = new JSONObject();
 
