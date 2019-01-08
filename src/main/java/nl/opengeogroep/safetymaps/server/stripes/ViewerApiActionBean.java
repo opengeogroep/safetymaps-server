@@ -1,16 +1,17 @@
 package nl.opengeogroep.safetymaps.server.stripes;
 
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.Validate;
-import nl.b3p.web.stripes.ErrorMessageResolution;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.*;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import nl.opengeogroep.safetymaps.viewer.ViewerDataExporter;
@@ -31,7 +32,7 @@ import org.json.JSONObject;
  * /api/features.json: objects for creator objects, with ETag caching
  * /api/object/n.json: creator object details
  * /api/library.json: creator library
- * /api/autocomplete/search: BAG search (TODO)
+ * /api/autocomplete/search: see NLExtractBagAddressSearchActionBean
  *
  * @author Matthijs Laan
  */
@@ -45,7 +46,6 @@ public class ViewerApiActionBean implements ActionBean {
     private static final String STYLES = "styles.json";
     private static final String LIBRARY = "library.json";
     private static final String OBJECT = "object/";
-    private static final String AUTOCOMPLETE = "autocomplete/";
 
     private ActionBeanContext context;
 
@@ -122,9 +122,6 @@ public class ViewerApiActionBean implements ActionBean {
                 if(path.indexOf(OBJECT) == 0) {
                     return object(c);
                 }
-                if(path.indexOf(AUTOCOMPLETE) == 0) {
-                    return autocomplete(c);
-                }
             }
 
             return new ErrorResolution(HttpServletResponse.SC_NOT_FOUND, "Not found: /api/" + path);
@@ -154,9 +151,17 @@ public class ViewerApiActionBean implements ActionBean {
                     response.setContentType("application/json");
                     response.addHeader("ETag", etag);
 
-                    // Compression to be done at webserver level
-
-                    IOUtils.copy(new StringReader(o.toString(indent)), response.getOutputStream(), encoding);
+                    OutputStream out;
+                    String acceptEncoding = request.getHeader("Accept-Encoding");
+                    if(acceptEncoding != null && acceptEncoding.contains("gzip")) {
+                        response.setHeader("Content-Encoding", "gzip");
+                        out = new GZIPOutputStream(response.getOutputStream(), true);
+                    } else {
+                        out = response.getOutputStream();
+                    }
+                    IOUtils.copy(new StringReader(o.toString(indent)), out, encoding);
+                    out.flush();
+                    out.close();
                 }
             };
 
@@ -253,11 +258,5 @@ public class ViewerApiActionBean implements ActionBean {
         } else {
             return new StreamingResolution("application/json", o.toString(indent));
         }
-    }
-
-    private Resolution autocomplete(Connection c) {
-        // TODO old controllers/bag.js
-
-        return new ErrorMessageResolution(500, "Not implemented");
     }
 }
