@@ -75,10 +75,10 @@
             <version>20140107</version>
         </dependency>
         <dependency>
-    <groupId>commons-fileupload</groupId>
-    <artifactId>commons-fileupload</artifactId>
-    <version>1.2</version>
-</dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.2</version>
+        </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -112,8 +112,8 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.1.4</version>
-            <!-- scope provided voor commandline gebruik API -->
+            <version>42.2.5.jre7</version>
+            <!-- scope provided voor commandline gebruik API, jre7 op server -->
             <scope>provided</scope>
         </dependency>
         <dependency>

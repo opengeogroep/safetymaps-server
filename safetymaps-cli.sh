@@ -1,2 +1,3 @@
 #!/bin/bash
-java -cp target/classes:$(echo target/dependency/*.jar | tr ' ' ':') nl.opengeogroep.safetymaps.Main $@
+DIR=$(dirname "$0")
+java -cp $DIR/target/classes:$(echo $DIR/target/dependency/*.jar | tr ' ' ':') nl.opengeogroep.safetymaps.Main $@

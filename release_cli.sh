@@ -1,16 +1,16 @@
 #!/bin/bash
-mvn install
+mvn clean install
 mvn dependency:copy-dependencies
-rm safetymaps-cli-*.zip 2>/dev/null
-rm -rf temp 2>/dev/null
-mkdir temp
-cd temp
+rm safetymaps-cli-*.tar.gz 2>/dev/null
+rm -rf safetymaps-cli 2>/dev/null
+mkdir safetymaps-cli
+cd safetymaps-cli
 mkdir lib
 cp -r ../target/classes lib
 cp -r ../target/dependency lib
 cp ../safetymaps-cli.sh .
 sed -i s/target/lib/g safetymaps-cli.sh
-zip -r -l -q ../safetymaps-cli-`date '+%Y-%m-%d_%H%M%S'`.zip *
 cd ..
-rm -rf temp 2>/dev/null
+tar czf safetymaps-cli-`date '+%Y-%m-%d_%H%M%S'`.tar.gz safetymaps-cli
+rm -rf safetymaps-cli 2>/dev/null
 
