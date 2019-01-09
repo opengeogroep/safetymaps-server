@@ -5,7 +5,9 @@ import java.io.FileOutputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
+import nl.opengeogroep.safetymaps.server.stripes.ViewerApiActionBean;
 import nl.opengeogroep.safetymaps.server.stripes.VrhActionBean;
+import nl.opengeogroep.safetymaps.server.stripes.VrlnActionBean;
 import nl.opengeogroep.safetymaps.viewer.ViewerDataExporter;
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
@@ -34,25 +36,25 @@ public class Main {
 
         OptionGroup commands = new OptionGroup();
         commands.setRequired(true);
+        commands.addOption(Option.builder("organisation")
+                    .desc("Write api/organisation.json")
+                    .build());
         commands.addOption(Option.builder("etag")
-                    .desc("Get cache ETag for viewer objects list")
+                    .desc("Get cache ETag for creator viewer objects list")
                     .build());
-        commands.addOption(Option.builder("exportoverview")
-                    .desc("Write viewer overview JSON to 'api/features.json'")
-                    .build());
-        commands.addOption(Option.builder("exportobjects")
-                    .desc("Write all objects JSON to 'api/object/<id>.json'")
-                    .build());
-        commands.addOption(Option.builder("exportstyles")
-                    .desc("Write styles JSON to 'api/styles.json'")
+        commands.addOption(Option.builder("creator")
+                    .desc("Write safetymaps_creator module JSON to api dir")
                     .build());
         commands.addOption(Option.builder("object")
                     .hasArg()
                     .argName("id")
-                    .desc("Write single object details JSON to stdout")
+                    .desc("Write single creator object details JSON to stdout")
                     .build());
         commands.addOption(Option.builder("vrh")
-                .desc("Write VRH api dir data")
+                .desc("Write vrh_objects module JSON to api dir")
+                .build());
+        commands.addOption(Option.builder("vrln")
+                .desc("Write vrln brandkranen module JSON to api dir")
                 .build());
         options.addOptionGroup(commands);
 
@@ -85,62 +87,78 @@ public class Main {
         String pass = System.getenv("PGPASSWORD");
         Connection c = DriverManager.getConnection(cl.getOptionValue("db"), user, pass);
 
-        ViewerDataExporter vde = new ViewerDataExporter(c);
-
         int indent = Integer.parseInt(cl.getOptionValue("indent", "0"));
 
-        if(cl.hasOption("etag")) {
-            cmdGetEtag(vde);
+        try {
+            if(cl.hasOption("organisation")) {
+                cmdWriteOrganisation(c, indent);
+            }
+            if(cl.hasOption("etag")) {
+                cmdGetEtag(c);
+            }
+            if(cl.hasOption("creator")) {
+                cmdWriteCreator(c, indent);
+            }
+            if(cl.hasOption("object")) {
+                cmdWriteObject(c, Integer.parseInt(cl.getOptionValue("object")), indent);
+            }
+            if(cl.hasOption("vrh")) {
+                cmdWriteVrh(c, indent);
+            }
+            if(cl.hasOption("vrln")) {
+                cmdWriteVrln(c, indent);
+            }
+            System.err.println("No command specified");
+            System.exit(1);
+        } catch(Exception e) {
+            e.printStackTrace();
+            System.exit(1);
         }
-        if(cl.hasOption("exportoverview")) {
-            cmdWriteOverview(vde, indent);
-        }
-        if(cl.hasOption("exportobjects")) {
-            cmdWriteObjects(vde, indent);
-        }
-        if(cl.hasOption("exportstyles")) {
-            cmdWriteStyles(vde, indent);
-        }
-        if(cl.hasOption("object")) {
-            cmdWriteObject(vde, Integer.parseInt(cl.getOptionValue("object")), indent);
-        }
-        if(cl.hasOption("vrh")) {
-            cmdWriteVrh(c, indent);
-        }
-        System.err.println("No command specified");
-        System.exit(1);
     }
 
-    private static void cmdGetEtag(ViewerDataExporter vde) throws Exception {
+    private static void cmdWriteOrganisation(Connection c, int indent) throws Exception {
+        JSONObject o = ViewerApiActionBean.getOrganisation(c, 28992);
+        FileUtils.writeByteArrayToFile(new File("api/organisation.json"), o.toString(indent).getBytes("UTF-8"));
+        System.exit(0);
+    }
+
+    private static void cmdGetEtag(Connection c) throws Exception {
+        ViewerDataExporter vde = new ViewerDataExporter(c);
         System.out.println(vde.getObjectsETag());
         System.exit(0);
     }
 
-    private static void cmdWriteOverview(ViewerDataExporter vde, int indent) throws Exception {
-        new File("api").mkdir();
-        try(FileOutputStream fos = new FileOutputStream("api/features.json")) {
-            JSONObject o = new JSONObject();
-            boolean success = true;
-            try {
-                JSONArray a = vde.getViewerObjectMapOverview();
-                o.put("results", a);
-            } catch(Exception e) {
-                success = true;
-                String msg = e.getClass() + ": " + e.getMessage();
-                if(e.getCause() != null) {
-                    msg += ", " + e.getCause().getMessage();
-                }
-                o.put("error", msg);
-                System.err.println("Error writing viewer overview JSON");
-                e.printStackTrace();
+    private static void cmdWriteCreator(Connection c, int indent) throws Exception {
+        ViewerDataExporter vde = new ViewerDataExporter(c);
+
+        JSONObject o = new JSONObject();
+        boolean success = true;
+        try {
+            JSONArray a = vde.getViewerObjectMapOverview();
+            o.put("results", a);
+        } catch(Exception e) {
+            success = true;
+            String msg = e.getClass() + ": " + e.getMessage();
+            if(e.getCause() != null) {
+                msg += ", " + e.getCause().getMessage();
             }
-            o.put("success", success);
-            fos.write(o.toString(indent).getBytes("UTF-8"));
-            System.exit(success ? 0 : 1);
+            o.put("error", msg);
+            System.err.println("Error writing viewer overview JSON");
+            e.printStackTrace();
         }
+        o.put("success", success);
+        FileUtils.writeByteArrayToFile(new File("api/features.json"), o.toString(indent).getBytes("UTF-8"));
+
+        writeCreatorObjects(vde, indent);
+
+        writeCreatorStyles(vde, indent);
+
+        writeCreatorLibrary(c, indent);
+
+        System.exit(success ? 0 : 1);
     }
 
-    private static void cmdWriteObjects(ViewerDataExporter vde, int indent) throws Exception {
+    private static void writeCreatorObjects(ViewerDataExporter vde, int indent) throws Exception {
         List<JSONObject> objects = vde.getAllViewerObjectDetails();
 
         new File("api/object").mkdirs();
@@ -153,13 +171,11 @@ public class Main {
             } catch(Exception e) {
                 System.err.println("Error writing object JSON to " + file);
                 e.printStackTrace();
-                System.exit(1);
             }
         }
-        System.exit(0);
     }
 
-    private static void cmdWriteStyles(ViewerDataExporter vde, int indent) throws Exception {
+    private static void writeCreatorStyles(ViewerDataExporter vde, int indent) throws Exception {
         JSONObject o = vde.getStyles();
 
         String file = "api/styles.json";
@@ -168,12 +184,16 @@ public class Main {
         } catch(Exception e) {
             System.err.println("Error writing object JSON to " + file);
             e.printStackTrace();
-            System.exit(1);
         }
-        System.exit(0);
     }
 
-    private static void cmdWriteObject(ViewerDataExporter vde, int id, int indent) throws Exception {
+    private static void writeCreatorLibrary(Connection c, int indent) throws Exception {
+        JSONObject o = ViewerApiActionBean.getLibrary(c);
+        FileUtils.writeByteArrayToFile(new File("api/library.json"), o.toString(indent).getBytes("UTF-8"));
+    }
+
+    private static void cmdWriteObject(Connection c, int id, int indent) throws Exception {
+        ViewerDataExporter vde = new ViewerDataExporter(c);
         JSONObject o = vde.getViewerObjectDetails(id);
         System.out.println(o.toString(indent));
         System.exit(0);
@@ -262,5 +282,11 @@ public class Main {
         }
 
         System.exit(success ? 0 : 1);
+    }
+
+    private static void cmdWriteVrln(Connection c, int indent) throws Exception {
+        JSONObject o = VrlnActionBean.getData(c, null);
+        FileUtils.writeByteArrayToFile(new File("api/vrln/brandkranen.json"), o.toString(indent).getBytes("UTF-8"));
+        System.exit(0);
     }
 }

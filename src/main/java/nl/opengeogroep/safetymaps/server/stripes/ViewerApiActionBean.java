@@ -203,14 +203,18 @@ public class ViewerApiActionBean implements ActionBean {
         return o;
     }
 
-    private Resolution organisation(Connection c) throws Exception {
+    public static JSONObject getOrganisation(Connection c, int srid) throws Exception {
         Object org = new QueryRunner().query(c, "select \"organisation\" from organisation.organisation_nieuw_json(" + srid + ")", new ScalarHandler<>());
         JSONObject j = new JSONObject();
         j.put("organisation", new JSONObject(org.toString()));
-        return new StreamingResolution("application/json", j.toString(indent));
+        return j;
     }
 
-    private Resolution library(Connection c) throws Exception {
+    private Resolution organisation(Connection c) throws Exception {
+        return new StreamingResolution("application/json", getOrganisation(c, srid).toString(indent));
+    }
+
+    public static JSONObject getLibrary(Connection c) throws Exception {
         JSONArray a = new JSONArray();
 
         List<Map<String,Object>> rows = new QueryRunner().query(c, "select \"ID\",\"Omschrijving\",\"Documentnaam\" from wfs.\"Bibliotheek\" order by \"Omschrijving\"", new MapListHandler());
@@ -224,7 +228,11 @@ public class ViewerApiActionBean implements ActionBean {
         JSONObject library = new JSONObject();
         library.put("success", true);
         library.put("items", a);
-        return new StreamingResolution("application/json", library.toString(indent));
+        return library;
+    }
+
+    private Resolution library(Connection c) throws Exception {
+        return new StreamingResolution("application/json", getLibrary(c).toString(indent));
     }
 
     private Resolution styles(Connection c) throws Exception {
