@@ -62,6 +62,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
     @ValidateNestedProperties({
         @Validate(field = "url", required = true, trim = true, maxlength = 255),
+        @Validate(field = "getcapabilities"),
         @Validate(field = "enabled"),
 //        @Validate(field = "baselayer"),
         @Validate(field = "index"),
@@ -95,9 +96,20 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     private boolean dpiConversionEnabled = true;
 
     @Validate
+    private boolean singleTile = true;
+
+    @Validate
+    private boolean hiDPI = true;
+
+    @Validate
+    private Double maxResolution;
+
+    @Validate
     private String layerToggleKey;
 
     private String mapFilesJson = "{}";
+
+    private boolean vrhObjectsEnabled = false;
 
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
@@ -166,6 +178,30 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         this.featureInfoRadius = featureInfoRadius;
     }
 
+    public boolean isSingleTile() {
+        return singleTile;
+    }
+
+    public void setSingleTile(boolean singleTile) {
+        this.singleTile = singleTile;
+    }
+
+    public boolean isHiDPI() {
+        return hiDPI;
+    }
+
+    public void setHiDPI(boolean hiDPI) {
+        this.hiDPI = hiDPI;
+    }
+
+    public Double getMaxResolution() {
+        return maxResolution;
+    }
+
+    public void setMaxResolution(Double maxResolution) {
+        this.maxResolution = maxResolution;
+    }
+
     public String getParams() {
         return params;
     }
@@ -205,18 +241,28 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     public void setLayerToggleKey(String layerToggleKey) {
         this.layerToggleKey = layerToggleKey;
     }
+
+    public boolean isVrhObjectsEnabled() {
+        return vrhObjectsEnabled;
+    }
+
+    public void setVrhObjectsEnabled(boolean vrhObjectsEnabled) {
+        this.vrhObjectsEnabled = vrhObjectsEnabled;
+    }
     // </editor-fold>
 
     @Before
-    private void loadLayers() throws NamingException, SQLException {
+    private void loadInfo() throws NamingException, SQLException {
         layers = qr().query(
                 "select * from " + TABLE + " where layertype = 'WMS' order by gid",
                 new BeanListHandler<>(ConfiguredLayer.class));
+
+        vrhObjectsEnabled = qr().query("select 1 from organisation.modules where name='vrh_objects' and enabled", new ScalarHandler<>()) != null;
     }
 
     @Override
     public Resolution handleValidationErrors(ValidationErrors errors) throws Exception {
-        loadLayers();
+        loadInfo();
         return list();
     }
 
@@ -278,18 +324,27 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
                 tab = n.substring(0, i);
                 name = n.substring(i+1);
             } else {
-                name = n;
+                if(Boolean.TRUE.equals(layer.isGetcapabilities())) {
+                    tab = n;
+                } else {
+                    name = n;
+                }
             }
 
             JSONObject options = null;
-            try {
-                options = new JSONObject(layer.getOptions());
-            } catch(JSONException e) {
+            if(layer.getOptions() != null) {
+                try {
+                    options = new JSONObject(layer.getOptions());
+                } catch(JSONException e) {
+                }
             }
             if(options != null) {
                 visible = options.optBoolean("visibility", visible);
                 hidefeatureinfo = options.optBoolean("hidefeatureinfo", false);
                 featureInfoRadius = options.has("featureInfoRadius") ? options.getInt("featureInfoRadius") : null;
+                maxResolution = options.has("maxResolution") ? options.getDouble("maxResolution") : null;
+                singleTile = options.optBoolean("singleTile", true);
+                hiDPI = options.optBoolean("hiDPI", false);
             }
 
             layerToggleKey = layer.getNotes();
@@ -322,7 +377,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
     public Resolution save() throws Exception {
         if(tab != null) {
-            name = tab + '\\' + name;
+            name = tab + (name == null ? "" : '\\' + name);
             layer.setParent(null);
         } else {
             layer.setParent("#overlaypanel_b2");
@@ -352,6 +407,8 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         }
         options.put("visibility", visible);
         options.put("hidefeatureinfo", hidefeatureinfo);
+        options.put("singleTile", singleTile);
+        options.put("hiDPI", hiDPI);
         if(featureInfoRadius != null) {
             options.put("featureInfoRadius", featureInfoRadius);
         } else {

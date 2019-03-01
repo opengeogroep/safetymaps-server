@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <%@include file="/WEB-INF/jsp/taglibs.jsp"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
+<stripes:useActionBean var="s" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.SettingsActionBean" event="list"/>
+
 <stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Lagen" menuitem="layers">
     <stripes:layout-component name="head">
         <script type="text/javascript" src="${contextPath}/public/js/layers.js"></script>
@@ -35,9 +37,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <thead>
                 <tr>
                     <th>Naam</th>
-                    <th>Inzetbalk knop</th>
+                    <c:if test="${actionBean.vrhObjectsEnabled}">
+                        <th>Inzetbalk knop</th>
+                    </c:if>
                     <th>Beschikbaar</th>
-                    <th>Basislaag</th>
                     <th>Index</th>
                     <th class="table-actions">&nbsp;</th>
                 </tr>
@@ -49,12 +52,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 </stripes:url>
                 <tr style="cursor: pointer" class="${actionBean.layer.gid == l.gid ? 'info' : ''}" onclick="window.location.href='${editLink}'">
                     <td><c:out value="${l.name}"/></td>
-                    <td><c:out value="${l.notes}"/></td>
+                    <c:if test="${actionBean.vrhObjectsEnabled}">
+                        <td><c:out value="${l.notes}"/></td>
+                    </c:if>
                     <td>
                         <span class="glyphicon ${l.enabled ? 'glyphicon-ok-circle text-success' : 'glyphicon-remove-circle'}"></span>
-                    </td>
-                    <td>
-                        <span class="glyphicon ${l.baselayer ? 'glyphicon-ok-circle text-success' : 'glyphicon-remove-circle'}"></span>
                     </td>
                     <td><c:out value="${l.index}"/></td>
                     <td class="table-actions">
@@ -100,27 +102,52 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <label class="col-sm-2 control-label">Naam:</label>
                     <div class="col-sm-10"><stripes:text class="form-control" name="name"/></div>
                 </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">Inzetbalk knop: </label>
-                    <div class="col-sm-10">
-                        <stripes:select name="layerToggleKey" class="form-control">
-                            <stripes:option value="">Geen</stripes:option>
-                            <stripes:option value="Basis">Basis (groen)</stripes:option>
-                            <stripes:option value="Brandweer">Brandweer (rood)</stripes:option>
-                            <stripes:option value="Water">Water (blauw)</stripes:option>
-                            <stripes:option value="Gebouw">Gebouw (zwart)</stripes:option>
-                        </stripes:select>
-                        <p class="help-block">Indien de laag niet gekoppeld is aan een inzetbalk knop kan de laag worden in- en uitgeschakeld via het kaartlagen scherm. Als de laag gekoppeld is aan een knop kan de laag alleen worden geschakeld via de knop.</p>
+                <c:if test="${actionBean.vrhObjectsEnabled}">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Inzetbalk knop: </label>
+                        <div class="col-sm-10">
+                            <stripes:select name="layerToggleKey" class="form-control">
+                                <stripes:option value="">Geen</stripes:option>
+                                <stripes:option value="Basis">Basis (groen)</stripes:option>
+                                <stripes:option value="Brandweer">Brandweer (rood)</stripes:option>
+                                <stripes:option value="Water">Water (blauw)</stripes:option>
+                                <stripes:option value="Gebouw">Gebouw (zwart)</stripes:option>
+                            </stripes:select>
+                            <p class="help-block">Indien de laag niet gekoppeld is aan een inzetbalk knop kan de laag worden in- en uitgeschakeld via het kaartlagen scherm. Als de laag gekoppeld is aan een knop kan de laag alleen worden geschakeld via de knop.</p>
+                        </div>
                     </div>
-                </div>                
+                </c:if>
                 <div class="form-group">
                     <label class="col-sm-2 control-label">URL:</label>
                     <div class="col-sm-10">
                         <stripes:text id="input-url" class="form-control" name="layer.url" size="80" maxlength="255"/><br/>
-                        <select id="select-mapfiles" class="form-control">
-                            <option>Kies beschikbare service...</option>
-                        </select>
-                        <p class="help-block">Kies hier een door Bridge als mapfile ge&euml;xporteerde MXD.</p>
+                        <c:if test="${actionBean.vrhObjectsEnabled}">
+                            <select id="select-mapfiles" class="form-control">
+                                <option>Kies beschikbare service...</option>
+                            </select>
+                            <p class="help-block">Kies hier een door Bridge als mapfile ge&euml;xporteerde MXD.</p>
+                        </c:if>
+                    </div>
+                </div>
+                <c:if test="${!actionBean.vrhObjectsEnabled}">
+                    <div class="form-group">
+                    <label class="col-sm-2 control-label">Modus:</label>
+                    <div class="col-sm-10">
+                        <div class="form-group">
+                            <div class="col-sm-12"><label><stripes:radio name="layer.getcapabilities" value="true"/>Doe WMS GetCapabilities request en voeg alle beschikbare kaartlagen toe aan tabblad</label></div>
+                            <div class="col-sm-12"><label><stripes:radio name="layer.getcapabilities" value="false"/>Direct laag met GetMap ophalen met ingevulde LAYERS parameter (hieronder invullen bij "Lagen")</label></div>
+                        </div>
+                    </div>
+                </c:if>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Lagen:</label>
+                    <div class="col-sm-10">
+                        <stripes:text name="layersParam" class="form-control" /><br/>
+                        <c:if test="${actionBean.vrhObjectsEnabled}">
+                            <select id="select-layer" class="form-control">
+                                <option>Laag toevoegen...</option>
+                            </select>
+                        </c:if>
                     </div>
                 </div>
                 <div class="form-group">
@@ -138,22 +165,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <div class="checkbox">
                             <label><stripes:checkbox name="hidefeatureinfo"/>Geen feature info weergeven</label>
                         </div>
+                        <c:if test="${actionBean.vrhObjectsEnabled}">
+                            <div class="checkbox">
+                                <label><stripes:checkbox name="dpiConversionEnabled"/>ArcGIS naar MapServer DPI conversie</label>
+                            </div>
+                        </c:if>
                         <div class="checkbox">
-                            <label><stripes:checkbox name="dpiConversionEnabled"/>ArcGIS naar MapServer DPI conversie</label>
+                            <label><stripes:checkbox name="singleTile"/>Niet getegeld ophalen (indien kaart snel rendert, sneller en minder dataverbruik)</label>
+                        </div>
+                        <div class="checkbox">
+                            <label><stripes:checkbox name="hiDPI"/>Op hoge resolutie schermen renderen met hoge pixeldichtheid</label>
                         </div>
                         <div class="form-group">
                             <div class="col-sm-2" style="padding-top: 5px">Pixel radius voor feature info:</div>
-                            <div class="col-sm-10"><stripes-dynattr:text name="featureInfoRadius" class="form-control input-sm" type="number"/></div>
+                            <div class="col-sm-10"><stripes-dynattr:text name="featureInfoRadius" class="form-control input-sm" style="width: 80px" type="number"/></div>
                         </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">Lagen:</label>
-                    <div class="col-sm-10">
-                        <stripes:text name="layersParam" class="form-control" /><br/>
-                        <select id="select-layer" class="form-control">
-                            <option>Laag toevoegen...</option>
-                        </select>                    
+                        <div class="form-group">
+                            <div class="col-sm-2" style="padding-top: 5px">Niet weergeven boven resolutie</div>
+                            <div class="col-sm-10"><stripes-dynattr:text name="maxResolution" class="form-control input-sm" style="width: 80px" type="number" step="0.0001" min="0"/></div>
+                            <div class="col-sm-12">
+                                (Wanneer een kaart niet zichtbaar hoeft te zijn, vermindert dit het dataverbruik. <a href="<c:out value="${s.settings['static_url']}?res=true"/>" target="_blank">Open voertuigviewer met resolutie weergave</a>)
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <%--div class="form-group">
