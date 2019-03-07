@@ -414,6 +414,9 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         } else {
             options.remove("featureInfoRadius");
         }
+        if(maxResolution != null) {
+            options.put("maxResolution", maxResolution);
+        }
 
         Object[] qparams = new Object[] {
             name,
