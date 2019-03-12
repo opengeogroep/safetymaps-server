@@ -108,5 +108,38 @@
     </session-config>
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
-    </welcome-file-list>    
+    </welcome-file-list>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>login</web-resource-name>
+            <url-pattern>/login</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>*</role-name>
+        </auth-constraint>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>admin</web-resource-name>
+            <url-pattern>/admin/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>admin</role-name>
+        </auth-constraint>
+    </security-constraint>
+    <security-role>
+        <role-name>*</role-name>
+        <role-name>admin</role-name>
+    </security-role>
+    <login-config>
+        <!-- BASIC is useful during development with lots of redeploys, use
+             FORM for production
+        -->
+        <auth-method>FORM</auth-method>
+        <form-login-config>
+            <form-login-page>/login.jsp</form-login-page>
+            <form-error-page>/loginfail.jsp</form-error-page>
+        </form-login-config>
+    </login-config>
 </web-app>

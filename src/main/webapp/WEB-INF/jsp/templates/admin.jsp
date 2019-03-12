@@ -57,7 +57,8 @@
                         <ul class="nav navbar-nav navbar-right">
                             <li><a href="<c:out value="${s.settings['static_url']}"/>" target="_blank">Open voertuigviewer</a></li>
                             <li><a href="${contextPath}/about.jsp">Versie</a></li>
-                            <%--li><a href=#">Ingelogd als: <span class="username"><c:out value="${pageContext.request.userPrincipal.name}"/></span></a></li--%>
+                            <li><a href="<c:url value="/authinfo.jsp"/>">Ingelogd als: <span class="username"><c:out value="${pageContext.request.userPrincipal.name}"/></span></a></li>
+                            <li><a href="<c:url value="/logout.jsp"/>">Uitloggen</a></li>
                         </ul>
                     </div>
                 </div>
