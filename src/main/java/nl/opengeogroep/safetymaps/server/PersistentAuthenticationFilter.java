@@ -108,9 +108,11 @@ public class PersistentAuthenticationFilter implements Filter {
         }
 
         Cookie authCookie = null;
-        for(Cookie cookie: request.getCookies()) {
-            if(COOKIE_NAME.equals(cookie.getName())) {
-                authCookie = cookie;
+        if(request.getCookies() != null) {
+            for(Cookie cookie: request.getCookies()) {
+                if(COOKIE_NAME.equals(cookie.getName())) {
+                    authCookie = cookie;
+                }
             }
         }
 
