@@ -19,10 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html><html>
     <head>
-        <stripes:url var="url" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean"/>
-        <meta http-equiv="Refresh" content="0;url=${contextPath}/admin/">
-        <title>Index</title>
+        <%--meta http-equiv="Refresh" content="0;url=${contextPath}/viewer/"--%>
+        <title>SafetyMaps</title>
     </head>
     <body>
+        <a href="viewer.jsp">Viewer</a><p>
+        <a href="${contextPath}/admin/">Admin</a>
     </body>
 </html>
