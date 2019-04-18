@@ -28,16 +28,16 @@ import org.json.JSONObject;
 /**
  * API for online safetymaps-viewer sites.
  *
- * /api/organisation.json: general settings
- * /api/features.json: objects for creator objects, with ETag caching
- * /api/object/n.json: creator object details
- * /api/library.json: creator library
- * /api/autocomplete/search: see NLExtractBagAddressSearchActionBean
+ * /viewer/api/organisation.json: general settings
+ * /viewer/api/features.json: objects for creator objects, with ETag caching
+ * /viewer/api/object/n.json: creator object details
+ * /viewer/api/library.json: creator library
+ * /viewer/api/autocomplete/search: see NLExtractBagAddressSearchActionBean
  *
  * @author Matthijs Laan
  */
 @StrictBinding
-@UrlBinding("/api/{path}")
+@UrlBinding("/viewer/api/{path}")
 public class ViewerApiActionBean implements ActionBean {
     private static final Log log = LogFactory.getLog(ViewerApiActionBean.class);
 

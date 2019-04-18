@@ -9,6 +9,7 @@ import net.sourceforge.stripes.action.ActionBean;
 import net.sourceforge.stripes.action.ActionBeanContext;
 import net.sourceforge.stripes.action.DefaultHandler;
 import net.sourceforge.stripes.action.Resolution;
+import net.sourceforge.stripes.action.UrlBinding;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 
@@ -16,6 +17,7 @@ import org.apache.commons.dbutils.handlers.MapListHandler;
  *
  * @author Matthijs Laan
  */
+@UrlBinding("/admin/action/modules")
 public class ModulesActionBean implements ActionBean {
     private ActionBeanContext context;
 

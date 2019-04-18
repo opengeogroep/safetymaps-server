@@ -71,7 +71,8 @@ public class PersistentAuthenticationFilter implements Filter {
 
         this.enabled = "true".equals(ObjectUtils.firstNonNull(getInitParameter(PARAM_ENABLED), "true"));
         this.persistentLoginPrefix = ObjectUtils.firstNonNull(getInitParameter(PARAM_PERSISTENT_LOGIN_PATH_PREFIX), "/");
-        this.loginUrl = ObjectUtils.firstNonNull(getInitParameter(PARAM_LOGIN_URL), "/viewer-forcelogin.jsp");
+
+        this.loginUrl = ObjectUtils.firstNonNull(getInitParameter(PARAM_LOGIN_URL), "/viewer/api/login");
         this.logoutUrl = ObjectUtils.firstNonNull(getInitParameter(PARAM_LOGIN_URL), "/logout.jsp");
         /*this.headerPrefix = ObjectUtils.firstNonNull(getInitParameter(PARAM_HEADER_PREFIX), "[disabled]");
         this.enabled = !"[disabled]".equals(this.headerPrefix);

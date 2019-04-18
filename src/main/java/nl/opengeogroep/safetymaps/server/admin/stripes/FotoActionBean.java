@@ -26,6 +26,7 @@ import net.sourceforge.stripes.action.ErrorResolution;
 import net.sourceforge.stripes.action.ForwardResolution;
 import net.sourceforge.stripes.action.Resolution;
 import net.sourceforge.stripes.action.SimpleMessage;
+import net.sourceforge.stripes.action.UrlBinding;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -37,6 +38,7 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author martijn
  */
+@UrlBinding("/admin/action/foto")
 public class FotoActionBean implements ActionBean {
     
     private static final Log log = LogFactory.getLog(FotoActionBean.class);

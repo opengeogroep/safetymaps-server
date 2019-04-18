@@ -20,7 +20,7 @@
         </init-param>
         <init-param>
             <param-name>persistentLoginPathPrefix</param-name>
-            <param-value>/viewer/</param-value>
+            <param-value>/viewer/api/</param-value>
         </init-param>
     </filter>
     <filter>
@@ -78,6 +78,10 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
     <filter-mapping>
+        <filter-name>PersistentAuthenticationFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
         <filter-name>StripesFilter</filter-name>
         <url-pattern>*.jsp</url-pattern>
     </filter-mapping>
@@ -89,10 +93,6 @@
         <dispatcher>INCLUDE</dispatcher>
         <dispatcher>ERROR</dispatcher>
     </filter-mapping>
-    <filter-mapping>
-        <filter-name>PersistentAuthenticationFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
     <servlet>
         <servlet-name>StripesDispatcher</servlet-name>
         <servlet-class>net.sourceforge.stripes.controller.DispatcherServlet</servlet-class>
@@ -103,22 +103,22 @@
         <servlet-class>nl.opengeogroep.safetymaps.server.ViewerApiForwardServlet</servlet-class>
         <load-on-startup>2</load-on-startup>
     </servlet>
-    <servlet-mapping>
+    <!--servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>*.action</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>/action/*</url-pattern>
-    </servlet-mapping>
+    </servlet-mapping-->
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
-        <url-pattern>/api/*</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ViewerApiForwarder</servlet-name>
         <url-pattern>/viewer/api/*</url-pattern>
     </servlet-mapping>
+    <!--servlet-mapping>
+        <servlet-name>ViewerApiForwarder</servlet-name>
+        <url-pattern>/viewer/api/*</url-pattern>
+    </servlet-mapping-->
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>/admin/action/*</url-pattern>
@@ -139,15 +139,6 @@
 
     <security-constraint>
         <web-resource-collection>
-            <web-resource-name>login</web-resource-name>
-            <url-pattern>/login</url-pattern>
-        </web-resource-collection>
-        <auth-constraint>
-            <role-name>*</role-name>
-        </auth-constraint>
-    </security-constraint>
-    <security-constraint>
-        <web-resource-collection>
             <web-resource-name>admin</web-resource-name>
             <url-pattern>/admin/*</url-pattern>
         </web-resource-collection>
@@ -158,7 +149,7 @@
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>viewer-login</web-resource-name>
-            <url-pattern>/viewer-forcelogin.jsp</url-pattern>
+            <url-pattern>/viewer/api/login</url-pattern>
         </web-resource-collection>
         <auth-constraint>
             <role-name>viewer</role-name>
@@ -170,9 +161,6 @@
         <role-name>admin</role-name>
     </security-role>
     <login-config>
-        <!-- BASIC is useful during development with lots of redeploys, use
-             FORM for production
-        -->
         <auth-method>FORM</auth-method>
         <form-login-config>
             <form-login-page>/login.jsp</form-login-page>

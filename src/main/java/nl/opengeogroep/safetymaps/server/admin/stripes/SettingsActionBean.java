@@ -13,6 +13,7 @@ import org.apache.commons.dbutils.handlers.MapListHandler;
  *
  * @author Matthijs Laan
  */
+@UrlBinding("/admin/action/settings")
 public class SettingsActionBean implements ActionBean {
     private ActionBeanContext context;
 
