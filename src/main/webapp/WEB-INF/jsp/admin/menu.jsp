@@ -6,13 +6,18 @@
 <c:if test="${staticBean.updateRequired}">Configuratie aangepast: <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.StaticViewerActionBean">update</stripes:link> van voertuigviewer nodig</c:if>
 <ul class="nav navbar-nav">
     <li${menuitem == 'index' ? ' class="active"' : ''}><a href="${contextPath}/admin/index.jsp">Start</a></li>
-    <li class="dropdown">
-        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Voertuig <span class="caret"></span></a>
-        <ul class="dropdown-menu">
-            <li${menuitem == 'static' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.StaticViewerActionBean">Update</stripes:link></li>
-            <li${menuitem == 'sync' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.SyncStatusActionBean">Synchronisatie</stripes:link></li>
-        </ul>
-    </li>
+
+    <stripes:useActionBean var="s" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.SettingsActionBean" event="list"/>
+
+    <c:if test="${s.settings['hide_onboard'] != 'true'}">
+        <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Voertuig <span class="caret"></span></a>
+            <ul class="dropdown-menu">
+                <li${menuitem == 'static' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.StaticViewerActionBean">Update</stripes:link></li>
+                <li${menuitem == 'sync' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.SyncStatusActionBean">Synchronisatie</stripes:link></li>
+            </ul>
+        </li>
+    </c:if>
     <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Configuratie <span class="caret"></span></a>
         <ul class="dropdown-menu">
