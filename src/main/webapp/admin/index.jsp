@@ -24,11 +24,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <p>
             Kies in het menu een optie om instellingen aan te passen.
         </p>
-        <p>
-            De aanpassingen van de configuratie worden direct zichtbaar in een
-            online SafetyMaps kantoorviewer. Voor de voertuigviewer moeten de 
-            aanpassingen mogelijk handmatig worden toegepast op de 
-            <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.StaticViewerActionBean">Voertuigviewer</stripes:link> pagina.
-        </p>
+
+        <stripes:useActionBean var="s" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.SettingsActionBean" event="list"/>
+
+        <c:if test="${s.settings['hide_onboard'] != 'true'}">
+            <p>
+                De aanpassingen van de configuratie worden direct zichtbaar in een
+                online SafetyMaps kantoorviewer. Voor de voertuigviewer moeten de
+                aanpassingen mogelijk handmatig worden toegepast op de
+                <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.StaticViewerActionBean">Voertuigviewer</stripes:link> pagina.
+            </p>
+        </c:if>
     </stripes:layout-component>
 </stripes:layout-render>
