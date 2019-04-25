@@ -31,6 +31,7 @@
         </ul>
     </li>
     <li${menuitem == 'fotofunctie' ? ' class="active"' : ''}><a href="${contextPath}/admin/fotomanager.jsp">Beheer fotofunctie</a></li>
+    <li${menuitem == 'edit' ? ' class="active"' : ''}><a href="${contextPath}/admin/edit.jsp">Tekening opslaan/laden</a></li>
     <%--li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Datasets <span class="caret"></span></a>
         <ul class="dropdown-menu">

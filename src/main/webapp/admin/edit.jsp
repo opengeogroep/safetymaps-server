@@ -17,14 +17,68 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <%@include file="/WEB-INF/jsp/taglibs.jsp"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
+<stripes:useActionBean var="s" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.SettingsActionBean" event="list"/>
+
 <stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Tekenen" menuitem="edit">
     <stripes:layout-component name="content">
         
-        <h1>Tekenen</h1>
-        <p>
-            Op deze pagina zou kan bij uitbreiding van de tekenmodule hier de
-            benodigde configuratie worden getoond, of bijvoorbeeld de WMS URL
-            om de tekeningen te delen met veiligheidspartners.
-        </p>
+        <h1>Tekening</h1>
+
+        Met onderstaande knop kan de huidige tekening in GeoJSON formaat worden opgeslagen:
+        <p><p>
+        <button class="btn btn-primary" onclick="download()">Tekening opslaan</button>
+
+        <script>
+
+            function download() {
+                var tekening = ${s.settings['edit']};
+
+                var element = document.createElement('a');
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(tekening));
+                element.setAttribute('download', "lcms-tekening.json");
+
+                element.style.display = 'none';
+                document.body.appendChild(element);
+
+                element.click();
+
+                document.body.removeChild(element);
+            }
+
+        </script>
+      <p><p>
+        Laden van eerder opgeslagen tekening (GeoJSON formaat, nog geen validatie):
+      <p><p>
+        <input type="file" id="file-input" class="btn btn-primary"></input>
+
+        <script>
+            function readFile(e) {
+                var file = e.target.files[0];
+                if (!file) {
+                    return;
+                }
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var contents = e.target.result;
+                    console.log("Loaded file",contents);
+
+                    $.ajax("${contextPath}/api/edit", {
+                        method: "POST",
+                        data: {
+                            save: "true",
+                            features: contents
+                        }
+                    })
+                    .done(function(result) {
+                        $("#msg").text("Tekening is geladen!");
+                    });
+                };
+                reader.readAsText(file);
+            }
+            document.getElementById('file-input')
+              .addEventListener('change', readFile, false);
+        </script>
+
+        <p><p id="msg">
     </stripes:layout-component>
 </stripes:layout-render>
