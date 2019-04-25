@@ -37,7 +37,7 @@ public class PersistentAuthenticationFilter implements Filter {
 
     private static final String SESSION_PRINCIPAL = PersistentAuthenticationFilter.class.getName() + ".PRINCIPAL";
     
-    private static final int COOKIE_EXPIRY = 60 * 60 * 30;
+    private static final int COOKIE_EXPIRY = 60 * 60 * 24 * 365 * 10;
 
     private static final String PARAM_ENABLED = "enabled";
     private static final String PARAM_PERSISTENT_LOGIN_PATH_PREFIX = "persistentLoginPathPrefix";
