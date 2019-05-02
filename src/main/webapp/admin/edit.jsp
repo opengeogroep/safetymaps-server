@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <%@include file="/WEB-INF/jsp/taglibs.jsp"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
-<stripes:useActionBean var="s" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.SettingsActionBean" event="list"/>
 
 <stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Tekenen" menuitem="edit">
     <stripes:layout-component name="content">
@@ -31,18 +30,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <script>
 
             function download() {
-                var tekening = ${s.settings['edit']};
 
-                var element = document.createElement('a');
-                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(tekening));
-                element.setAttribute('download', "lcms-tekening.json");
+                $.ajax("${contextPath}/api/edit", {
+                    method: "GET"
+                })
+                .done(function(result) {
+                    var element = document.createElement('a');
+                    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(result));
+                    element.setAttribute('download', "lcms-tekening.json");
 
-                element.style.display = 'none';
-                document.body.appendChild(element);
+                    element.style.display = 'none';
+                    document.body.appendChild(element);
 
-                element.click();
+                    element.click();
 
-                document.body.removeChild(element);
+                    document.body.removeChild(element);
+                });
             }
 
         </script>
