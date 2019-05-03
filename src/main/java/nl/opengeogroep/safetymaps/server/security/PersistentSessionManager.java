@@ -94,13 +94,13 @@ public class PersistentSessionManager {
         }
 
         // Double check; do not rely on row being deleted when removing a user via user interface, maybe direct db delete by dba!
-        List<Map<String,Object>> removedUserSessions = qr().query("select * from safetymaps.persistent_session ps where not exists (select 1 from safetymaps.user_ u where u.username = ps.username)", new MapListHandler());
+        List<Map<String,Object>> removedUserSessions = qr().query("select * from safetymaps.persistent_session ps where login_source = 'userDatabase' and not exists (select 1 from safetymaps.user_ u where u.username = ps.username)", new MapListHandler());
         if(!removedUserSessions.isEmpty()) {
-            log.info("Removing " + expiredSessions.size() + " sessions for deleted user");
+            log.info("Removing " + removedUserSessions.size() + " sessions for deleted users");
             for(Map<String,Object> session: expiredSessions) {
                 log.info(String.format("Removing session id %s for non-existant user %s", session.get("id"), session.get("username")));
             }
-            qr().update("delete from safetymaps.persistent_session ps where not exists (select 1 from safetymaps.user_ u where u.username = ps.username)");
+            qr().update("delete from safetymaps.persistent_session ps where login_source = 'userDatabase' and not exists (select 1 from safetymaps.user_ u where u.username = ps.username)");
         }
     }
 
