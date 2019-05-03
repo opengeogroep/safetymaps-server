@@ -85,7 +85,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <stripes:submit name="delete" class="btn btn-danger remove-item">Verwijderen</stripes:submit>
                 <stripes:submit name="cancel" class="btn btn-default">Annuleren</stripes:submit>
 
-                <h2>Bewerken van <c:out value="${!empty actionBean.username ? 'gebruiker "'.concat(actionBean.username).concat('"')  : 'nieuwe gebruiker'}"/></h2>
+                <c:choose>
+                    <c:when test="${empty actionBean.username}">
+                        <h2>Bewerken van nieuwe gebruiker</h2>
+                    </c:when>
+                    <c:otherwise>
+                        <h2>Bewerken van gebruiker &quot;<c:out value="${actionBean.username}"/>&quot;</h2>
+                    </c:otherwise>
+                </c:choose>
 
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Gebruikersnaam:</label>
