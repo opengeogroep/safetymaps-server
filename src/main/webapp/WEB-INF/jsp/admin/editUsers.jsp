@@ -114,8 +114,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Groeplidmaatschap:</label>
                     <div class="col-sm-10">
-                    <c:forEach var="role" items="${actionBean.allRoles}">
-                        <label><stripes:checkbox name="roles" class="form-control" value="${role}"/> <c:out value="${role}"/></label>
+                    <c:forEach var="role" items="${actionBean.allRoles}" varStatus="status">
+                        <div class="custom-control custom-checkbox">
+                            <stripes:checkbox name="roles" class="custom-control-input" value="${role}" id="role${status.index}"/>
+                            <label class="custom-control-label" for="role${status.index}"><c:out value="${role}"/></label>
+                        </div>
                     </c:forEach>
                     </div>
                 </div>
