@@ -18,13 +18,11 @@
 package nl.opengeogroep.safetymaps.server.admin.stripes;
 
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.naming.NamingException;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.*;
-import nl.opengeogroep.safetymaps.server.db.Cfg;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
@@ -32,7 +30,6 @@ import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONObject;
 
 /**
  *
@@ -161,7 +158,6 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
         }
         return new RedirectResolution(this.getClass()).flash(this);
     }
-
 
     public Resolution save() throws Exception {
 
