@@ -1,4 +1,4 @@
-package nl.opengeogroep.safetymaps.server;
+package nl.opengeogroep.safetymaps.server.security;
 
 import java.io.IOException;
 import javax.servlet.*;
@@ -6,13 +6,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import java.security.Principal;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import static nl.opengeogroep.safetymaps.server.db.DB.qr;
+import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -41,6 +46,7 @@ public class PersistentAuthenticationFilter implements Filter {
 
     private static final String PARAM_ENABLED = "enabled";
     private static final String PARAM_PERSISTENT_LOGIN_PATH_PREFIX = "persistentLoginPathPrefix";
+    private static final String PARAM_ALLOWED_ROLES = "allowedRoles";
     private static final String PARAM_LOGIN_URL = "loginUrl";
     private static final String PARAM_LOGOUT_URL = "logoutUrl";
 
@@ -48,6 +54,7 @@ public class PersistentAuthenticationFilter implements Filter {
     private boolean enabled;
     private String loginUrl;
     private String logoutUrl;
+    private List<String> allowedRoles;
 
     /**
      * Get a filter init-parameter which can be overriden by a context parameter
@@ -73,17 +80,8 @@ public class PersistentAuthenticationFilter implements Filter {
         this.persistentLoginPrefix = ObjectUtils.firstNonNull(getInitParameter(PARAM_PERSISTENT_LOGIN_PATH_PREFIX), "/");
 
         this.loginUrl = ObjectUtils.firstNonNull(getInitParameter(PARAM_LOGIN_URL), "/viewer/api/login");
-        this.logoutUrl = ObjectUtils.firstNonNull(getInitParameter(PARAM_LOGIN_URL), "/logout.jsp");
-        /*this.headerPrefix = ObjectUtils.firstNonNull(getInitParameter(PARAM_HEADER_PREFIX), "[disabled]");
-        this.enabled = !"[disabled]".equals(this.headerPrefix);
-        this.userHeader = this.headerPrefix + ObjectUtils.firstNonNull(getInitParameter(PARAM_USER_HEADER), "_uid");
-        this.authPath = ObjectUtils.firstNonNull(getInitParameter(PARAM_AUTH_PATH), "auth/saml");
-        this.authInitPath = ObjectUtils.firstNonNull(getInitParameter(PARAM_AUTH_PATH), "auth/init");
-        this.rolesHeader = this.headerPrefix + ObjectUtils.firstNonNull(getInitParameter(PARAM_ROLES_HEADER), "_roles");
-        this.rolesSeparator = ObjectUtils.firstNonNull(getInitParameter(PARAM_ROLES_SEPARATOR), ";");
-        this.useRolesNSuffix = "true".equals(getInitParameter(PARAM_USE_ROLES_NSUFFIX));
-        this.commonRole = getInitParameter(PARAM_COMMON_ROLE);
-        this.saveExtraHeaders = getInitParameter(PARAM_SAVE_EXTRA_HEADERS);*/
+        this.logoutUrl = ObjectUtils.firstNonNull(getInitParameter(PARAM_LOGOUT_URL), "/logout.jsp");
+        this.allowedRoles =  Arrays.asList(ObjectUtils.firstNonNull(getInitParameter(PARAM_ALLOWED_ROLES), "").split(","));
         log.info("Initialized - " + toString());
     }
 
@@ -109,6 +107,7 @@ public class PersistentAuthenticationFilter implements Filter {
         }
 
         Cookie authCookie = null;
+        Map<String,Object> persistentSession = null;
         if(request.getCookies() != null) {
             for(Cookie cookie: request.getCookies()) {
                 if(COOKIE_NAME.equals(cookie.getName())) {
@@ -119,30 +118,55 @@ public class PersistentAuthenticationFilter implements Filter {
 
         if(request.getRequestURI().startsWith(request.getContextPath() + logoutUrl)) {
             if(authCookie != null) {
-                log.info("Clearing persisent login cookie for user " + authCookie.getValue() + " on logout");
-                Cookie cookie = new Cookie(COOKIE_NAME, authCookie.getValue());
+                String sessionId = authCookie.getValue();
+                log.info("Clearing persistent login cookie for persistent session ID " + sessionId + " on logout");
+                Cookie cookie = new Cookie(COOKIE_NAME, sessionId);
                 cookie.setMaxAge(0);
                 response.addCookie(cookie);
+                PersistentSessionManager.deleteSession(sessionId);
             }
             chain.doFilter(request, response);
             return;
         }
 
         if(!request.getRequestURI().startsWith(request.getContextPath() + persistentLoginPrefix)) {
+            // No authentication required
             chain.doFilter(request, response);
             return;
         }
 
+        if(authCookie != null) {
+            String sessionId = authCookie.getValue();
+            persistentSession = PersistentSessionManager.getValidPersistentSession(request, sessionId);
+        }
+
         Principal principal = request.getUserPrincipal();
         if(principal != null) {
-            // If cookie already set, do nothing
-            if(authCookie != null) {
-                log.trace("Request external authenticated for user " + principal.getName() + ", cookie already set, path: " + request.getRequestURI());
+            boolean allowed = false;
+            for(String role: allowedRoles) {
+                if(request.isUserInRole(role)) {
+                    allowed = true;
+                    break;
+                }
+            }
+            if(!allowed) {
+                log.warn("User " + request.getRemoteUser() + " has no access to voertuigviewer (authenticated by user database)");
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Toegang tot voertuigviewer geweigerd");
+                return;
+            }
+
+            // If valid persistent session already set, do nothing
+            if(persistentSession != null) {
+                log.trace("Request external authenticated for user " + principal.getName() + ", persistent session verified, path: " + request.getRequestURI());
                 chain.doFilter(request, response);
                 return;
             }
 
-            Cookie cookie = new Cookie(COOKIE_NAME, principal.getName());
+            // Create new persistent session
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.SECOND, COOKIE_EXPIRY);
+            String id = PersistentSessionManager.createPersistentSession(request, c.getTime());
+            Cookie cookie = new Cookie(COOKIE_NAME, id);
             cookie.setPath(request.getServletContext().getContextPath()); // Set path so we can clear cookie on logout
             cookie.setHttpOnly(true);
             cookie.setSecure(request.getScheme().equals("https"));
@@ -157,18 +181,50 @@ public class PersistentAuthenticationFilter implements Filter {
 
         if(persistentPrincipal != null) {
             log.trace("Request authenticated by cookie for user " + persistentPrincipal.getName() + ", using principal from session: " + request.getRequestURI());
-        } else  {
+        } else if(authCookie == null) {
+            log.info("User not authenticated externally and no persistent session cookie, redirect tologin page");
+            response.sendRedirect(request.getServletContext().getContextPath() + this.loginUrl);
+            return;
+        } else {
 
-            if(authCookie != null) {
-                // TODO check authCookie valid
-                log.info("Using authentication from cookie for user " + authCookie.getValue() + ", saving principal in session: " + request.getRequestURI());
+            if(persistentSession != null) {
+                // persistentSession was found and not expired
+                String obfuscatedSession = (String)persistentSession.get("id");
+                obfuscatedSession = StringUtils.repeat("x", obfuscatedSession.length() / 2) + obfuscatedSession.substring(obfuscatedSession.length() / 2);
+                log.info("Using authentication from cookie session for user " + persistentSession.get("username") + " from session id " + obfuscatedSession + ", saving principal in session: " + request.getRequestURI());
 
-                // TODO get roles from DB
-                persistentPrincipal = new PersistentAuthenticatedPrincipal(authCookie.getValue(), new HashSet(Arrays.asList(new String[] {"viewer"})));
-                request.getSession().setAttribute(SESSION_PRINCIPAL, persistentPrincipal);
+                try {
+                    // Changes in authorizations
+                    List<String> roles = qr().query("select role from safetymaps.user_roles where username = ?", new ColumnListHandler<String>(), persistentSession.get("username"));
+                    if("LDAP".equals(persistentSession.get("login_source"))) {
+                        // XXX original LDAP roles lost. Maybe
+                        // - Save to database (role changes in LDAP never propagated)
+                        // - Recheck using JNDI.. (double LDAP config, extra code)
+                        // For now only grant viewer access
+                        roles.add("LDAPUser");
+                        log.warn("Returning LDAP user " + persistentSession.get("username") + " using persistent session cookie, only granting LDAPUser role and roles by same username, roles: " + roles.toString());
+                    }
+
+                    boolean allowed = false;
+                    for(String role: allowedRoles) {
+                        if(roles.contains(role)) {
+                            allowed = true;
+                            break;
+                        }
+                    }
+                    if(!allowed) {
+                        log.warn("User " + persistentSession.get("username") + " has no access to voertuigviewer (authenticated from persistent session cookie)");
+                        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Toegang tot voertuigviewer geweigerd");
+                        return;
+                    }
+
+                    persistentPrincipal = new PersistentAuthenticatedPrincipal((String)persistentSession.get("username"), new HashSet(roles));
+                    request.getSession().setAttribute(SESSION_PRINCIPAL, persistentPrincipal);
+                } catch(javax.naming.NamingException | java.sql.SQLException e) {
+                    throw new IOException(e);
+                }
             } else {
-
-                log.info("User not authenticated externally or by cooking, redirect tologin page");
+                log.info("User not authenticated externally, persistent cookie is not valid, redirect tologin page");
                 response.sendRedirect(request.getServletContext().getContextPath() + this.loginUrl);
                 return;
             }

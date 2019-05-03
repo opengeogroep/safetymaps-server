@@ -13,7 +13,7 @@
     <filter>
         <description>Persistent logins across browser sessions</description>
         <filter-name>PersistentAuthenticationFilter</filter-name>
-        <filter-class>nl.opengeogroep.safetymaps.server.PersistentAuthenticationFilter</filter-class>
+        <filter-class>nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter</filter-class>
         <init-param>
             <param-name>enabled</param-name>
             <param-value>true</param-value>
@@ -21,6 +21,10 @@
         <init-param>
             <param-name>persistentLoginPathPrefix</param-name>
             <param-value>/viewer/api/</param-value>
+        </init-param>
+        <init-param>
+            <param-name>allowedRoles</param-name>
+            <param-value>viewer,admin,LDAPUser</param-value>
         </init-param>
     </filter>
     <filter>
@@ -98,11 +102,6 @@
         <servlet-class>net.sourceforge.stripes.controller.DispatcherServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
-    <servlet>
-        <servlet-name>ViewerApiForwarder</servlet-name>
-        <servlet-class>nl.opengeogroep.safetymaps.server.ViewerApiForwardServlet</servlet-class>
-        <load-on-startup>2</load-on-startup>
-    </servlet>
     <!--servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>*.action</url-pattern>
@@ -115,10 +114,6 @@
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>/viewer/api/*</url-pattern>
     </servlet-mapping>
-    <!--servlet-mapping>
-        <servlet-name>ViewerApiForwarder</servlet-name>
-        <url-pattern>/viewer/api/*</url-pattern>
-    </servlet-mapping-->
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>/admin/action/*</url-pattern>
@@ -154,6 +149,7 @@
         <auth-constraint>
             <role-name>viewer</role-name>
             <role-name>admin</role-name>
+            <role-name>LDAPUser</role-name>
         </auth-constraint>
     </security-constraint>
     <security-role>
