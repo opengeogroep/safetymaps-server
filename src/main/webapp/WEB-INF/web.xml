@@ -116,6 +116,10 @@
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
+        <url-pattern>/viewer/editAllowed</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>/admin/action/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>

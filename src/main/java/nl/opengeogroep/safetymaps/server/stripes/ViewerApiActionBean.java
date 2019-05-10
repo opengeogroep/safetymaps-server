@@ -3,17 +3,24 @@ package nl.opengeogroep.safetymaps.server.stripes;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.sql.Connection;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
+import static javafx.scene.input.KeyCode.O;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.Validate;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.*;
 import nl.opengeogroep.safetymaps.server.db.DB;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import nl.opengeogroep.safetymaps.viewer.ViewerDataExporter;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
@@ -210,8 +217,37 @@ public class ViewerApiActionBean implements ActionBean {
         return j;
     }
 
+    public static JSONObject getOrganisationWithAuthorizedModules(HttpServletRequest request, Connection c, int srid) throws Exception {
+        Object org = new QueryRunner().query(c, "select \"organisation\" from organisation.organisation_nieuw_json(" + srid + ")", new ScalarHandler<>());
+        JSONObject organisation = new JSONObject(org.toString());
+        if(!request.isUserInRole(ROLE_ADMIN)) {
+            List<Map<String,Object>> roles = qr().query("select role, modules from " + ROLE_TABLE + " where modules is not null", new MapListHandler());
+            Set<String> authorizedModules = new HashSet();
+            for(Map<String,Object> role: roles) {
+                if(request.isUserInRole(role.get("role").toString())) {
+                    String modules = (String)role.get("modules");
+                    authorizedModules.addAll(Arrays.asList(modules.split(", ")));
+                }
+            }
+            JSONArray modules = organisation.getJSONArray("modules");
+            JSONArray jaAuthorizedModules = new JSONArray();
+            for(int i = 0; i < modules.length(); i++) {
+                JSONObject module = modules.getJSONObject(i);
+                if(authorizedModules.contains(module.getString("name"))) {
+                    jaAuthorizedModules.put(module);
+                }
+            }
+            organisation.put("modules", jaAuthorizedModules);
+
+        }
+        JSONObject j = new JSONObject();
+
+        j.put("organisation", organisation);
+        return j;
+    }
+
     private Resolution organisation(Connection c) throws Exception {
-        return new StreamingResolution("application/json", getOrganisation(c, srid).toString(indent));
+        return new StreamingResolution("application/json", getOrganisationWithAuthorizedModules(getContext().getRequest(), c, srid).toString(indent));
     }
 
     public static JSONObject getLibrary(Connection c) throws Exception {

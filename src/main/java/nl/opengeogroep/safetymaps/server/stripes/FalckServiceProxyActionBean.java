@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
 import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.logging.Log;
@@ -50,7 +51,7 @@ public class FalckServiceProxyActionBean implements ActionBean {
     }
 
     public Resolution proxy() throws Exception {
-        if(!context.getRequest().isUserInRole(ROLE)) {
+        if(!context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN)) {
             return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot webservice");
         }
 

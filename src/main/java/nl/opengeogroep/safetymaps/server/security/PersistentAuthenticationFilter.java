@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import static nl.opengeogroep.safetymaps.server.db.DB.USERNAME_LDAP;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.lang3.ObjectUtils;
@@ -195,14 +196,17 @@ public class PersistentAuthenticationFilter implements Filter {
 
                 try {
                     // Changes in authorizations
-                    List<String> roles = qr().query("select role from safetymaps.user_roles where username = ?", new ColumnListHandler<String>(), persistentSession.get("username"));
+                    List<String> roles;
                     if("LDAP".equals(persistentSession.get("login_source"))) {
+                        roles = qr().query("select role from safetymaps.user_roles where username = ?", new ColumnListHandler<String>(), USERNAME_LDAP);
                         // XXX original LDAP roles lost. Maybe
-                        // - Save to database (role changes in LDAP never propagated)
+                        // - Save to database (needs reflection to get list (see authinfo.jsp), role changes in LDAP never propagated)
                         // - Recheck using JNDI.. (double LDAP config, extra code)
-                        // For now only grant viewer access
+                        // For now only grant roles special user has
                         roles.add("LDAPUser");
-                        log.warn("Returning LDAP user " + persistentSession.get("username") + " using persistent session cookie, only granting LDAPUser role and roles by same username, roles: " + roles.toString());
+                        log.warn("Returning LDAP user " + persistentSession.get("username") + " using persistent session cookie, only granting LDAPUser role and roles granted to special user '" + USERNAME_LDAP + "', roles: " + roles.toString());
+                    } else {
+                        roles = qr().query("select role from safetymaps.user_roles where username = ?", new ColumnListHandler<String>(), persistentSession.get("username"));
                     }
 
                     boolean allowed = false;

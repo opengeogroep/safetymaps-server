@@ -19,6 +19,16 @@ public class DB {
     private static final String JNDI_NAME = "java:/comp/env/jdbc/safetymaps-server";
     private static final String JNDI_NAME_BAG = "java:/comp/env/jdbc/nlextract-bag";
 
+    public static final String USER_TABLE = "safetymaps.user_ ";
+    public static final String USER_ROLE_TABLE = "safetymaps.user_roles ";
+    public static final String ROLE_TABLE = "safetymaps.role ";
+    public static final String SESSION_TABLE = "safetymaps.persistent_session ";
+
+    public static final String ROLE_ADMIN = "admin";
+    public static final String ROLE_EDITOR = "editor";
+
+    public static final String USERNAME_LDAP = "ldap_gebruiker";
+
     public static final DataSource getDataSource(String jndiName) throws NamingException {
         InitialContext cxt = new InitialContext();
         log.trace("looking up JNDI resource " + jndiName);

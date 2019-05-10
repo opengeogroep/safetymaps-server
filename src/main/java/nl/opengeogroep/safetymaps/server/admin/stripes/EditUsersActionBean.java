@@ -23,6 +23,11 @@ import java.util.Map;
 import javax.naming.NamingException;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.*;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.SESSION_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.USERNAME_LDAP;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
@@ -41,10 +46,6 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
     private static final Log log = LogFactory.getLog("admin.users");
 
     private static final String JSP = "/WEB-INF/jsp/admin/editUsers.jsp";
-
-    private static final String USER_TABLE = "safetymaps.user_ ";
-    private static final String USER_ROLE_TABLE = "safetymaps.user_roles ";
-    private static final String SESSION_TABLE = "safetymaps.persistent_session ";
 
     private ActionBeanContext context;
 
@@ -115,7 +116,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
 
     @Before
     private void loadInfo() throws NamingException, SQLException {
-        allRoles = qr().query("select distinct role from " + USER_ROLE_TABLE + " order by 1", new ColumnListHandler<String>());
+        allRoles = qr().query("select role from " + ROLE_TABLE + " order by protected desc, role", new ColumnListHandler<String>());
 
         allUsers = qr().query("select 'userDatabase' as login_source, username, (select count(*) from " + SESSION_TABLE + " ps where ps.username = u.username) as session_count, (select max(created_at) from " + SESSION_TABLE + " ps where ps.username = u.username) as last_login\n" +
                 "from " + USER_TABLE + " u\n" +
@@ -144,6 +145,10 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
     }
 
     public Resolution delete() throws Exception {
+        if("admin".equals(username) || USERNAME_LDAP.equals(username)) {
+            getContext().getValidationErrors().addGlobalError(new SimpleError("Speciale gebruiker kan niet verwijderd worden"));
+            return list();
+        }
         // TODO: https://stackoverflow.com/questions/24895177/how-to-access-sessions-in-tomcat-and-terminate-one-of-them
 
         int count = qr().update("delete from " + SESSION_TABLE + " where username = ?", username);

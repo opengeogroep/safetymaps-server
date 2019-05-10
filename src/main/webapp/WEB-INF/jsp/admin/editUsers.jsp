@@ -18,18 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 
 <stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Gebruikersbeheer" menuitem="users">
-    <stripes:layout-component name="head">
-        <%--script type="text/javascript" src="${contextPath}/public/js/editUsers.js"></script--%>
-    </stripes:layout-component>
     <stripes:layout-component name="content">
 
         <h1>Gebruikersbeheer</h1>
-
-        <%--script>
-            var mapFiles = ${actionBean.mapFilesJson};
-
-            $(document).ready(layersInit);
-        </script--%>
 
         <table class="table table-bordered table-striped table-fixed-header table-condensed table-hover" id="layers-table">
             <thead>
@@ -46,7 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <stripes:url var="editLink" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.EditUsersActionBean" event="edit">
                     <stripes:param name="username" value="${u.username}"/>
                 </stripes:url>
-                <c:if test="${u.login_source == 'LDAP'}">
+                <c:if test="${u.login_source == 'LDAP' || u.username == 'admin'}">
                     <c:set var="editLink" value=""/>
                 </c:if>
                 <tr style="${editLink == '' ? '' : 'cursor: pointer'}" class="${actionBean.username == u.username ? 'info' : ''}" onclick="${editLink != '' ? 'window.location.href=\''.concat(editLink).concat('\'') : ''}">
