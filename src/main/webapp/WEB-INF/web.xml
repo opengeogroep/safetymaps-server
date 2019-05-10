@@ -163,4 +163,8 @@
             <form-error-page>/loginfail.jsp</form-error-page>
         </form-login-config>
     </login-config>
+    <error-page>
+        <error-code>403</error-code>
+        <location>/403.jsp</location>
+    </error-page>
 </web-app>

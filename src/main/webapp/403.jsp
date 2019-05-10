@@ -1,5 +1,5 @@
 <%--
-Copyright (C) 2012 B3Partners B.V.
+Copyright (C) 2019 B3Partners B.V.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -17,29 +17,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@include file="/WEB-INF/jsp/taglibs.jsp"%>
-
-<% request.getSession().invalidate(); %>
-
 <!DOCTYPE html>
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <meta name="teststring" content="<h1>Uitgelogd</h1>">
-        <title>Uitgelogd</title>
+        <title>Geen toegang</title>
     </head>
     <body>
-        <h1>Uitgelogd</h1>
+        <h1>U heeft geen toegang tot de gevraagde pagina</h1>
 
-        <b>U bent nu uitgelogd.</b>
         <p>
-        <a href="<c:url value="/"/>">Startpagina</a>
+            Klik
+            <a id="link" href="${contextPath}/logout.jsp">hier</a> om met een ander account in te loggen.
+        </p>
 
         <script>
-            var url = new URL(window.location.href);
-            var r = url.searchParams.get("returnTo");
-            if(r) {
-                window.location.href = r;
-            }
+            var link = document.getElementById("link");
+            var href = link.getAttribute("href");
+            href = href + "?returnTo=" + encodeURIComponent(window.location.href);
+            link.setAttribute("href", href);
+            console.log(href);
         </script>
     </body>
 </html>
