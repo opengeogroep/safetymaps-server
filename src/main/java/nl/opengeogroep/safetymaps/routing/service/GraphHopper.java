@@ -38,7 +38,9 @@ public class GraphHopper implements RoutingService {
     private static final Log log = LogFactory.getLog(GraphHopper.class);
 
     private String URL = "http://localhost:11111/route";
-    
+
+    private String profile = "car";
+
     public GraphHopper() {
     
     }
@@ -49,6 +51,12 @@ public class GraphHopper implements RoutingService {
 
     public void setURL(String URL) {
         this.URL = URL;
+    }
+
+    public void setProfile(String profile) {
+        if(profile != null) {
+            this.profile = profile;
+        }
     }
     
     @Override
@@ -78,7 +86,7 @@ public class GraphHopper implements RoutingService {
                         .addHeader("Accept", "text/json; charset=utf-8, application/json")
                         .addParameter("point", fromTransformed.getX() + "," + fromTransformed.getY())
                         .addParameter("point", toTransformed.getX() + "," + toTransformed.getY())
-                        .addParameter("vehicle", "car")
+                        .addParameter("vehicle", profile)
                         .addParameter("weighting", "fastest")
                         .addParameter("locale", "nl")
                         .addParameter("type", "json")
