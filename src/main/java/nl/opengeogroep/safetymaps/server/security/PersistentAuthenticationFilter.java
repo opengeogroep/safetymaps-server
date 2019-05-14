@@ -5,12 +5,14 @@ import javax.servlet.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import java.security.Principal;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.naming.NamingException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
@@ -19,6 +21,7 @@ import javax.servlet.http.HttpSession;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.DB.USERNAME_LDAP;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
+import static nl.opengeogroep.safetymaps.server.security.PersistentSessionManager.LDAP_GROUP;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -43,6 +46,7 @@ public class PersistentAuthenticationFilter implements Filter {
     private static final String COOKIE_NAME = "sm-plogin";
 
     private static final String SESSION_PRINCIPAL = PersistentAuthenticationFilter.class.getName() + ".PRINCIPAL";
+    private static final String SESSION_ADDITIONAL_ROLES = PersistentAuthenticationFilter.class.getName() + ".ADDITIONAL_ROLES";
     
     private static final int COOKIE_EXPIRY = 60 * 60 * 24 * 365 * 10;
 
@@ -94,6 +98,25 @@ public class PersistentAuthenticationFilter implements Filter {
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
+    }
+
+    private void chainWithPrincipal(final HttpServletRequest request, HttpServletResponse response, FilterChain chain, final AuthenticatedPrincipal principal) throws IOException, ServletException {
+        chain.doFilter(new HttpServletRequestWrapper(request) {
+            @Override
+            public String getRemoteUser() {
+                return principal.getName();
+            }
+
+            @Override
+            public Principal getUserPrincipal() {
+                return principal;
+            }
+
+            @Override
+            public boolean isUserInRole(String role) {
+                return request.isUserInRole(role) || principal.isUserInRole(role);
+            }
+        }, response);
     }
 
     @Override
@@ -160,26 +183,48 @@ public class PersistentAuthenticationFilter implements Filter {
             // If valid persistent session already set, do nothing
             if(persistentSession != null) {
                 log.trace("Request external authenticated for user " + principal.getName() + ", persistent session verified, path: " + request.getRequestURI());
-                chain.doFilter(request, response);
-                return;
-            }
 
-            // Create new persistent session
-            Calendar c = Calendar.getInstance();
-            c.add(Calendar.SECOND, COOKIE_EXPIRY);
-            String id = PersistentSessionManager.createPersistentSession(request, c.getTime());
-            Cookie cookie = new Cookie(COOKIE_NAME, id);
-            cookie.setPath(request.getServletContext().getContextPath()); // Set path so we can clear cookie on logout
-            cookie.setHttpOnly(true);
-            cookie.setSecure(request.getScheme().equals("https"));
-            cookie.setMaxAge(COOKIE_EXPIRY);
-            log.info("Request externally authenticated for user " + principal.getName() + ", setting persistent login cookie " + cookie);
-            response.addCookie(cookie);
-            chain.doFilter(request, response);
-            return;
+                // If LDAP user, apply additional roles from DB user set in session
+                // in other branch of this if statement
+                AuthenticatedPrincipal ldapPrincipal = (AuthenticatedPrincipal)session.getAttribute(SESSION_PRINCIPAL);
+                if(ldapPrincipal != null) {
+                    chainWithPrincipal(request, response, chain, ldapPrincipal);
+                } else {
+                    chain.doFilter(servletRequest, servletResponse);
+                }
+                return;
+
+            } else {
+
+                // Create new persistent session
+                Calendar c = Calendar.getInstance();
+                c.add(Calendar.SECOND, COOKIE_EXPIRY);
+                String id = PersistentSessionManager.createPersistentSession(request, c.getTime());
+                Cookie cookie = new Cookie(COOKIE_NAME, id);
+                cookie.setPath(request.getServletContext().getContextPath()); // Set path so we can clear cookie on logout
+                cookie.setHttpOnly(true);
+                cookie.setSecure(request.getScheme().equals("https"));
+                cookie.setMaxAge(COOKIE_EXPIRY);
+                log.info("Request externally authenticated for user " + principal.getName() + ", setting persistent login cookie " + obfuscateSessionId(id));
+                response.addCookie(cookie);
+
+                // Apply additional roles if LDAP user
+                if(request.isUserInRole(LDAP_GROUP)) {
+                    try {
+                        List<String> roles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), USERNAME_LDAP);
+                        AuthenticatedPrincipal ldapPrincipal = new AuthenticatedPrincipal(principal.getName(), new HashSet<>(roles));
+                        log.info("Apply additional roles for this LDAP user in this session: " + roles);
+                        session.setAttribute(SESSION_PRINCIPAL, ldapPrincipal);
+                        chainWithPrincipal(request, response, chain, ldapPrincipal);
+                        return;
+                    } catch(SQLException | NamingException e) {
+                        throw new IOException(e);
+                    }
+                }
+            }
         }
 
-        PersistentAuthenticatedPrincipal persistentPrincipal = (PersistentAuthenticatedPrincipal)request.getSession().getAttribute(SESSION_PRINCIPAL);
+        AuthenticatedPrincipal persistentPrincipal = (AuthenticatedPrincipal)session.getAttribute(SESSION_PRINCIPAL);
 
         if(persistentPrincipal != null) {
             log.trace("Request authenticated by cookie for user " + persistentPrincipal.getName() + ", using principal from session: " + request.getRequestURI());
@@ -191,8 +236,7 @@ public class PersistentAuthenticationFilter implements Filter {
 
             if(persistentSession != null) {
                 // persistentSession was found and not expired
-                String obfuscatedSession = (String)persistentSession.get("id");
-                obfuscatedSession = StringUtils.repeat("x", obfuscatedSession.length() / 2) + obfuscatedSession.substring(obfuscatedSession.length() / 2);
+                String obfuscatedSession = obfuscateSessionId((String)persistentSession.get("id"));
                 log.info("Using authentication from cookie session for user " + persistentSession.get("username") + " from session id " + obfuscatedSession + ", saving principal in session: " + request.getRequestURI());
 
                 try {
@@ -223,7 +267,7 @@ public class PersistentAuthenticationFilter implements Filter {
                         return;
                     }
 
-                    persistentPrincipal = new PersistentAuthenticatedPrincipal((String)persistentSession.get("username"), new HashSet(roles));
+                    persistentPrincipal = new AuthenticatedPrincipal((String)persistentSession.get("username"), new HashSet(roles));
                     request.getSession().setAttribute(SESSION_PRINCIPAL, persistentPrincipal);
                 } catch(javax.naming.NamingException | java.sql.SQLException e) {
                     throw new IOException(e);
@@ -235,30 +279,20 @@ public class PersistentAuthenticationFilter implements Filter {
             }
         }
 
-        final PersistentAuthenticatedPrincipal thePrincipal = persistentPrincipal;
-        chain.doFilter(new HttpServletRequestWrapper(request) {
-            @Override
-            public String getRemoteUser() {
-                return thePrincipal.getName();
-            }
+        final AuthenticatedPrincipal thePrincipal = persistentPrincipal;
+        chainWithPrincipal(request, response, chain, thePrincipal);
 
-            @Override
-            public Principal getUserPrincipal() {
-                return thePrincipal;
-            }
-
-            @Override
-            public boolean isUserInRole(String role) {
-                return thePrincipal.isUserInRole(role);
-            }
-        }, response);
     }
 
-    private class PersistentAuthenticatedPrincipal implements Principal {
+    private static String obfuscateSessionId(String id) {
+        return StringUtils.repeat("x", id.length() / 2) + id.substring(id.length() / 2);
+    }
+
+    private class AuthenticatedPrincipal implements Principal {
         private final String name;
         private final Set<String> roles;
 
-        public PersistentAuthenticatedPrincipal(String name, Set<String> roles) {
+        public AuthenticatedPrincipal(String name, Set<String> roles) {
             this.name = name;
             this.roles = roles;
         }

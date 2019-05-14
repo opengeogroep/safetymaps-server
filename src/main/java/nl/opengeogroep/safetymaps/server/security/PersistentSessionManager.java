@@ -31,7 +31,7 @@ public class PersistentSessionManager {
     private static Log log = LogFactory.getLog(PersistentSessionManager.class);
 
     // commonRole attribut from META-INF/context.xml <Realm className="org.apache.catalina.realm.JNDIRealm"/> element
-    private static final String LDAP_GROUP = "LDAPUser";
+    public static final String LDAP_GROUP = "LDAPUser";
 
     private static final String SESSION_TABLE = "safetymaps.persistent_session ";
 
