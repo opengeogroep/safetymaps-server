@@ -62,8 +62,9 @@ public class FalckServiceProxyActionBean implements ActionBean {
             return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Geen toegangsgegevens voor webservice geconfigureerd door beheerder");
         }
 
+        String qs = context.getRequest().getQueryString();
         final HttpUriRequest req = RequestBuilder.get()
-                .setUri(url + "/" + path + "?" + context.getRequest().getQueryString())
+                .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
                 .addHeader("Authorization", authorization)
                 .build();
 
