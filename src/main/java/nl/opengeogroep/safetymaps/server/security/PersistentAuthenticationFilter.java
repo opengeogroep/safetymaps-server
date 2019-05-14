@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.DB.USERNAME_LDAP;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
@@ -198,7 +199,7 @@ public class PersistentAuthenticationFilter implements Filter {
                     // Changes in authorizations
                     List<String> roles;
                     if("LDAP".equals(persistentSession.get("login_source"))) {
-                        roles = qr().query("select role from safetymaps.user_roles where username = ?", new ColumnListHandler<String>(), USERNAME_LDAP);
+                        roles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), USERNAME_LDAP);
                         // XXX original LDAP roles lost. Maybe
                         // - Save to database (needs reflection to get list (see authinfo.jsp), role changes in LDAP never propagated)
                         // - Recheck using JNDI.. (double LDAP config, extra code)
@@ -206,7 +207,7 @@ public class PersistentAuthenticationFilter implements Filter {
                         roles.add("LDAPUser");
                         log.warn("Returning LDAP user " + persistentSession.get("username") + " using persistent session cookie, only granting LDAPUser role and roles granted to special user '" + USERNAME_LDAP + "', roles: " + roles.toString());
                     } else {
-                        roles = qr().query("select role from safetymaps.user_roles where username = ?", new ColumnListHandler<String>(), persistentSession.get("username"));
+                        roles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), persistentSession.get("username"));
                     }
 
                     boolean allowed = false;

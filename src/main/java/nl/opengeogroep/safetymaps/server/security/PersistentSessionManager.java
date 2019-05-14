@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Random;
 import javax.naming.NamingException;
 import javax.servlet.http.HttpServletRequest;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -31,6 +32,8 @@ public class PersistentSessionManager {
 
     // commonRole attribut from META-INF/context.xml <Realm className="org.apache.catalina.realm.JNDIRealm"/> element
     private static final String LDAP_GROUP = "LDAPUser";
+
+    private static final String SESSION_TABLE = "safetymaps.persistent_session ";
 
     private static final int SESSION_ID_LENGTH = 16;
 
@@ -65,7 +68,7 @@ public class PersistentSessionManager {
         }
 
         try {
-            qr().update("insert into safetymaps.persistent_session(id, username, created_at, expires_at, remote_ip_login, remote_ip_last, login_source) values (?, ?, ?, ?, ?, ?, ?)",
+            qr().update("insert into " + SESSION_TABLE + "(id, username, created_at, expires_at, remote_ip_login, remote_ip_last, login_source) values (?, ?, ?, ?, ?, ?, ?)",
                     id,
                     username,
                     new java.sql.Timestamp(new java.util.Date().getTime()),
@@ -84,23 +87,23 @@ public class PersistentSessionManager {
         // TODO: for performance maybe only every x seconds
 
         log.debug("Checking for invalid sessions to remove");
-        List<Map<String,Object>> expiredSessions = qr().query("select * from safetymaps.persistent_session where expires_at < now()", new MapListHandler());
+        List<Map<String,Object>> expiredSessions = qr().query("select * from " + SESSION_TABLE + " where expires_at < now()", new MapListHandler());
         if(!expiredSessions.isEmpty()) {
             log.info("Removing " + expiredSessions.size() + " expired sessions");
             for(Map<String,Object> session: expiredSessions) {
                 log.info(String.format("Removing session id %s, expired at %tc for user %s", session.get("id"), new Date(((java.sql.Timestamp)session.get("expires_at")).getTime()), session.get("username")));
             }
-            qr().update("delete from safetymaps.persistent_session where expires_at < now()");
+            qr().update("delete from " + SESSION_TABLE + " where expires_at < now()");
         }
 
         // Double check; do not rely on row being deleted when removing a user via user interface, maybe direct db delete by dba!
-        List<Map<String,Object>> removedUserSessions = qr().query("select * from safetymaps.persistent_session ps where login_source = 'userDatabase' and not exists (select 1 from safetymaps.user_ u where u.username = ps.username)", new MapListHandler());
+        List<Map<String,Object>> removedUserSessions = qr().query("select * from " + SESSION_TABLE + " ps where login_source = 'userDatabase' and not exists (select 1 from " + USER_TABLE + " u where u.username = ps.username)", new MapListHandler());
         if(!removedUserSessions.isEmpty()) {
             log.info("Removing " + removedUserSessions.size() + " sessions for deleted users");
             for(Map<String,Object> session: expiredSessions) {
                 log.info(String.format("Removing session id %s for non-existant user %s", session.get("id"), session.get("username")));
             }
-            qr().update("delete from safetymaps.persistent_session ps where login_source = 'userDatabase' and not exists (select 1 from safetymaps.user_ u where u.username = ps.username)");
+            qr().update("delete from " + SESSION_TABLE + " ps where login_source = 'userDatabase' and not exists (select 1 from " + USER_TABLE + " u where u.username = ps.username)");
         }
     }
 
@@ -109,11 +112,11 @@ public class PersistentSessionManager {
         try {
             removeInvalidSessions();
 
-            Map result = qr().query("select * from safetymaps.persistent_session where id = ?", new MapHandler(), id);
+            Map result = qr().query("select * from " + SESSION_TABLE + " where id = ?", new MapHandler(), id);
             log.debug("Result: " + result);
             if(result != null && !request.getRemoteAddr().equals(result.get("remote_ip_last"))) {
                 log.info(String.format("Changed remote address for session %s from %s to %s", result.get("id"), result.get("remote_ip_last"), request.getRemoteAddr()));
-                qr().update("update safetymaps.persistent_session set remote_ip_last = ? where id = ?", request.getRemoteAddr(), result.get("id"));
+                qr().update("update " + SESSION_TABLE + " set remote_ip_last = ? where id = ?", request.getRemoteAddr(), result.get("id"));
             }
             return result;
         } catch(SQLException | NamingException e) {
@@ -124,7 +127,7 @@ public class PersistentSessionManager {
     public static void deleteSession(String id) throws IOException {
         log.debug("Deleting session for id " + id);
         try {
-            qr().update("delete from safetymaps.persistent_session where id = ?", id);
+            qr().update("delete from " + SESSION_TABLE + " where id = ?", id);
         } catch(SQLException | NamingException e) {
             throw new IOException("Database error", e);
         }
