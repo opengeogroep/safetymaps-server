@@ -20,9 +20,11 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.DB.USERNAME_LDAP;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import static nl.opengeogroep.safetymaps.server.security.PersistentSessionManager.LDAP_GROUP;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
+import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -48,7 +50,8 @@ public class PersistentAuthenticationFilter implements Filter {
     private static final String SESSION_PRINCIPAL = PersistentAuthenticationFilter.class.getName() + ".PRINCIPAL";
     private static final String SESSION_ADDITIONAL_ROLES = PersistentAuthenticationFilter.class.getName() + ".ADDITIONAL_ROLES";
     
-    private static final int COOKIE_EXPIRY = 60 * 60 * 24 * 365 * 10;
+    private static final int EXPIRY_DEFAULT_UNIT = Calendar.YEAR;
+    private static final int EXPIRY_DEFAULT = 10;
 
     private static final String PARAM_ENABLED = "enabled";
     private static final String PARAM_PERSISTENT_LOGIN_PATH_PREFIX = "persistentLoginPathPrefix";
@@ -197,21 +200,49 @@ public class PersistentAuthenticationFilter implements Filter {
             } else {
 
                 // Create new persistent session
+                String dbUsername = request.getRemoteUser();
+                if(request.isUserInRole(LDAP_GROUP)) {
+                    dbUsername = USERNAME_LDAP;
+                }
+
+                Map<String,Object> data;
+                try {
+                    data = qr().query("select * from " + USER_TABLE + " where username = ?", new MapHandler(), dbUsername);
+                } catch(SQLException | NamingException e) {
+                    throw new IOException(e);
+                }
+                Integer expiry = data.containsKey("session_expiry_number") ? (Integer)data.get("session_expiry_number") : null;
+                String expiryTimeUnit = (String)data.get("session_expiry_timeunit");
+
                 Calendar c = Calendar.getInstance();
-                c.add(Calendar.SECOND, COOKIE_EXPIRY);
+                if(expiry != null) {
+                    if(expiryTimeUnit.equals("days")) {
+                        c.add(Calendar.DAY_OF_YEAR, expiry);
+                    } else if(expiryTimeUnit.equals("weeks")) {
+                        c.add(Calendar.WEEK_OF_YEAR, expiry);
+                    } else if(expiryTimeUnit.equals("months")) {
+                        c.add(Calendar.MONTH, expiry);
+                    } else if(expiryTimeUnit.equals("years")) {
+                        c.add(Calendar.YEAR, expiry);
+                    } else {
+                        c.add(EXPIRY_DEFAULT_UNIT, EXPIRY_DEFAULT);
+                    }
+                } else {
+                    c.add(EXPIRY_DEFAULT_UNIT, EXPIRY_DEFAULT);
+                }
                 String id = PersistentSessionManager.createPersistentSession(request, c.getTime());
                 Cookie cookie = new Cookie(COOKIE_NAME, id);
                 cookie.setPath(request.getServletContext().getContextPath()); // Set path so we can clear cookie on logout
                 cookie.setHttpOnly(true);
                 cookie.setSecure(request.getScheme().equals("https"));
-                cookie.setMaxAge(COOKIE_EXPIRY);
+                cookie.setMaxAge((int)((c.getTimeInMillis() - System.currentTimeMillis()) / 1000));
                 log.info("Request externally authenticated for user " + principal.getName() + ", setting persistent login cookie " + obfuscateSessionId(id));
                 response.addCookie(cookie);
 
                 // Apply additional roles if LDAP user
                 if(request.isUserInRole(LDAP_GROUP)) {
                     try {
-                        List<String> roles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), USERNAME_LDAP);
+                        List<String> roles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), dbUsername);
                         AuthenticatedPrincipal ldapPrincipal = new AuthenticatedPrincipal(principal.getName(), new HashSet<>(roles));
                         log.info("Apply additional roles for this LDAP user in this session: " + roles);
                         session.setAttribute(SESSION_PRINCIPAL, ldapPrincipal);

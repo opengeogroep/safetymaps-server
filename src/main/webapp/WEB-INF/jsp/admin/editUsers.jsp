@@ -103,6 +103,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     </div>
                 </div>
                 <div class="form-group">
+                    <label class="col-sm-2 control-label">Automatisch uitloggen na:</label>
+                    <div class="col-sm-10">
+                        <stripes:text name="expiry" size="3"/>
+                        <stripes:select name="expiryTimeUnit">
+                            <stripes:option value="years">jaren</stripes:option>
+                            <stripes:option value="months">maanden</stripes:option>
+                            <stripes:option value="weeks">weken</stripes:option>
+                            <stripes:option value="days">dagen</stripes:option>
+                        </stripes:select>
+                    </div>
+                    <p class="help-block">Automatisch uitloggen gebeurt alleen na inactiviteit van de browsersessie.</p>
+                </div>
+                <div class="form-group">
                     <label class="col-sm-2 control-label">Groeplidmaatschap:</label>
                     <div class="col-sm-10">
                     <c:forEach var="role" items="${actionBean.allRoles}" varStatus="status">

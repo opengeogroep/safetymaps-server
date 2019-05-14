@@ -31,6 +31,7 @@ import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
+import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.logging.Log;
@@ -58,6 +59,12 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
 
     @Validate
     private String password;
+
+    @Validate
+    private Integer expiry;
+
+    @Validate
+    private String expiryTimeUnit;
 
     @Validate
     private List<String> roles;
@@ -112,6 +119,22 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
     public void setAllUsers(List<Map<String, Object>> allUsers) {
         this.allUsers = allUsers;
     }
+
+    public Integer getExpiry() {
+        return expiry;
+    }
+
+    public void setExpiry(Integer expiry) {
+        this.expiry = expiry;
+    }
+
+    public String getExpiryTimeUnit() {
+        return expiryTimeUnit;
+    }
+
+    public void setExpiryTimeUnit(String expiryTimeUnit) {
+        this.expiryTimeUnit = expiryTimeUnit;
+    }
     // </editor-fold>
 
     @Before
@@ -140,7 +163,17 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
     }
 
     public Resolution edit() throws SQLException, NamingException {
-        roles = qr().query("select role from " + USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), username);
+        if(username == null) {
+            expiry = 10;
+            expiryTimeUnit = "years";
+        } else {
+            roles = qr().query("select role from " + USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), username);
+
+            Map<String,Object> data = qr().query("select * from " + USER_TABLE + " where username = ?", new MapHandler(), username);
+            expiry = data.containsKey("session_expiry_number") ? (Integer)data.get("session_expiry_number") : null;
+            expiryTimeUnit = (String)data.get("session_expiry_timeunit");
+        }
+
         return new ForwardResolution(JSP);
     }
 
@@ -177,9 +210,9 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
             hashedPassword = DigestUtils.sha1Hex(password);
         }
 
-        int update = qr().update("update " + USER_TABLE + " set password = ? where username = ?", hashedPassword, username);
+        int update = qr().update("update " + USER_TABLE + " set password = ?, session_expiry_number = ?, session_expiry_timeunit = ? where username = ?", hashedPassword, expiry, expiryTimeUnit, username);
         if(update == 0) {
-            qr().update("insert into " + USER_TABLE + " (username, password) values(?, ?)", username, hashedPassword);
+            qr().update("insert into " + USER_TABLE + " (username, password, session_expiry_number, session_expiry_timeunit) values(?, ?, ?, ?)", username, hashedPassword, expiry, expiryTimeUnit);
         }
         qr().update("delete from " + USER_ROLE_TABLE + " where username = ?", username);
         if(roles != null) {
