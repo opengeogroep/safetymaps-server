@@ -220,6 +220,7 @@ public class ViewerApiActionBean implements ActionBean {
     public static JSONObject getOrganisationWithAuthorizedModules(HttpServletRequest request, Connection c, int srid) throws Exception {
         Object org = new QueryRunner().query(c, "select \"organisation\" from organisation.organisation_nieuw_json(" + srid + ")", new ScalarHandler<>());
         JSONObject organisation = new JSONObject(org.toString());
+        organisation.put("integrated", true);
         if(!request.isUserInRole(ROLE_ADMIN)) {
             List<Map<String,Object>> roles = qr().query("select role, modules from " + ROLE_TABLE + " where modules is not null", new MapListHandler());
             Set<String> authorizedModules = new HashSet();
