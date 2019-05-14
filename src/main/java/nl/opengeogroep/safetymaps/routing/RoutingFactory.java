@@ -32,6 +32,7 @@ public class RoutingFactory {
             } else if("graphhopper".equals(engine)) {
                 String url = Cfg.getSetting("graphhopper_url");
                 GraphHopper service = new GraphHopper();
+                service.setProfile(Cfg.getSetting("graphhopper_profile"));
                 service.setURL(url);
                 log.info("Using GraphHopper engine for routing with URL " + url);
                 return service;
