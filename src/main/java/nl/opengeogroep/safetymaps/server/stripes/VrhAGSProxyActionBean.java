@@ -1,7 +1,13 @@
 package nl.opengeogroep.safetymaps.server.stripes;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.ActionBean;
 import net.sourceforge.stripes.action.ActionBeanContext;
@@ -11,19 +17,23 @@ import net.sourceforge.stripes.action.UrlBinding;
 import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpResponse;
+import static org.apache.http.HttpVersion.HTTP;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import static org.apache.http.client.methods.RequestBuilder.post;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 
 /**
  *
@@ -85,19 +95,38 @@ public class VrhAGSProxyActionBean implements ActionBean {
             String url = Cfg.getSetting("vrh_ags_incidents_url");
 
             String qs = context.getRequest().getQueryString();
-            builder = RequestBuilder.get()
+            builder = RequestBuilder.create(context.getRequest().getMethod())
                     .setUri(url + (path == null ? "" : path) + (qs == null ? "" : "?" + qs));
 
-        }
-/*
-        if("POST".equals(getContext().getRequest().getMethod())) {
-            String contentType = getContext().getRequest().getContentType();
-            if(contentType.contains(";")) {
-                contentType = contentType.split(";")[0];
+            if("POST".equals(getContext().getRequest().getMethod())) {
+                String contentType = getContext().getRequest().getContentType();
+                if(contentType != null && contentType.contains("application/x-www-form-urlencoded")) {
+
+                    List <NameValuePair> nvps = new ArrayList<>();
+                    for(Map.Entry<String,String[]> param: context.getRequest().getParameterMap().entrySet()) {
+                        nvps.add(new BasicNameValuePair(param.getKey(), context.getRequest().getParameter(param.getKey())));
+                    }
+
+                    builder.setEntity(new UrlEncodedFormEntity(nvps, "UTF-8"));
+                } else {
+                    /*
+                    if(contentType.contains(";")) {
+                        contentType = contentType.split(";")[0];
+                    }
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    IOUtils.copy(context.getRequest().getInputStream(), bos);
+                    byte[] body = bos.toByteArray();
+                    log.debug("Setting body content type " + contentType + " to: " + new String(body));
+                    ByteArrayInputStream bis = new ByteArrayInputStream(body);
+                    builder.setEntity(new InputStreamEntity(bis, body.length, ContentType.create(contentType)));
+                    //builder.setEntity(new InputStreamEntity(getContext().getRequest().getInputStream(), ContentType.create(contentType)));
+                    */
+
+                    return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Post alleen x-www-form-urlencoded naar proxy!");
+                }
             }
-            builder.setEntity(new InputStreamEntity(getContext().getRequest().getInputStream(), ContentType.create(contentType)));
         }
-*/
+
         final HttpUriRequest req = builder.build();
 
         try(CloseableHttpClient client = HttpClients.createDefault()) {
@@ -106,7 +135,12 @@ public class VrhAGSProxyActionBean implements ActionBean {
                 @Override
                 public String handleResponse(HttpResponse hr) {
                     log.debug("proxy for user " + context.getRequest().getRemoteUser() + " URL " + req.getURI() + ", response: " + hr.getStatusLine().getStatusCode() + " " + hr.getStatusLine().getReasonPhrase());
-                    contentType.setValue(hr.getEntity().getContentType().getValue());
+                    if(log.isTraceEnabled()) {
+                        log.trace("response headers: " + Arrays.asList(hr.getAllHeaders()));
+                    }
+                    if(hr.getEntity() != null && hr.getEntity().getContentType() != null) {
+                        contentType.setValue(hr.getEntity().getContentType().getValue());
+                    }
                     try {
                         // XXX streaming werkt niet?
                         return IOUtils.toString(hr.getEntity().getContent(), "UTF-8");
