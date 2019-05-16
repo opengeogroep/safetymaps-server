@@ -155,7 +155,7 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
             return list();
         }
 
-        String s = String.join(", ", modules);
+        String s = String.join(", ", modules.toArray(new String[]{}));
 
         int update = qr().update("update " + ROLE_TABLE + " set modules = ? where role = ?", s, role);
         if(update == 0) {
