@@ -1,9 +1,9 @@
 package nl.opengeogroep.safetymaps.server.stripes;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,15 +22,13 @@ import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpResponse;
-import static org.apache.http.HttpVersion.HTTP;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
-import static org.apache.http.client.methods.RequestBuilder.post;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.conn.ssl.SSLContextBuilder;
+import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
@@ -129,7 +127,7 @@ public class VrhAGSProxyActionBean implements ActionBean {
 
         final HttpUriRequest req = builder.build();
 
-        try(CloseableHttpClient client = HttpClients.createDefault()) {
+        try(CloseableHttpClient client = createHttpClient()) {
             final MutableObject<String> contentType = new MutableObject<>("text/plain");
             String content = client.execute(req, new ResponseHandler<String>() {
                 @Override
@@ -158,4 +156,14 @@ public class VrhAGSProxyActionBean implements ActionBean {
         }
     }
 
+    private CloseableHttpClient createHttpClient() throws Exception {
+        return HttpClients.custom()
+                .setSslcontext(new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy() {
+                        @Override
+                        public boolean isTrusted(X509Certificate[] xcs, String string) throws CertificateException {
+                            return true;
+                        }
+                }).build())
+                .build();
+    }
 }
