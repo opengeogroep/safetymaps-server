@@ -31,6 +31,7 @@ import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -155,7 +156,7 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
             return list();
         }
 
-        String s = String.join(", ", modules.toArray(new String[]{}));
+        String s = StringUtils.join(modules, ", ");
 
         int update = qr().update("update " + ROLE_TABLE + " set modules = ? where role = ?", s, role);
         if(update == 0) {
