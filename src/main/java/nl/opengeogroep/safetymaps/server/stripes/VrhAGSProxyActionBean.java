@@ -87,42 +87,13 @@ public class VrhAGSProxyActionBean implements ActionBean {
                     .addParameter("username", authorization.split(":")[0])
                     .addParameter("password", authorization.split(":")[1]);
         } else if(path != null && path.startsWith("Eenheden")) {
-            // TODO
-            return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Eenheden proxy nog niet beschikbaar");
+            String url = Cfg.getSetting("vrh_ags_eenheden_url");
+
+            path = path.substring("Eenheden".length());
+            builder = buildProxyRequestBuilder(url);
         } else {
             String url = Cfg.getSetting("vrh_ags_incidents_url");
-
-            String qs = context.getRequest().getQueryString();
-            builder = RequestBuilder.create(context.getRequest().getMethod())
-                    .setUri(url + (path == null ? "" : path) + (qs == null ? "" : "?" + qs));
-
-            if("POST".equals(getContext().getRequest().getMethod())) {
-                String contentType = getContext().getRequest().getContentType();
-                if(contentType != null && contentType.contains("application/x-www-form-urlencoded")) {
-
-                    List <NameValuePair> nvps = new ArrayList<>();
-                    for(Map.Entry<String,String[]> param: context.getRequest().getParameterMap().entrySet()) {
-                        nvps.add(new BasicNameValuePair(param.getKey(), context.getRequest().getParameter(param.getKey())));
-                    }
-
-                    builder.setEntity(new UrlEncodedFormEntity(nvps, "UTF-8"));
-                } else {
-                    /*
-                    if(contentType.contains(";")) {
-                        contentType = contentType.split(";")[0];
-                    }
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    IOUtils.copy(context.getRequest().getInputStream(), bos);
-                    byte[] body = bos.toByteArray();
-                    log.debug("Setting body content type " + contentType + " to: " + new String(body));
-                    ByteArrayInputStream bis = new ByteArrayInputStream(body);
-                    builder.setEntity(new InputStreamEntity(bis, body.length, ContentType.create(contentType)));
-                    //builder.setEntity(new InputStreamEntity(getContext().getRequest().getInputStream(), ContentType.create(contentType)));
-                    */
-
-                    return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Post alleen x-www-form-urlencoded naar proxy!");
-                }
-            }
+            builder = buildProxyRequestBuilder(url);
         }
 
         final HttpUriRequest req = builder.build();
@@ -154,6 +125,41 @@ public class VrhAGSProxyActionBean implements ActionBean {
             log.error("Failed to write output:", e);
             return null;
         }
+    }
+
+    private RequestBuilder buildProxyRequestBuilder(String url) throws Exception {
+        String qs = context.getRequest().getQueryString();
+        RequestBuilder builder = RequestBuilder.create(context.getRequest().getMethod())
+                .setUri(url + (path == null ? "" : path) + (qs == null ? "" : "?" + qs));
+
+        if("POST".equals(getContext().getRequest().getMethod())) {
+            String contentType = getContext().getRequest().getContentType();
+            if(contentType != null && contentType.contains("application/x-www-form-urlencoded")) {
+
+                List <NameValuePair> nvps = new ArrayList<>();
+                for(Map.Entry<String,String[]> param: context.getRequest().getParameterMap().entrySet()) {
+                    nvps.add(new BasicNameValuePair(param.getKey(), context.getRequest().getParameter(param.getKey())));
+                }
+
+                builder.setEntity(new UrlEncodedFormEntity(nvps, "UTF-8"));
+            } else {
+                /*
+                if(contentType.contains(";")) {
+                    contentType = contentType.split(";")[0];
+                }
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                IOUtils.copy(context.getRequest().getInputStream(), bos);
+                byte[] body = bos.toByteArray();
+                log.debug("Setting body content type " + contentType + " to: " + new String(body));
+                ByteArrayInputStream bis = new ByteArrayInputStream(body);
+                builder.setEntity(new InputStreamEntity(bis, body.length, ContentType.create(contentType)));
+                //builder.setEntity(new InputStreamEntity(getContext().getRequest().getInputStream(), ContentType.create(contentType)));
+                */
+
+                throw new Exception("Post alleen x-www-form-urlencoded naar proxy!");
+            }
+        }
+        return builder;
     }
 
     private CloseableHttpClient createHttpClient() throws Exception {
