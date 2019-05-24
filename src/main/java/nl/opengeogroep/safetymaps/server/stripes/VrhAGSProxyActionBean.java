@@ -1,6 +1,7 @@
 package nl.opengeogroep.safetymaps.server.stripes;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -8,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.ActionBean;
 import net.sourceforge.stripes.action.ActionBeanContext;
@@ -100,7 +103,7 @@ public class VrhAGSProxyActionBean implements ActionBean {
 
         try(CloseableHttpClient client = createHttpClient()) {
             final MutableObject<String> contentType = new MutableObject<>("text/plain");
-            String content = client.execute(req, new ResponseHandler<String>() {
+            final String content = client.execute(req, new ResponseHandler<String>() {
                 @Override
                 public String handleResponse(HttpResponse hr) {
                     log.debug("proxy for user " + context.getRequest().getRemoteUser() + " URL " + req.getURI() + ", response: " + hr.getStatusLine().getStatusCode() + " " + hr.getStatusLine().getReasonPhrase());
@@ -120,7 +123,28 @@ public class VrhAGSProxyActionBean implements ActionBean {
                 }
             });
 
-            return new StreamingResolution(contentType.getValue(), new StringReader(content));
+            return new Resolution() {
+                @Override
+                public void execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
+                    String encoding = "UTF-8";
+                    response.setCharacterEncoding(encoding);
+                    response.setContentType(contentType.getValue());
+
+                    OutputStream out;
+                    String acceptEncoding = request.getHeader("Accept-Encoding");
+                    if(acceptEncoding != null && acceptEncoding.contains("gzip")) {
+                        response.setHeader("Content-Encoding", "gzip");
+                        out = new GZIPOutputStream(response.getOutputStream(), true);
+                    } else {
+                        out = response.getOutputStream();
+                    }
+                    IOUtils.copy(new StringReader(content), out, encoding);
+                    out.flush();
+                    out.close();
+                }
+            };
+
+            //return new StreamingResolution(contentType.getValue(), new StringReader(content));
         } catch(IOException e) {
             log.error("Failed to write output:", e);
             return null;
