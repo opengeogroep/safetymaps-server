@@ -25,6 +25,7 @@ public class DB {
     public static final String SESSION_TABLE = "safetymaps.persistent_session ";
 
     public static final String ROLE_ADMIN = "admin";
+    public static final String USER_ADMIN = "admin";
     public static final String ROLE_EDITOR = "editor";
 
     public static final String USERNAME_LDAP = "ldap_gebruiker";

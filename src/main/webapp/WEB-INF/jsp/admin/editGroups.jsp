@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <p>Let op! Voor een gebruiker zijn alleen de modules beschikbaar die bij groepen waarvan hij lid
             van is geautoriseerd zijn (cumulatief).</p>
 
-        <p>Speciale groepen kunnen niet bewerkt worden.</p>
+        <p>Voor speciale groepen kunnen geen modules ingesteld worden.</p>
 
         <table class="table table-bordered table-striped table-fixed-header table-condensed table-hover" id="layers-table">
             <thead>
@@ -41,9 +41,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <stripes:url var="editLink" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.EditGroupsActionBean" event="edit">
                     <stripes:param name="role" value="${r.role}"/>
                 </stripes:url>
-                <c:if test="${r['protected']}">
+                <%--c:if test="${r['protected']}">
                     <c:set var="editLink" value=""/>
-                </c:if>
+                </c:if--%>
                 <tr style="${editLink == '' ? '' : 'cursor: pointer'}" class="${actionBean.role == r.role ? 'info' : ''}" onclick="${editLink != '' ? 'window.location.href=\''.concat(editLink).concat('\'') : ''}">
                     <td><c:out value="${r.role}"/></td>
                     <td><c:out value="${r.description}"/></td>
@@ -99,17 +99,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         </c:if>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="col-sm-2 control-label">Afgeschermde modules:</label>
-                    <div class="col-sm-10">
-                        Let op! Indien de module voor alle gebruikers is uitgeschakeld is deze doorgestreept.
-                        <p>                        
-                    <c:forEach var="module" items="${actionBean.allModules}" varStatus="status">
-                        <div class="custom-control custom-checkbox">
-                            <stripes:checkbox name="modules" class="custom-control-input" value="${module.name}" id="role${status.index}"/>
-                            <label class="custom-control-label" for="role${status.index}" style="${module.enabled ? '' : 'text-decoration: line-through'}"><c:out value="${module.name}"/></label>
+                <c:if test="${!actionBean.protectedGroup}">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Geautoriseerde modules:</label>
+                        <div class="col-sm-10">
+                            Let op! Indien de module voor alle gebruikers is uitgeschakeld is deze doorgestreept.
+                            <p>
+                            <c:forEach var="module" items="${actionBean.allModules}" varStatus="status">
+                                <div class="custom-control custom-checkbox">
+                                    <stripes:checkbox name="modules" class="custom-control-input" value="${module.name}" id="role${status.index}"/>
+                                    <label class="custom-control-label" for="role${status.index}" style="${module.enabled ? '' : 'text-decoration: line-through'}"><c:out value="${module.name}"/></label>
+                                </div>
+                            </c:forEach>
                         </div>
-                    </c:forEach>
+                    </div>
+                </c:if>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Gebruikers lid van deze groep:</label>
+                    <div class="col-sm-10">
+                        <c:forEach var="user" items="${actionBean.allUsers}" varStatus="status">
+                            <div class="custom-control custom-checkbox">
+                                <stripes:checkbox name="users" class="custom-control-input" value="${user}" id="role${status.index}"/>
+                                <label class="custom-control-label" for="role${status.index}"><c:out value="${user}"/></label>
+                            </div>
+                        </c:forEach>
                     </div>
                 </div>
             </c:if>

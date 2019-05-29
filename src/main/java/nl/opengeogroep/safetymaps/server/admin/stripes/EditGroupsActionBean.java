@@ -27,8 +27,11 @@ import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.*;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
+import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.lang3.StringUtils;
@@ -50,12 +53,18 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
 
     private List<Map<String,Object>> allRoles;
     private List<Map<String,Object>> allModules;
+    private List<String> allUsers;
+
+    private boolean protectedGroup;
 
     @Validate(required = true, on = {"save", "delete"})
     private String role;
 
     @Validate
     List<String> modules = new ArrayList<>();
+
+    @Validate
+    List<String> users = new ArrayList<>();
 
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
@@ -96,8 +105,32 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         return modules;
     }
 
+    public boolean isProtectedGroup() {
+        return protectedGroup;
+    }
+
+    public void setProtectedGroup(boolean protectedGroup) {
+        this.protectedGroup = protectedGroup;
+    }
+
     public void setModules(List<String> modules) {
         this.modules = modules;
+    }
+
+    public List<String> getAllUsers() {
+        return allUsers;
+    }
+
+    public void setAllUsers(List<String> allUsers) {
+        this.allUsers = allUsers;
+    }
+
+    public List<String> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<String> users) {
+        this.users = users;
     }
     // </editor-fold>
 
@@ -106,6 +139,8 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         allRoles = qr().query("select * from " + ROLE_TABLE + " order by protected desc, role", new MapListHandler());
 
         allModules = qr().query("select name, enabled from organisation.modules order by 1", new MapListHandler());
+
+        allUsers = qr().query("select username from " + USER_TABLE + " order by 1", new ColumnListHandler<String>());
     }
 
     @Override
@@ -125,6 +160,9 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         if(s != null) {
             modules = Arrays.asList(s.split(", "));
         }
+        protectedGroup = qr().query("select protected from " + ROLE_TABLE + " where role = ?", new ScalarHandler<Boolean>(), role);
+
+        users = qr().query("select username from " + USER_ROLE_TABLE + " where role = ?", new ColumnListHandler<String>(), role);
 
         return new ForwardResolution(JSP);
     }
@@ -152,8 +190,9 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
     public Resolution save() throws Exception {
 
         if(ROLE_ADMIN.equals(role)) {
-            getContext().getValidationErrors().addGlobalError(new SimpleError("Admin groep kan niet aangepast worden"));
-            return list();
+            if(!users.contains(USER_ADMIN)) {
+                users.add(USER_ADMIN);
+            }
         }
 
         String s = StringUtils.join(modules, ", ");
@@ -161,6 +200,11 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         int update = qr().update("update " + ROLE_TABLE + " set modules = ? where role = ?", s, role);
         if(update == 0) {
             qr().update("insert into " + ROLE_TABLE + " (role, modules) values(?, ?)", role, s);
+        }
+
+        qr().update("delete from " + USER_ROLE_TABLE + " where role = ?", role);
+        for(String u: users) {
+            qr().update("insert into " + USER_ROLE_TABLE + "(username,role) values (?,?)", u, role);
         }
 
         getContext().getMessages().add(new SimpleMessage("Groep is opgeslagen"));
