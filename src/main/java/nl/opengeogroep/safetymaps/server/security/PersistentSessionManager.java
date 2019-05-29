@@ -132,4 +132,13 @@ public class PersistentSessionManager {
             throw new IOException("Database error", e);
         }
     }
+
+    public static void deleteUserSessions(String name) throws IOException {
+        try {
+            int count = qr().update("delete from " + SESSION_TABLE + " where username = ?", name);
+            log.debug("Deleted " + count + " persistent sessions for user " + name);
+        } catch(SQLException | NamingException e) {
+            throw new IOException("Database error", e);
+        }
+    }
 }

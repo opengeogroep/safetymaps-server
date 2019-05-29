@@ -6,8 +6,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import java.security.Principal;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +49,7 @@ public class PersistentAuthenticationFilter implements Filter {
 
     private static final String COOKIE_NAME = "sm-plogin";
 
+    private static final String SESSION_USERNAME = PersistentAuthenticationFilter.class.getName() + ".USERNAME";
     private static final String SESSION_PRINCIPAL = PersistentAuthenticationFilter.class.getName() + ".PRINCIPAL";
     private static final String SESSION_ADDITIONAL_ROLES = PersistentAuthenticationFilter.class.getName() + ".ADDITIONAL_ROLES";
     
@@ -64,6 +67,8 @@ public class PersistentAuthenticationFilter implements Filter {
     private String loginUrl;
     private String logoutUrl;
     private List<String> allowedRoles;
+
+    private static final Map<String,HttpSession> containerSessions = new HashMap();
 
     /**
      * Get a filter init-parameter which can be overriden by a context parameter
@@ -129,6 +134,8 @@ public class PersistentAuthenticationFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse)servletResponse;
         HttpSession session = request.getSession();
 
+        containerSessions.put(session.getId(), session);
+
         if(!enabled) {
             chain.doFilter(request, response);
             return;
@@ -153,6 +160,7 @@ public class PersistentAuthenticationFilter implements Filter {
                 response.addCookie(cookie);
                 PersistentSessionManager.deleteSession(sessionId);
             }
+            session.invalidate();
             chain.doFilter(request, response);
             return;
         }
@@ -170,6 +178,8 @@ public class PersistentAuthenticationFilter implements Filter {
 
         Principal principal = request.getUserPrincipal();
         if(principal != null) {
+            session.setAttribute(SESSION_USERNAME, principal.getName());
+
             boolean allowed = false;
             for(String role: allowedRoles) {
                 if(request.isUserInRole(role)) {
@@ -210,6 +220,11 @@ public class PersistentAuthenticationFilter implements Filter {
                     data = qr().query("select * from " + USER_TABLE + " where username = ?", new MapHandler(), dbUsername);
                 } catch(SQLException | NamingException e) {
                     throw new IOException(e);
+                }
+                // If user is deleted...
+                if(data == null) {
+                    session.invalidate();
+                    chain.doFilter(request, response);
                 }
                 Integer expiry = data.containsKey("session_expiry_number") ? (Integer)data.get("session_expiry_number") : null;
                 String expiryTimeUnit = (String)data.get("session_expiry_timeunit");
@@ -310,9 +325,33 @@ public class PersistentAuthenticationFilter implements Filter {
             }
         }
 
+        session.setAttribute(SESSION_USERNAME, persistentPrincipal.getName());
+
         final AuthenticatedPrincipal thePrincipal = persistentPrincipal;
         chainWithPrincipal(request, response, chain, thePrincipal);
 
+    }
+
+    public static void invalidateUserSessions(String name) throws IOException {
+        List<String> invalidSessionIds = new ArrayList<>();
+        for(HttpSession session: containerSessions.values()) {
+            try {
+                String sessionUser = (String)session.getAttribute(SESSION_USERNAME);
+                log.debug("Checking container session " + session.getId() + " to delete, session user = " + sessionUser);
+                if(name.equals(sessionUser)) {
+                    log.info("Invalidating container session for user " + name + ": " + session.getId());
+                    session.invalidate();
+                    invalidSessionIds.add(session.getId());
+                }
+            } catch(IllegalStateException e) {
+                log.info("Session already invalid: " + session.getId());
+                invalidSessionIds.add(session.getId());
+            }
+        }
+        for(String id: invalidSessionIds) {
+            containerSessions.remove(id);
+        }
+        PersistentSessionManager.deleteUserSessions(name);
     }
 
     private static String obfuscateSessionId(String id) {

@@ -98,7 +98,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <label class="col-sm-2 control-label">Wachtwoord:</label>
                     <div class="col-sm-10">
                         <stripes-dynattr:password class="form-control" name="password" autocomplete="off"/>
-                        <c:if test="${!empty actionBean.username}"><p class="help-block">(laat leeg om niet te wijzigen)</p></c:if>
+                        <c:if test="${!empty actionBean.username}">
+                            <p class="help-block">Laat leeg om niet te wijzigen.</p>
+                            <p class="help-block">Let op! Alle sessies van de gebruiker worden beeindigd bij het wijzigen van de het wachtwoord.</p>
+                        </c:if>
 
                     </div>
                 </div>

@@ -26,9 +26,12 @@ import net.sourceforge.stripes.validation.*;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.SESSION_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.USERNAME_LDAP;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
+import nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter;
+import nl.opengeogroep.safetymaps.server.security.PersistentSessionManager;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
@@ -178,11 +181,12 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
     }
 
     public Resolution delete() throws Exception {
-        if("admin".equals(username) || USERNAME_LDAP.equals(username)) {
+        if(USER_ADMIN.equals(username) || USERNAME_LDAP.equals(username)) {
             getContext().getValidationErrors().addGlobalError(new SimpleError("Speciale gebruiker kan niet verwijderd worden"));
             return list();
         }
         // TODO: https://stackoverflow.com/questions/24895177/how-to-access-sessions-in-tomcat-and-terminate-one-of-them
+        PersistentSessionManager.deleteUserSessions(username);
 
         int count = qr().update("delete from " + SESSION_TABLE + " where username = ?", username);
         log.info("Removing user " + username + ", deleted " + count + " persistent sessions");
@@ -208,6 +212,9 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
             }
         } else {
             hashedPassword = DigestUtils.sha1Hex(password);
+            if(!USER_ADMIN.equals(username)) {
+                PersistentAuthenticationFilter.invalidateUserSessions(username);
+            }
         }
 
         int update = qr().update("update " + USER_TABLE + " set password = ?, session_expiry_number = ?, session_expiry_timeunit = ? where username = ?", hashedPassword, expiry, expiryTimeUnit, username);
