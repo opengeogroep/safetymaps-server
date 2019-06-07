@@ -160,7 +160,7 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         if(s != null) {
             modules = Arrays.asList(s.split(", "));
         }
-        protectedGroup = qr().query("select protected from " + ROLE_TABLE + " where role = ?", new ScalarHandler<Boolean>(), role);
+        protectedGroup = Boolean.TRUE.equals(qr().query("select protected from " + ROLE_TABLE + " where role = ?", new ScalarHandler<>(), role));
 
         users = qr().query("select username from " + USER_ROLE_TABLE + " where role = ?", new ColumnListHandler<String>(), role);
 
