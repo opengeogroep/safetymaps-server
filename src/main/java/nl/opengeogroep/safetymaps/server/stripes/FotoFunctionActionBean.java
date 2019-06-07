@@ -6,12 +6,15 @@
 package nl.opengeogroep.safetymaps.server.stripes;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
+import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.ActionBean;
 import net.sourceforge.stripes.action.ActionBeanContext;
 import net.sourceforge.stripes.action.DefaultHandler;
@@ -21,11 +24,13 @@ import net.sourceforge.stripes.action.StreamingResolution;
 import net.sourceforge.stripes.action.StrictBinding;
 import net.sourceforge.stripes.action.UrlBinding;
 import net.sourceforge.stripes.validation.Validate;
+import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapListHandler;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
@@ -126,6 +131,9 @@ public class FotoFunctionActionBean implements ActionBean {
         JSONObject response = new JSONObject();
         try {
             PATH = Cfg.getSetting("fotofunctie");
+            if(PATH == null) {
+                throw new IllegalArgumentException("Fotofunctie serverpad niet geconfigureerd");
+            }
 
             response.put("result", false);
             if (extraInfo == null) {
@@ -137,19 +145,43 @@ public class FotoFunctionActionBean implements ActionBean {
             }
             
             fileName = fileName.replace('/','_');
-            final File file = new File(PATH + fileName);
-            try {
-                picture.save(file);
-                insertIntoDb();
-            } catch (Exception e) {
-                log.error(e);
-            }
+            final File file = new File(PATH + File.separator + fileName);
+            picture.save(file);
+            insertIntoDb();
             response.put("message", "Foto is opgeslagen met bestandsnaam: " + fileName);
             response.put("result", true);
         } catch (Exception e) {
             response.put("message", "Error met fout " + e.getMessage());
         }
         return new StreamingResolution("application/json", response.toString());
+    }
+
+    public Resolution download() throws Exception {
+
+        // First pathname security check: must exist in db
+        boolean exists = DB.qr().query("select 1 from wfs." + TABLE + " where filename = ?", new ScalarHandler<>(), fileName) != null;
+
+        // Second security check: No path breaker like /../ in filename
+        if(!exists || fileName.contains("..")) {
+            return new ErrorMessageResolution(HttpServletResponse.SC_NOT_FOUND, "Foto '" + fileName + "' niet gevonden");
+        }
+
+        String fotoPath = Cfg.getSetting("fotofunctie");
+        File fotoPathDir = new File(fotoPath);
+        File f = new File(fotoPath + File.separator + fileName);
+
+        // Third security check: resulting path parent file must be the foto directory,
+        // not another directory using path breakers like /../ etc.
+        if(!f.getParentFile().equals(fotoPathDir)) {
+            return new ErrorMessageResolution(HttpServletResponse.SC_BAD_REQUEST, "Filename contains path breaker: " + fileName);
+        }
+
+        if(!f.exists() || !f.canRead()) {
+            return new ErrorMessageResolution(HttpServletResponse.SC_NOT_FOUND, "Foto '" + fileName + "' niet gevonden");
+        }
+
+        String mimeType = Files.probeContentType(f.toPath());
+        return new StreamingResolution(mimeType, new FileInputStream(f));
     }
 
     public Resolution fotoForIncident() throws Exception {
