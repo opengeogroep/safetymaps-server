@@ -247,7 +247,14 @@ public class PersistentAuthenticationFilter implements Filter {
                 }
                 String id = PersistentSessionManager.createPersistentSession(request, c.getTime());
                 Cookie cookie = new Cookie(COOKIE_NAME, id);
-                cookie.setPath(request.getServletContext().getContextPath()); // Set path so we can clear cookie on logout
+                String path = request.getServletContext().getContextPath();
+                if("".equals(path)) {
+                    // for ROOT webapp the context path is "", make sure cookie path is
+                    // set to "/", otherwise cookie will not be set on /logout.jsp,
+                    // making logging out impossible
+                    path = "/";
+                }
+                cookie.setPath(path); // Set path so we can clear cookie on logout
                 cookie.setHttpOnly(true);
                 cookie.setSecure(request.getScheme().equals("https"));
                 cookie.setMaxAge((int)((c.getTimeInMillis() - System.currentTimeMillis()) / 1000));
