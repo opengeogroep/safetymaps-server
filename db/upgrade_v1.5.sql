@@ -1,6 +1,6 @@
 SET search_path = safetymaps, pg_catalog;
 
-create table user_(username varchar, password varchar, session_expiry_number int, session_expiry_timeunit varchar, primary key(username));
+create table user_(username varchar, password varchar, session_expiry_number int, session_expiry_timeunit varchar, details json, primary key(username));
 create table role(role varchar, description text, protected boolean default false, modules text, primary key(role));
 create table user_roles(username varchar, role varchar, primary key(username, role), foreign key(role) references safetymaps.role(role));
 

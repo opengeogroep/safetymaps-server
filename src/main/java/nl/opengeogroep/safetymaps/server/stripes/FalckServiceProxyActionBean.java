@@ -33,6 +33,9 @@ public class FalckServiceProxyActionBean implements ActionBean {
 
     private static final String ROLE = "falck_webservice";
 
+    private static final String SETTING_INCIDENTMONITOR_ROLE = "incidentmonitor_role_required";
+    private static final String SETTING_VOERTUIGNUMMER_SERVERSIDE_USER_DETAILS = "voertuignummer_serverside_user_detail";
+
     private String path;
 
     @Override
