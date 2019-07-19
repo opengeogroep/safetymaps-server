@@ -44,7 +44,6 @@ public class DeletePhotoJob implements Job {
             //Loop through photo's and delete it.
             for (Map<String, Object> photo : rs) {
                 String fileName = photo.get("filename").toString();
-                System.out.println(fileName);
                 File file = new File(fotoDir + fileName);
                 if (file.delete()) {
                     LOG.debug(fileName + " deleted");
