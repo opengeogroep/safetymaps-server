@@ -386,7 +386,7 @@ public class VrhActionBean implements ActionBean {
                 "    ) as gevaarlijke_stoffen, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                "    from (select objectid, type, bijzonderh, opmerkinge, st_astext(t.geom) as geometry " +
+                "    from (select objectid, coalesce(type, symboolcod) as type, bijzonderh, opmerkinge, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_dbk_lijn t " +
                 "         where t.dbk_object = o.id) r " +
                 "    ) as overige_lijnen, " +
