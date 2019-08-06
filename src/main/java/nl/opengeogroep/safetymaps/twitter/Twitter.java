@@ -81,6 +81,7 @@ public class Twitter {
 
     public static final CloseableHttpClient getClient() {
         return HttpClients.custom()
+            .useSystemProperties()
             .setDefaultRequestConfig(RequestConfig.custom()
                     .setConnectTimeout(15 * 1000)
                     .setSocketTimeout(30 * 1000)
