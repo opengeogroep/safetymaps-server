@@ -6,7 +6,6 @@
         <listener-class>nl.opengeogroep.safetymaps.utils.DeletePhotoScheduler</listener-class>
     </listener>
     -->
-    
     <!-- Localization context voor o.a. de <fmt:message> JSTL tag -->
     <context-param>
         <param-name>javax.servlet.jsp.jstl.fmt.localizationContext</param-name>
@@ -16,7 +15,7 @@
     <context-param>
         <param-name>javax.servlet.jsp.jstl.fmt.locale</param-name>
         <param-value>nl</param-value>
-    </context-param>    
+    </context-param>
     <filter>
         <description>Filter from Tomcat 6 distribution, see http://wiki.apache.org/tomcat/FAQ/CharacterEncoding</description>
         <filter-name>SetCharacterEncodingFilter</filter-name>
@@ -25,7 +24,7 @@
             <param-name>encoding</param-name>
             <param-value>UTF-8</param-value>
         </init-param>
-    </filter>    
+    </filter>
     <filter>
         <display-name>Stripes Filter</display-name>
         <filter-name>StripesFilter</filter-name>
@@ -67,9 +66,19 @@
             <param-value>org.stripesstuff.plugin.security.J2EESecurityManager</param-value>
         </init-param-->
     </filter>
+    <filter>
+        <display-name>mod_auth_pubtkt SSO filter</display-name>
+        <filter-name>ModAuthPubTktSSOFilter</filter-name>
+        <filter-class>nl.opengeogroep.safetymaps.security.ModAuthPubTktSSOFilter</filter-class>
+        <!-- enabled/disabled by safetymaps.settings database config -->
+    </filter>
     <filter-mapping>
         <filter-name>SetCharacterEncodingFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>ModAuthPubTktSSOFilter</filter-name>
+        <url-pattern>/api/organisation.json</url-pattern>
     </filter-mapping>
     <filter-mapping>
         <filter-name>StripesFilter</filter-name>
@@ -82,7 +91,7 @@
         <dispatcher>FORWARD</dispatcher>
         <dispatcher>INCLUDE</dispatcher>
         <dispatcher>ERROR</dispatcher>
-    </filter-mapping>    
+    </filter-mapping>
     <servlet>
         <servlet-name>StripesDispatcher</servlet-name>
         <servlet-class>net.sourceforge.stripes.controller.DispatcherServlet</servlet-class>
@@ -107,7 +116,7 @@
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>*.wait</url-pattern>
-    </servlet-mapping>    
+    </servlet-mapping>
     <session-config>
         <session-timeout>
             30 
@@ -115,5 +124,5 @@
     </session-config>
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
-    </welcome-file-list>    
+    </welcome-file-list>
 </web-app>
