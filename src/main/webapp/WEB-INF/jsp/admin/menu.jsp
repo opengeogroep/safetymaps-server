@@ -27,6 +27,7 @@
         <ul class="dropdown-menu">
             <li${menuitem == 'app' ? ' class="active"' : ''}><a href="${contextPath}/admin/app.jsp">Instellingen</a></li>
             <li${menuitem == 'modules' ? ' class="active"' : ''}><a href="${contextPath}/admin/modules.jsp">Modules</a></li>
+            <c:if test="${s.settings['linkify_enabled'] == 'true'}"><li${menuitem == 'linkify' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LinkifyActionBean">Steekwoorden</stripes:link></li></c:if>
             <li${menuitem == 'layers' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean">Lagen</stripes:link></li>
             <%--li${menuitem == 'customize' ? ' class="active"' : ''}><a href="${contextPath}/admin/customize.jsp">Maatwerk</a></li>
             <li${menuitem == 'dbksymbols' ? ' class="active"' : ''}><a href="${contextPath}/admin/dbksymbols.jsp">DBK Symbolen</a></li>
