@@ -5,6 +5,7 @@
         <description>The class which initializes deletePhoto schedules</description>
         <listener-class>nl.opengeogroep.safetymaps.utils.DeletePhotoScheduler</listener-class>
     </listener>
+
     <!-- Localization context voor o.a. de <fmt:message> JSTL tag -->
     <context-param>
         <param-name>javax.servlet.jsp.jstl.fmt.localizationContext</param-name>
