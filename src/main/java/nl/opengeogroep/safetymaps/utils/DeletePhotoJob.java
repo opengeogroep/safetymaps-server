@@ -6,14 +6,10 @@
 package nl.opengeogroep.safetymaps.utils;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.naming.NamingException;
+import nl.opengeogroep.safetymaps.server.db.Cfg;
 import nl.opengeogroep.safetymaps.server.db.DB;
-import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,32 +30,29 @@ public class DeletePhotoJob implements Job {
     @Override
     public void execute(JobExecutionContext jec) throws JobExecutionException {
         try {
-            // get photo directory from DB
-            Map<String, Object> settings = DB.qr().query("select value from safetymaps.settings where name='fotofunctie'", new MapHandler());
-            String fotoDir = settings.get("value").toString();
-            
-            //get all photos that are older than INTERVAL
-            List<Map<String, Object>> rs = DB.qr().query("select * from wfs.\"FotoFunctie\" where date <=  CURRENT_DATE + INTERVAL '-" + INTERVAL + " day'", new MapListHandler());
-            
-            //Loop through photo's and delete it.
-            for (Map<String, Object> photo : rs) {
-                String fileName = photo.get("filename").toString();
-                File file = new File(fotoDir + fileName);
-                if (file.delete()) {
-                    LOG.debug(fileName + " deleted");
-                } else {
-                    LOG.debug(fileName + " bestaat niet");
+            String fotoDir = Cfg.getSetting("fotofunctie");
+
+            if(fotoDir != null) {
+                //get all photos that are older than INTERVAL
+                List<Map<String, Object>> rs = DB.qr().query("select * from wfs.\"FotoFunctie\" where date <=  CURRENT_DATE + INTERVAL '-" + INTERVAL + " day'", new MapListHandler());
+
+                if(rs.isEmpty()) {
+                    //Loop through photo's and delete it.
+                    for (Map<String, Object> photo : rs) {
+                        String fileName = photo.get("filename").toString();
+                        File file = new File(fotoDir + fileName);
+                        if (file.delete()) {
+                            LOG.debug(fileName + " deleted");
+                        } else {
+                            LOG.debug(fileName + " bestaat niet");
+                        }
+                    }
+                    //finally delete Photo's from DB
+                    DB.qr().update("delete from wfs.\"FotoFunctie\" where datum <=  CURRENT_DATE + INTERVAL '-" + INTERVAL + " day'");
                 }
             }
-            
-            //finally delete Photo's from DB
-            DB.qr().update("delete from wfs.\"FotoFunctie\" where datum <=  CURRENT_DATE + INTERVAL '-" + INTERVAL + " day'");
-
-        } catch (NamingException ex) {
-            LOG.error(ex);
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             LOG.error(ex);
         }
     }
-
 }

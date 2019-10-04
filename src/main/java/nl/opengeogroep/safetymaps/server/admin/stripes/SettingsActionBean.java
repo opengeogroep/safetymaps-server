@@ -1,9 +1,10 @@
 package nl.opengeogroep.safetymaps.server.admin.stripes;
 
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import javax.naming.NamingException;
 import net.sourceforge.stripes.action.*;
 import nl.opengeogroep.safetymaps.server.db.DB;
@@ -13,10 +14,11 @@ import org.apache.commons.dbutils.handlers.MapListHandler;
  *
  * @author Matthijs Laan
  */
+@UrlBinding("/admin/action/settings")
 public class SettingsActionBean implements ActionBean {
     private ActionBeanContext context;
 
-    private final Map<String,String> settings = new HashMap();
+    private final SortedMap<String,String> settings = new TreeMap();
 
     @Override
     public ActionBeanContext getContext() {

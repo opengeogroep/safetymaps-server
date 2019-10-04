@@ -35,6 +35,13 @@
             <li${menuitem == 'edit' ? ' class="active"' : ''}><a href="#">Tekenmodule</a></li--%>
         </ul>
     </li>
+    <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Beveiliging <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+            <li${menuitem == 'users' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.EditUsersActionBean">Gebruikers</stripes:link></li>
+            <li${menuitem == 'groups' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.EditGroupsActionBean">Groepen</stripes:link></li>
+        </ul>
+    </li>
     <li${menuitem == 'fotofunctie' ? ' class="active"' : ''}><a href="${contextPath}/admin/fotomanager.jsp">Beheer fotofunctie</a></li>
     <li${menuitem == 'edit' ? ' class="active"' : ''}><a href="${contextPath}/admin/edit.jsp">Tekening opslaan/laden</a></li>
     <%--li class="dropdown">

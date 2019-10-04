@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
             function download() {
 
-                $.ajax("${contextPath}/api/edit", {
+                $.ajax("${contextPath}/viewer/api/edit", {
                     method: "GET"
                 })
                 .done(function(result) {
@@ -65,7 +65,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     var contents = e.target.result;
                     console.log("Loaded file",contents);
 
-                    $.ajax("${contextPath}/api/edit", {
+                    $.ajax("${contextPath}/viewer/api/edit", {
+
                         method: "POST",
                         data: {
                             save: "true",

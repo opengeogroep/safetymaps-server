@@ -27,7 +27,7 @@ import org.json.JSONObject;
  * @author Matthijs Laan
  */
 @StrictBinding
-@UrlBinding("/action/mail")
+@UrlBinding("/viewer/api/annotation")
 public class MailActionBean implements ActionBean {
     private ActionBeanContext context;
 

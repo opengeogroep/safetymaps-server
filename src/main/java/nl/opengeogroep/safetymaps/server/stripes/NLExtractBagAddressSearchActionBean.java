@@ -25,7 +25,7 @@ import org.json.JSONArray;
  * @author matthijsln
  */
 @StrictBinding
-@UrlBinding("/api/autocomplete/{term}")
+@UrlBinding("/viewer/api/autocomplete/{term}")
 public class NLExtractBagAddressSearchActionBean  implements ActionBean {
     private static final Log log = LogFactory.getLog(NLExtractBagAddressSearchActionBean.class);
     private ActionBeanContext context;

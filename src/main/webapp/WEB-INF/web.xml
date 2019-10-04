@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app version="3.1" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd">
-    <!-- Context listener for deleting photos 
+    <!-- Context listener for deleting photos -->
     <listener>
         <description>The class which initializes deletePhoto schedules</description>
         <listener-class>nl.opengeogroep.safetymaps.utils.DeletePhotoScheduler</listener-class>
     </listener>
-    -->
+
     <!-- Localization context voor o.a. de <fmt:message> JSTL tag -->
     <context-param>
         <param-name>javax.servlet.jsp.jstl.fmt.localizationContext</param-name>
@@ -16,6 +16,23 @@
         <param-name>javax.servlet.jsp.jstl.fmt.locale</param-name>
         <param-value>nl</param-value>
     </context-param>
+    <filter>
+        <description>Persistent logins across browser sessions</description>
+        <filter-name>PersistentAuthenticationFilter</filter-name>
+        <filter-class>nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter</filter-class>
+        <init-param>
+            <param-name>enabled</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>persistentLoginPathPrefix</param-name>
+            <param-value>/viewer/api/</param-value>
+        </init-param>
+        <init-param>
+            <param-name>allowedRoles</param-name>
+            <param-value>viewer,admin,LDAPUser</param-value>
+        </init-param>
+    </filter>
     <filter>
         <description>Filter from Tomcat 6 distribution, see http://wiki.apache.org/tomcat/FAQ/CharacterEncoding</description>
         <filter-name>SetCharacterEncodingFilter</filter-name>
@@ -77,6 +94,10 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
     <filter-mapping>
+        <filter-name>PersistentAuthenticationFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
         <filter-name>ModAuthPubTktSSOFilter</filter-name>
         <url-pattern>/api/organisation.json</url-pattern>
     </filter-mapping>
@@ -97,17 +118,21 @@
         <servlet-class>net.sourceforge.stripes.controller.DispatcherServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
-    <servlet-mapping>
+    <!--servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>*.action</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>/action/*</url-pattern>
+    </servlet-mapping-->
+    <servlet-mapping>
+        <servlet-name>StripesDispatcher</servlet-name>
+        <url-pattern>/viewer/api/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
-        <url-pattern>/api/*</url-pattern>
+        <url-pattern>/viewer/editAllowed</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
@@ -124,5 +149,42 @@
     </session-config>
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
+        <welcome-file>index.html</welcome-file>
     </welcome-file-list>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>admin</web-resource-name>
+            <url-pattern>/admin/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>admin</role-name>
+        </auth-constraint>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>viewer-login</web-resource-name>
+            <url-pattern>/viewer/api/login</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>viewer</role-name>
+            <role-name>admin</role-name>
+            <role-name>LDAPUser</role-name>
+        </auth-constraint>
+    </security-constraint>
+    <security-role>
+        <role-name>*</role-name>
+        <role-name>admin</role-name>
+    </security-role>
+    <login-config>
+        <auth-method>FORM</auth-method>
+        <form-login-config>
+            <form-login-page>/login.jsp</form-login-page>
+            <form-error-page>/loginfail.jsp</form-error-page>
+        </form-login-config>
+    </login-config>
+    <error-page>
+        <error-code>403</error-code>
+        <location>/403.jsp</location>
+    </error-page>
 </web-app>

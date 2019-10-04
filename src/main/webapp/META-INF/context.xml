@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Context antiJARLocking="true" path="/safetymaps-server">
   <!-- Paste this in tomcat/conf/server.xml with the correct settings. Restart tomcat. This has to be done once.
-    
-        <Resource 
+
+        <Resource
             name="jdbc/safetymaps-server"
             auth="Container"
             type="javax.sql.DataSource"
@@ -20,11 +20,33 @@
     -->
   <ResourceLink global="jdbc/safetymaps-server" name="jdbc/safetymaps-server" type="javax.sql.DataSource"/>
   <ResourceLink global="jdbc/filesetsync-server" name="jdbc/filesetsync-server" type="javax.sql.DataSource"/>
-
   <ResourceLink global="jdbc/nlextract-bag" name="jdbc/nlextract-bag" type="javax.sql.DataSource"/>
 
   <!-- Place javax.mail.jar in Tomcat lib and add this to tomcat/conf/server.xml
     <Resource name="mail/session" auth="Container" type="javax.mail.Session" mail.smtp.host="ip here" />
   -->
   <ResourceLink global="mail/session" name="mail/session" type="javax.mail.Session"/>
+
+  <!-- Security configuration -->
+  <!-- use LockOutRealm instead of CombinedRealm to prevent brute-forcing -->
+  <Realm className="org.apache.catalina.realm.LockOutRealm">
+    <Realm allRolesMode="authOnly" className="org.apache.catalina.realm.DataSourceRealm" dataSourceName="jdbc/safetymaps-server" digest="SHA-1" roleNameCol="role" userCredCol="password" userNameCol="username" userRoleTable="safetymaps.user_roles" userTable="safetymaps.user_">
+      <CredentialHandler algorithm="SHA-1" className="org.apache.catalina.realm.MessageDigestCredentialHandler"/>
+    </Realm>
+    <!-- Use JNDIRealm for authenticating against a LDAP server (such as
+             Active Directory):
+             http://tomcat.apache.org/tomcat-8.0-doc/config/realm.html
+             http://tomcat.apache.org/tomcat-8.0-doc/realm-howto.html#JNDIRealm
+        -->
+    <!--Realm className="org.apache.catalina.realm.JNDIRealm"
+            allRolesMode="authOnly"
+            connectionURL="ldap://ldap:389"
+            connectionName="cn=ServiceUser,ou=Services,o=MyOrg"
+            connectionPassword=""
+            userBase="o=MyOrg"
+            userSubtree="true"
+            userSearch="cn={0}"
+            commonRole="ExtendedUser"
+        /-->
+  </Realm>
 </Context>

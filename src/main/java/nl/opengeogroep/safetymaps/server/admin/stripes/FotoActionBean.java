@@ -10,26 +10,26 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.naming.NamingException;
+import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.ActionBean;
 import net.sourceforge.stripes.action.ActionBeanContext;
 import net.sourceforge.stripes.action.DefaultHandler;
 import net.sourceforge.stripes.action.DontValidate;
-import net.sourceforge.stripes.action.ErrorResolution;
 import net.sourceforge.stripes.action.ForwardResolution;
 import net.sourceforge.stripes.action.Resolution;
 import net.sourceforge.stripes.action.SimpleMessage;
+import net.sourceforge.stripes.action.StreamingResolution;
+import net.sourceforge.stripes.action.UrlBinding;
+import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import org.apache.commons.dbutils.handlers.MapListHandler;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -37,6 +37,7 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author martijn
  */
+@UrlBinding("/admin/action/foto")
 public class FotoActionBean implements ActionBean {
     
     private static final Log log = LogFactory.getLog(FotoActionBean.class);
@@ -93,36 +94,18 @@ public class FotoActionBean implements ActionBean {
         return new ForwardResolution(JSP);
     }
 
-@DontValidate
+    @DontValidate
     public Resolution downloadFoto() throws Exception {
         String filename = context.getRequest().getParameter("filename");
         String location = Cfg.getSetting("fotofunctie");
-        String path = location + filename;
-        log.info("downloading: " + path);
-        File file = new File(path);
-        Image image = ImageIO.read(file);
-        if (image != null && file.exists()) {
-            Path source = Paths.get(path);
-            context.getResponse().setBufferSize(DEFAULT_BUFFER_SIZE);
-            context.getResponse().setContentType(Files.probeContentType(source));
-            context.getResponse().setHeader("Content-Length", String.valueOf(file.length()));
-            context.getResponse().addHeader("content-disposition", "attachment; filename=" + filename);
+        File f = new File(location + File.separator + filename);
 
-            FileInputStream fis = null;
-
-            try {
-                fis = new FileInputStream(file);
-
-                IOUtils.copy(fis, context.getResponse().getOutputStream());
-            }catch(Exception e){
-                log.error(e);
-                return new ErrorResolution(500);
-            }
-            return null;
-        } else {
-            log.debug("The requested file" + path + "could not be opened , it is not an image or does not exists");
-            return new ErrorResolution(404);
+        if(!f.exists() || !f.canRead()) {
+            return new ErrorMessageResolution(HttpServletResponse.SC_NOT_FOUND, "Foto '" + filename + "' niet gevonden");
         }
+
+        String mimeType = Files.probeContentType(f.toPath());
+        return new StreamingResolution(mimeType, new FileInputStream(f));
     }
     
     public void deleteFromFileSystem(String filename) throws NamingException, SQLException, Exception {

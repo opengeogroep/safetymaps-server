@@ -19,4 +19,5 @@ INSERT INTO settings (name, value) VALUES ('static_outputdir', 'www');
 INSERT INTO settings (name, value) VALUES ('static_url', '/voertuigviewer/');
 INSERT INTO settings (name, value) VALUES ('static_update_command', '/usr/bin/sudo -u webdev /home/webdev/update_viewer.sh');
 
+-- zie upgrade_v1.5.sql
 
