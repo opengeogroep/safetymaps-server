@@ -93,13 +93,12 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
     <filter-mapping>
-<<<<<<< HEAD
         <filter-name>PersistentAuthenticationFilter</filter-name>
         <url-pattern>/*</url-pattern>
-=======
+    </filter-mapping>
+    <filter-mapping>
         <filter-name>ModAuthPubTktSSOFilter</filter-name>
         <url-pattern>/api/organisation.json</url-pattern>
->>>>>>> 96ffb2f... add mod_auth_pubtkt sso support
     </filter-mapping>
     <filter-mapping>
         <filter-name>StripesFilter</filter-name>
@@ -149,7 +148,6 @@
     </session-config>
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
-<<<<<<< HEAD
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>
 
@@ -188,7 +186,4 @@
         <error-code>403</error-code>
         <location>/403.jsp</location>
     </error-page>
-=======
-    </welcome-file-list>
->>>>>>> 96ffb2f... add mod_auth_pubtkt sso support
 </web-app>
