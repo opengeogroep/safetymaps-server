@@ -17,6 +17,8 @@ import org.json.JSONObject;
  *
  * @author matthijsln
  */
+@StrictBinding
+@UrlBinding("/admin/action/linkify")
 public class LinkifyActionBean implements ActionBean, ValidationErrorHandler {
     private static final String JSP = "/WEB-INF/jsp/admin/linkify.jsp";
 
