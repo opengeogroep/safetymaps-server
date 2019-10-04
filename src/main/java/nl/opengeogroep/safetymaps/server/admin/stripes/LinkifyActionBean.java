@@ -89,6 +89,8 @@ public class LinkifyActionBean implements ActionBean, ValidationErrorHandler {
         JSONObject words = new JSONObject();
         if(settings.has("linkifyWords")) {
             words = settings.getJSONObject("linkifyWords");
+        } else {
+            settings.put("linkifyWords", words);
         }
 
         // Key value is String for a search term, or any other type to search with
