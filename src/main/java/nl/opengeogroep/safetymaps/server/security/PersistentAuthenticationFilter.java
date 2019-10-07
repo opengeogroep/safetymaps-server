@@ -14,6 +14,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import javax.naming.NamingException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -68,7 +70,7 @@ public class PersistentAuthenticationFilter implements Filter {
     private String logoutUrl;
     private List<String> allowedRoles;
 
-    private static final Map<String,HttpSession> containerSessions = new HashMap();
+    private static final ConcurrentMap<String,HttpSession> containerSessions = new ConcurrentHashMap();
 
     /**
      * Get a filter init-parameter which can be overriden by a context parameter
@@ -134,7 +136,7 @@ public class PersistentAuthenticationFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse)servletResponse;
         HttpSession session = request.getSession();
 
-        containerSessions.put(session.getId(), session);
+        containerSessions.putIfAbsent(session.getId(), session);
 
         if(!enabled) {
             chain.doFilter(request, response);
