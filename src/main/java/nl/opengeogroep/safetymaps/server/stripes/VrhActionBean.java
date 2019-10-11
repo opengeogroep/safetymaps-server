@@ -178,9 +178,9 @@ public class VrhActionBean implements ActionBean {
                         result = dbkJson(c, Integer.parseInt(getIdFromPath(TYPE_DBK)));
                     }
                 } else if(MAP_WATERONGEVALLEN.equals(path)) {
-                    result = waterongevallenJson(c);
+                    result = waterongevallenJson(c, newDbSchema);
                 } else if(path.indexOf(TYPE_WATERONGEVALLEN + "/") == 0) {
-                    result = waterongevallenkaartJson(c, Integer.parseInt(getIdFromPath(TYPE_WATERONGEVALLEN)));
+                    result = waterongevallenkaartJson(c, Integer.parseInt(getIdFromPath(TYPE_WATERONGEVALLEN)), newDbSchema);
                 } else if(MAP_EVENEMENTEN.equals(path)) {
                     result = evenementenJson(c);
                 } else if(path.indexOf(TYPE_EVENEMENT + "/") == 0) {
@@ -697,13 +697,14 @@ public class VrhActionBean implements ActionBean {
         return rowToJson(rows.get(0), true, true);
     }
 
-    public static JSONArray waterongevallenJson(Connection c) throws Exception {
+    public static JSONArray waterongevallenJson(Connection c, boolean newDbSchema) throws Exception {
         String sql;
+        String schema = (newDbSchema ? "vrh_new" : "vrh");
         sql = "select id,locatie,adres,plaatsnaam,st_astext(selectiekader) as selectiekader, box2d(geom)::varchar as extent, st_astext(st_centroid(geom)) as geometry "
             + "from"
             + "(select id, locatie, adres, plaatsnaam, coalesce(sk.geom,wdbk.geom) as geom, sk.geom as selectiekader "
-            + " from vrh.wdbk_waterbereikbaarheidskaart wdbk "
-            + " left join vrh.waterbereikbaarheidskaart_selectiekader sk on (sk.dbk_object = wdbk.id) "
+            + " from " + schema + ".wdbk_waterbereikbaarheidskaart wdbk "
+            + " left join " + schema + ".waterbereikbaarheidskaart_selectiekader sk on (sk.dbk_object = wdbk.id) "
             + " where locatie is not null "
             + " order by locatie) s";
         List<Map<String,Object>> rows = new QueryRunner().query(c, sql, new MapListHandler());
@@ -724,11 +725,12 @@ public class VrhActionBean implements ActionBean {
         return rowsToJSONArray(dedupRows);
     }
 
-    public static JSONObject waterongevallenkaartJson(Connection c, Integer id) throws Exception {
+    public static JSONObject waterongevallenkaartJson(Connection c, Integer id, boolean newDbSchema) throws Exception {
         JSONObject result = new JSONObject();
         result.put("success", true);
         QueryRunner qr = new QueryRunner();
-        List<Map<String,Object>> rows = qr.query(c, "select *, st_astext(geom) as geometry from vrh.wdbk_waterbereikbaarheidskaart where id = ?", new MapListHandler(), id);
+        String schema = (newDbSchema ? "vrh_new" : "vrh");
+        List<Map<String,Object>> rows = qr.query(c, "select *, st_astext(geom) as geometry from " + schema + ".wdbk_waterbereikbaarheidskaart where id = ?", new MapListHandler(), id);
         if(rows.isEmpty()) {
             result.put("error", "WBBK met ID " + id + " niet gevonden");
         } else {
@@ -748,13 +750,16 @@ public class VrhActionBean implements ActionBean {
                 }
             }
 
-            rows = qr.query(c, "select id, symboolcod, symboolgro, bijzonderh, st_astext(geom) as geometry from vrh.voorzieningen_water where dbk_object = ?", new MapListHandler(), id);
+            String table = schema + (newDbSchema ? ".symbolen" : ".voorzieningen_water");
+            rows = qr.query(c, "select id, symboolcod, symboolgro, bijzonderh, st_astext(geom) as geometry from " + table + " where dbk_object = ?", new MapListHandler(), id);
             result.put("symbolen", rowsToJSONArray(rows));
 
-            rows = qr.query(c, "select id, type, bijzonderh, opmerkinge, st_astext(geom) as geometry from vrh.overige_lijnen where dbk_object = ?", new MapListHandler(), id);
+            table = schema + (newDbSchema ? ".lijnen" : ".overige_lijnen");
+            rows = qr.query(c, "select id, type, bijzonderh, opmerkinge, st_astext(geom) as geometry from " + table + " where dbk_object = ?", new MapListHandler(), id);
             result.put("lijnen", rowsToJSONArray(rows));
 
-            rows = qr.query(c, "select id, type, bijzonderh, st_astext(geom) as geometry from vrh.overige_vlakken where dbk_object = ? order by \n" +
+            table = schema + (newDbSchema ? ".vlakken" : ".overige_vlakken");
+            rows = qr.query(c, "select id, type, bijzonderh, st_astext(geom) as geometry from " + table + " where dbk_object = ? order by \n" +
                 "   case type \n" +
                 "   when 'Dieptevlak 4 tot 9 meter' then -3 \n" +
                 "   when 'Dieptevlak 9 tot 15 meter' then -2\n" +
@@ -769,7 +774,7 @@ public class VrhActionBean implements ActionBean {
             }
             result.put("vlakken", vlakken);
 
-            rows = qr.query(c, "select objectid, tekst, hoek, st_astext(geom) as geometry from vrh.teksten where dbk_object = ?", new MapListHandler(), id);
+            rows = qr.query(c, "select objectid, tekst, hoek, st_astext(geom) as geometry from " + schema + ".teksten where dbk_object = ?", new MapListHandler(), id);
             result.put("teksten", rowsToJSONArray(rows));
         }
 
