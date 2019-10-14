@@ -259,7 +259,7 @@ public class Main {
         JSONArray waterongevallen = new JSONArray();
         success = true;
         try {
-            waterongevallen = VrhActionBean.waterongevallenJson(c);
+            waterongevallen = VrhActionBean.waterongevallenJson(c, false);
             o.put("results", waterongevallen);
         } catch(Exception e) {
             success = false;
@@ -277,7 +277,7 @@ public class Main {
 
         for(int i = 0; i < waterongevallen.length(); i++) {
             int id = waterongevallen.getJSONObject(i).getInt("id");
-            o.put("results", VrhActionBean.waterongevallenkaartJson(c, id));
+            o.put("results", VrhActionBean.waterongevallenkaartJson(c, id, false));
             FileUtils.writeByteArrayToFile(new File("api/vrh/waterongevallenkaart/" + id + ".json"), o.toString(indent).getBytes("UTF-8"));
         }
 
