@@ -56,8 +56,6 @@ public class LibraryActionBean implements ActionBean{
     @DefaultHandler
     public Resolution download() throws Exception{
         
-        //Decode filename
-        filename = URLDecoder.decode(filename, "UTF-8");
         // First pathname security check: must exist in db
         boolean exists = DB.qr().query("select 1 from wfs." + TABLE + " where \"Documentnaam\" = ?", new ScalarHandler<>(), filename) != null;
         
