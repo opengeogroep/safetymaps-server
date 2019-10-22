@@ -25,7 +25,7 @@ import org.apache.commons.dbutils.handlers.ScalarHandler;
  */
 @StrictBinding
 @MultipartConfig
-@UrlBinding("/viewer/api/library")
+@UrlBinding("/viewer/api/media/bibliotheek/{filename}")
 public class LibraryActionBean implements ActionBean{
     
     private ActionBeanContext context;
