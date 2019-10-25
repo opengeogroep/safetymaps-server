@@ -57,6 +57,8 @@ public class FalckServiceProxyActionBean implements ActionBean {
     }
 
     public Resolution proxy() throws Exception {
+        context.getResponse().addHeader("Access-Control-Allow-Origin", "http://localhost");
+        context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
         if(!context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN)) {
             return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot webservice");
         }
