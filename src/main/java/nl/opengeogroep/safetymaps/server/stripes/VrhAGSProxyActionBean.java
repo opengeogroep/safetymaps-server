@@ -84,7 +84,7 @@ public class VrhAGSProxyActionBean implements ActionBean {
             }
 
             String qs = context.getRequest().getQueryString();
-            builder = RequestBuilder.get()
+            builder = RequestBuilder.post()
                     .setUri(url)
                     .addParameter("f", context.getRequest().getParameter("f"))
                     .addParameter("username", authorization.split(":")[0])
