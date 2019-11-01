@@ -73,7 +73,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <c:if test="${event == 'edit' || event == 'save'}">
 
                 <stripes:submit name="save" class="btn btn-primary">Opslaan</stripes:submit>
-                <stripes:submit name="delete" class="btn btn-danger remove-item">Verwijderen</stripes:submit>
+                <c:if test="${!empty actionBean.username}">
+                    <stripes:submit name="delete" class="btn btn-danger remove-item">Verwijderen</stripes:submit>
+                    <stripes:submit name="deleteSessions" class="btn btn-warning" onclick="return confirm('Weet u het zeker? Alle actieve browsersessies voor deze gebruiker zullen worden beëindigd.')">Overal uitloggen</stripes:submit>
+                </c:if>
                 <stripes:submit name="cancel" class="btn btn-default">Annuleren</stripes:submit>
 
                 <c:choose>
@@ -100,7 +103,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <stripes-dynattr:password class="form-control" name="password" autocomplete="off"/>
                         <c:if test="${!empty actionBean.username}">
                             <p class="help-block">Laat leeg om niet te wijzigen.</p>
-                            <p class="help-block">Let op! Alle sessies van de gebruiker worden beeindigd bij het wijzigen van de het wachtwoord.</p>
+                            <p class="help-block">Let op! Alle sessies van de gebruiker worden be&euml;indigd bij het wijzigen van de het wachtwoord.</p>
                         </c:if>
 
                     </div>
@@ -115,12 +118,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                             <stripes:option value="weeks">weken</stripes:option>
                             <stripes:option value="days">dagen</stripes:option>
                         </stripes:select>
+                        <p class="help-block">Automatisch uitloggen gebeurt alleen na inactiviteit van de browsersessie.</p>
                     </div>
-                    <p class="help-block">Automatisch uitloggen gebeurt alleen na inactiviteit van de browsersessie.</p>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Incidentkoppeling:</label>
+                    <div class="col-sm-10">
+                        Voertuignummer: <stripes:text name="voertuignummer" size="8" maxlength="6"/>
+                        <p class="help-block">Voor incidentinformatie in de voertuigviewer een voertuignummer invullen of gebruiker lid maken van groep &quot;eigen_voertuignummer&quot;.
+                            Voertuignummer is niet vereist als gebruiker de Incidentmonitor kan gebruiken of geen incidentinformatie voor zijn voertuig nodig heeft.</p>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Groeplidmaatschap:</label>
                     <div class="col-sm-10">
+                        <c:if test="${!empty actionBean.username}">
+                            <p class="help-block text-warning">Let op: wijzigingen in groeplidmaatschap worden pas toegepast na uit- en inloggen. Als de uitlogknop is
+                                verborgen kan alleen worden uitgelogd door de hele browsercache te legen of door een beheerder met de "Overal uitloggen" knop.</p>
+                        </c:if>
                     <c:forEach var="role" items="${actionBean.allRoles}" varStatus="status">
                         <div class="custom-control custom-checkbox">
                             <stripes:checkbox name="roles" class="custom-control-input" value="${role}" id="role${status.index}"/>
