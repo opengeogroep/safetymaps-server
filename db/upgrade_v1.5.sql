@@ -9,7 +9,9 @@ insert into safetymaps.role(role, protected, description) values
 ('admin', true, 'Heeft overal toegang toe'),
 ('viewer', true, 'Benodigd voor toegang voertuigviewer'),
 ('falck_webservice', true, 'Benodigd voor toegang incident/eenheidsgegevens uit Falck webservice'),
-('editor', true, 'Benodigd voor opslaan tekeningen');
+('editor', true, 'Benodigd voor opslaan tekeningen',
+('incidentmonitor', true, 'Benodigd voor toegang incidentmonitor',
+('eigen_voertuignummer', true, 'Benodigd voor zelf kunnen instellen voertuignummer');
 insert into user_(username, password) values ('admin', 'insert hash here');
 insert into user_roles(username, role) values( 'admin', 'admin');
 
