@@ -265,11 +265,11 @@ public class ViewerApiActionBean implements ActionBean {
         String name = module.getString("name");
         JSONObject options = module.isNull("options") ? new JSONObject(): module.getJSONObject("options");
         if("incidents".equals(name)) {
-            options.put("incidentmonitor", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR));
-            options.put("eigenVoertuignummer", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_EIGEN_VOERTUIGNUMMER));
+            options.put("incidentMonitorAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR));
+            options.put("eigenVoertuignummerAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_EIGEN_VOERTUIGNUMMER));
 
             JSONObject details = getUserDetails(request);
-            options.put("voertuignummer", details.optString("voertuignummer", null));
+            options.put("userVoertuignummer", details.optString("voertuignummer", null));
         }
         return module;
     }
