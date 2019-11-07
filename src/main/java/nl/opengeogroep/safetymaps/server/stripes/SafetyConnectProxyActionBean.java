@@ -31,7 +31,7 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 
     private ActionBeanContext context;
 
-    private static final String ROLE = "safetyconnect_webservice";
+    static final String ROLE = "safetyconnect_webservice";
 
     private String path;
 

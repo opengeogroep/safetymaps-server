@@ -46,7 +46,7 @@ public class VrhAGSProxyActionBean implements ActionBean {
 
     private ActionBeanContext context;
 
-    private static final String ROLE = "vrh_ags_replica";
+    static final String ROLE = "vrh_ags_replica";
 
     private String path;
 
