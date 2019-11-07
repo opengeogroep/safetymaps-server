@@ -261,6 +261,7 @@ public class PersistentAuthenticationFilter implements Filter {
                 cookie.setSecure(request.getScheme().equals("https"));
                 cookie.setMaxAge((int)((c.getTimeInMillis() - System.currentTimeMillis()) / 1000));
                 log.info("Request externally authenticated for user " + principal.getName() + ", setting persistent login cookie " + obfuscateSessionId(id));
+                // TODO: set SameSite=Lax for crossdomain requests from onboard viewer
                 response.addCookie(cookie);
 
                 // Apply additional roles if LDAP user
