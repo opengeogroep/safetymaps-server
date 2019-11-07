@@ -31,6 +31,7 @@ public class DB {
     public static final String USER_ADMIN = "admin";
     public static final String ROLE_EDITOR = "editor";
     public static final String ROLE_INCIDENTMONITOR = "incidentmonitor";
+    public static final String ROLE_INCIDENTMONITOR_KLADBLOK = "incidentmonitor_kladblok";
     public static final String ROLE_EIGEN_VOERTUIGNUMMER = "eigen_voertuignummer";
 
     public static final String USERNAME_LDAP = "ldap_gebruiker";

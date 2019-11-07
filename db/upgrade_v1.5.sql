@@ -4,14 +4,13 @@ create table user_(username varchar, password varchar, session_expiry_number int
 create table role(role varchar, description text, protected boolean default false, modules text, primary key(role));
 create table user_roles(username varchar, role varchar, primary key(username, role), foreign key(role) references safetymaps.role(role));
 
--- echo -n [password] | sha1sum
 insert into safetymaps.role(role, protected, description) values
 ('admin', true, 'Heeft overal toegang toe'),
 ('viewer', true, 'Benodigd voor toegang voertuigviewer'),
 ('falck_webservice', true, 'Benodigd voor toegang incident/eenheidsgegevens uit Falck webservice'),
-('editor', true, 'Benodigd voor opslaan tekeningen',
-('incidentmonitor', true, 'Benodigd voor toegang incidentmonitor',
-('eigen_voertuignummer', true, 'Benodigd voor zelf kunnen instellen voertuignummer');
+('editor', true, 'Benodigd voor opslaan tekeningen');
+
+-- echo -n [password] | sha1sum
 insert into user_(username, password) values ('admin', 'insert hash here');
 insert into user_roles(username, role) values( 'admin', 'admin');
 
