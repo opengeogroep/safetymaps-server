@@ -42,7 +42,7 @@ import org.apache.http.message.BasicNameValuePair;
  */
 @UrlBinding("/viewer/api/vrhAGS{path}")
 public class VrhAGSProxyActionBean implements ActionBean {
-    private static final Log log = LogFactory.getLog(FalckServiceProxyActionBean.class);
+    private static final Log log = LogFactory.getLog(VrhAGSProxyActionBean.class);
 
     private ActionBeanContext context;
 
