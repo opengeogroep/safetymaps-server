@@ -4,10 +4,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONObject;
 
 /**
  *
@@ -27,6 +30,9 @@ public class DB {
     public static final String ROLE_ADMIN = "admin";
     public static final String USER_ADMIN = "admin";
     public static final String ROLE_EDITOR = "editor";
+    public static final String ROLE_INCIDENTMONITOR = "incidentmonitor";
+    public static final String ROLE_INCIDENTMONITOR_KLADBLOK = "incidentmonitor_kladblok";
+    public static final String ROLE_EIGEN_VOERTUIGNUMMER = "eigen_voertuignummer";
 
     public static final String USERNAME_LDAP = "ldap_gebruiker";
 
@@ -50,5 +56,23 @@ public class DB {
 
     public static final QueryRunner bagQr() throws NamingException {
         return new QueryRunner(getDataSource(JNDI_NAME_BAG));
+    }
+
+    public static final JSONObject getUserDetails(HttpServletRequest request) throws Exception {
+        String username = request.getRemoteUser();
+        if(username != null) {
+            return getUserDetails(request.getRemoteUser());
+        } else {
+            return new JSONObject();
+        }
+    }
+
+    public static final JSONObject getUserDetails(String username) throws Exception {
+        Object d = qr().query("select details from " + USER_TABLE + " where username = ?", new ScalarHandler<>(), username);
+        if(d != null) {
+            return new JSONObject(d.toString());
+        } else {
+            return new JSONObject();
+        }
     }
 }

@@ -25,16 +25,13 @@ import org.apache.http.impl.client.HttpClients;
  *
  * @author matthijsln
  */
-@UrlBinding("/viewer/api/falckService/{path}")
-public class FalckServiceProxyActionBean implements ActionBean {
-    private static final Log log = LogFactory.getLog(FalckServiceProxyActionBean.class);
+@UrlBinding("/viewer/api/safetyconnect/{path}")
+public class SafetyConnectProxyActionBean implements ActionBean {
+    private static final Log log = LogFactory.getLog(SafetyConnectProxyActionBean.class);
 
     private ActionBeanContext context;
 
-    private static final String ROLE = "falck_webservice";
-
-    private static final String SETTING_INCIDENTMONITOR_ROLE = "incidentmonitor_role_required";
-    private static final String SETTING_VOERTUIGNUMMER_SERVERSIDE_USER_DETAILS = "voertuignummer_serverside_user_detail";
+    static final String ROLE = "safetyconnect_webservice";
 
     private String path;
 
@@ -57,16 +54,25 @@ public class FalckServiceProxyActionBean implements ActionBean {
     }
 
     public Resolution proxy() throws Exception {
+        // Allow online access to webservice from onboard safetymaps-viewer using
+        // mobile data connection. On the device the browser must be logged in
+        // using a persistent login session to the safetymaps-server integrated version
+        context.getResponse().addHeader("Access-Control-Allow-Origin", "http://localhost");
+        context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
+
         if(!context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN)) {
             return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot webservice");
         }
 
-        String authorization = Cfg.getSetting("falck_webservice_authorization");
-        String url = Cfg.getSetting("falck_webservice_url");
+        String authorization = Cfg.getSetting("safetyconnect_webservice_authorization");
+        String url = Cfg.getSetting("safetyconnect_webservice_url");
 
         if(authorization == null || url == null) {
             return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Geen toegangsgegevens voor webservice geconfigureerd door beheerder");
         }
+
+        // TODO: serverside checks incidentmonitor, incidentmonitor_kladblok,
+        // eigen_voertuignummer roles and use voertuignummer from user details
 
         String qs = context.getRequest().getQueryString();
         final HttpUriRequest req = RequestBuilder.get()
