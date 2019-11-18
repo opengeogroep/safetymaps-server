@@ -37,7 +37,9 @@ public class Main {
         OptionGroup commands = new OptionGroup();
         commands.setRequired(true);
         commands.addOption(Option.builder("organisation")
-                    .desc("Write api/organisation.json")
+                    .desc("Write api/organisation.json as user")
+                    .hasArg()
+                    .argName("username")
                     .build());
         commands.addOption(Option.builder("etag")
                     .desc("Get cache ETag for creator viewer objects list")
@@ -91,7 +93,7 @@ public class Main {
 
         try {
             if(cl.hasOption("organisation")) {
-                cmdWriteOrganisation(c, indent);
+                cmdWriteOrganisation(c, indent, cl.getOptionValue("organisation"));
             }
             if(cl.hasOption("etag")) {
                 cmdGetEtag(c);
@@ -116,8 +118,8 @@ public class Main {
         }
     }
 
-    private static void cmdWriteOrganisation(Connection c, int indent) throws Exception {
-        JSONObject o = ViewerApiActionBean.getOrganisation(c, 28992);
+    private static void cmdWriteOrganisation(Connection c, int indent, String username) throws Exception {
+        JSONObject o = ViewerApiActionBean.getOrganisationWithUserAuthorization(username, c, 28992);
         FileUtils.writeByteArrayToFile(new File("api/organisation.json"), o.toString(indent).getBytes("UTF-8"));
         System.exit(0);
     }

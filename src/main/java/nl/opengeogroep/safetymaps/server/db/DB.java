@@ -58,17 +58,17 @@ public class DB {
         return new QueryRunner(getDataSource(JNDI_NAME_BAG));
     }
 
-    public static final JSONObject getUserDetails(HttpServletRequest request) throws Exception {
+    public static final JSONObject getUserDetails(HttpServletRequest request, Connection c) throws Exception {
         String username = request.getRemoteUser();
         if(username != null) {
-            return getUserDetails(request.getRemoteUser());
+            return getUserDetails(request.getRemoteUser(), c);
         } else {
             return new JSONObject();
         }
     }
 
-    public static final JSONObject getUserDetails(String username) throws Exception {
-        Object d = qr().query("select details from " + USER_TABLE + " where username = ?", new ScalarHandler<>(), username);
+    public static final JSONObject getUserDetails(String username, Connection c) throws Exception {
+        Object d = new QueryRunner().query(c, "select details from " + USER_TABLE + " where username = ?", new ScalarHandler<>(), username);
         if(d != null) {
             return new JSONObject(d.toString());
         } else {
