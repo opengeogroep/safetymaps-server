@@ -20,6 +20,7 @@ import net.sourceforge.stripes.validation.Validate;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.*;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_DRAWING_EDITOR;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_EIGEN_VOERTUIGNUMMER;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_KLADBLOK;
@@ -289,6 +290,8 @@ public class ViewerApiActionBean implements ActionBean {
 
             JSONObject details = getUserDetails(request, c);
             options.put("userVoertuignummer", details.optString("voertuignummer", null));
+        } else if("drawing".equals(name)) {
+            options.put("editAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_DRAWING_EDITOR));
         }
         return module;
     }
