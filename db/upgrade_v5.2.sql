@@ -4,7 +4,8 @@ insert into role(role, protected, description) values
 ('safetyconnect_webservice', true, 'Benodigd voor toegang SC&T SafetyConnect webservice'),
 ('incidentmonitor', true, 'Benodigd voor toegang incidentmonitor'),
 ('incidentmonitor_kladblok', true, 'Benodigd voor tonen kladblokregels in incidentmonitor'),
-('eigen_voertuignummer', true, 'Benodigd voor zelf kunnen instellen voertuignummer');
+('eigen_voertuignummer', true, 'Benodigd voor zelf kunnen instellen voertuignummer'),
+('drawing_editor', true, 'Benodigd om te kunnen tekenen');
 
 update user_roles set role = 'safetyconnect_webservice' where role = 'falck_webservice';
 delete from role where role = 'falck_webservice';
