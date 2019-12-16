@@ -29,6 +29,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         
         <script>
             var mapFiles = ${actionBean.mapFilesJson};
+            var staticPrefix = '${s.settings['mapserver_prefix_static']}';
+            var onlinePrefix = '${s.settings['mapserver_prefix']}';
             
             $(document).ready(layersInit);
         </script>
