@@ -6,10 +6,10 @@ var onlinePrefix = "/cgi-bin/mapserv?map=/home/webdev/mapserver/data/webdav/";
 // TODO configure function in config 
 function convertStaticWmsUrl(url, toStatic, toOnline) {
     var path = url;
-    if(url.indexOf(staticPrefix) === 0) {
+    if(staticPrefix && staticPrefix.length > 0 && url.indexOf(staticPrefix) === 0) {
         path = url.substring(staticPrefix.length);
     }
-    if(url.indexOf(onlinePrefix) === 0) {
+    if(onlinePrefix && onlinePrefix.length > 0 && url.indexOf(onlinePrefix) === 0) {
         path = url.substring(onlinePrefix.length).replace("l_", "");
     }
     if(toStatic) {
