@@ -2,7 +2,6 @@ package nl.opengeogroep.safetymaps.server.stripes;
 
 import java.io.OutputStream;
 import java.io.StringReader;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -717,9 +716,9 @@ public class VrhActionBean implements ActionBean {
 
         // Deduplicate based on ID
         List<Map<String,Object>> dedupRows = new ArrayList();
-        Set<BigDecimal> ids = new HashSet();
+        Set<Long> ids = new HashSet();
         for(Map<String,Object> row: rows) {
-            BigDecimal thisId = (BigDecimal)row.get("id");
+            Long thisId = (Long)row.get("id");
             if(ids.contains(thisId)) {
                 log.warn("Duplicate wbbk row for id " + thisId);
             } else {
