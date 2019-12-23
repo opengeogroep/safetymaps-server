@@ -720,7 +720,7 @@ public class VrhActionBean implements ActionBean {
         Set<Long> ids = new HashSet();
         for(Map<String,Object> row: rows) {
             Object o = row.get("id");
-            Long thisId;
+            Long thisId = null;
             if(o instanceof BigDecimal) {
                 thisId = ((BigDecimal)o).longValue();
             } else if(o instanceof Long) {
