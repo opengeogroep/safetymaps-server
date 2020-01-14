@@ -4,6 +4,8 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +25,7 @@ import nl.opengeogroep.safetymaps.server.db.JSONUtils;
 import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.logExceptionAndReturnJSONObject;
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -294,158 +297,122 @@ public class VrhActionBean implements ActionBean {
         QueryRunner qr = new QueryRunner();
         JSONArray objects = new JSONArray();
 
-        List<Map<String,Object>> rows = qr.query(c, "select vrh_bag_id as id, naam_pand as naam, oms_nummer, vrh_bag_id, " +
-                "st_astext(st_centroid(geom)) as pand_centroid, gp.bagpand_id as hoofdpand_bag_id, box2d(geom)::varchar as extent, " +
-                "(select array_to_json(array_agg(r.bagpand_id)) " +
-                "    from (select bagpand_id " +
-                "         from vrh_new.vrh_geo_pand p " +
-                "         where p.vrh_bag_id = gp.vrh_bag_id" +
-                "         and bagpand_id is not null" +
-                "         and hoofd_sub = 'Subpand') r " +
-                "    ) as subpanden " +
-                "from vrh_new.vrh_geo_pand gp " +
-                "where hoofd_sub='Hoofdpand' " +
-                "and naam_pand is not null " +
-                "order by naam_pand", new MapListHandler());
+        List<Map<String,Object>> objectRows = qr.query(c, "select vrh_bag_id as id, naam, oms_nummer, st_astext(geom) as pand_centroid " +
+                "from vrh_new.vrh_geo_dbk_bag_object o " +
+                "order by naam", new MapListHandler());
 
-        Set<String> nummeraanduidingIds = new HashSet();
-        Set<String> pandIds = new HashSet();
+        Map<String,Map<String,Object>> objectExtents = (Map<String,Map<String,Object>>)qr.query(c, "select vrh_bag_id, st_extent(geom) as extent from vrh_new.vrh_geo_pand group by vrh_bag_id", new KeyedHandler("vrh_bag_id"));
 
-        for(Map<String,Object> row: rows) {
-            String vrhBagId = (String)row.get("vrh_bag_id");
-            if(vrhBagId != null) {
-                nummeraanduidingIds.add(vrhBagId);
-            }
-            String bagPandId = (String)row.get("hoofdpand_bag_id");
-            if(bagPandId != null) {
-                pandIds.add(bagPandId);
-            }
-            if(row.get("subpanden") != null) {
-                JSONArray subpanden = new JSONArray(row.get("subpanden").toString());
-                for(int i = 0; i < subpanden.length(); i++) {
-                    bagPandId = subpanden.getString(i);
-                    pandIds.add(bagPandId);
+        final Map<String,Set<String>> objectPandIds = new HashMap();
+        final Set<String> allPandIds = new HashSet();
+
+        // Geen negatieve of verkeerd ingevulde niet-numerieke "ids"
+        qr.query(c, "select vrh_bag_id, bagpand_id from vrh_new.vrh_geo_pand where bagpand_id ~ '^[0-9]+$'", new ResultSetHandler() {
+            @Override
+            public Object handle(ResultSet rs) throws SQLException {
+                while(rs.next()) {
+                    String vrhBagId = rs.getString(1);
+                    String pandId = rs.getString(2);
+                    Set<String> thisObjectPandIds = objectPandIds.get(vrhBagId);
+                    if(thisObjectPandIds == null) {
+                        thisObjectPandIds = new HashSet();
+                        objectPandIds.put(vrhBagId, thisObjectPandIds);
+                    }
+                    thisObjectPandIds.add(pandId);
+                    allPandIds.add(pandId);
                 }
+                return null;
             }
-        }
+        });
 
-        Map<String,Map<String,Object>> adresRows = (Map<String,Map<String,Object>>)DB.bagQr().query("select nummeraanduiding, openbareruimtenaam, huisnummer, huisletter, huisnummertoevoeging, postcode, woonplaatsnaam, st_astext(st_force2d(geopunt)) as geopunt from bag_actueel.adres where nummeraanduiding in (" + StringUtils.repeat("?", ", ", nummeraanduidingIds.size()) + ")", new KeyedHandler("nummeraanduiding"), (Object[])nummeraanduidingIds.toArray(new String[] {}));
-
-        Map<String,Map<String,Object>> adresNietBagRows = (Map<String,Map<String,Object>>)qr.query(c, "select id, straatnaam, huisnummer, huisletter, toevoeging, postcode, woonplaats, adres_loca, st_astext(st_force2d(geom)) as geopunt from vrh_new.vrh_geo_adres_niet_bag", new KeyedHandler("id"));
-
-        List<Map<String,Object>> pandAdresRows = DB.bagQr().query("select pandid, openbareruimtenaam, huisnummer, huisletter, huisnummertoevoeging, postcode, woonplaatsnaam, st_astext(st_force2d(geopunt)) as geopunt from bag_actueel.adres_full where pandid in (" + StringUtils.repeat("?", ", ", pandIds.size()) + ")", new MapListHandler(), (Object[])pandIds.toArray(new String[] {}));
+        List<Map<String,Object>> pandAdresRows = DB.bagQr().query("select pandid, nummeraanduiding, openbareruimtenaam, huisnummer, huisletter, huisnummertoevoeging, postcode, woonplaatsnaam, st_astext(st_force2d(geopunt)) as geopunt from bag_actueel.adres_full where pandid in (" + StringUtils.repeat("?", ", ", allPandIds.size()) + ")", new MapListHandler(), (Object[])allPandIds.toArray(new String[] {}));
         Map<String,List<Map<String,Object>>> pandIdAdressen = new HashMap();
         for(Map<String,Object> r: pandAdresRows) {
             String pandId = (String)r.get("pandid");
             List<Map<String,Object>> pandAdressen = pandIdAdressen.get(pandId);
-            if(pandAdressen != null) {
-                pandAdressen.add(r);
-            } else {
+            if(pandAdressen == null) {
                 pandAdressen = new ArrayList();
-                pandAdressen.add(r);
                 pandIdAdressen.put(pandId, pandAdressen);
             }
+            pandAdressen.add(r);
         }
 
-        Set objectIds = new HashSet();
-
-        for(Map<String,Object> row: rows) {
+        for(Map<String,Object> row: objectRows) {
             JSONObject o = JSONUtils.rowToJson(row, true, true);
+            objects.put(o);
 
-            Object id = row.get("id");
-            if(objectIds.contains(id)) {
-                // Duplicate hoofdpand pand row
-                continue;
-            }
-            objectIds.add(id);
+            String vrhBagId = (String)row.get("id");
 
-            String vrhBagId = (String)row.get("vrh_bag_id");
-            Map<String,Object> bagAdres = adresRows.get(vrhBagId);
-
-            if(bagAdres != null) {
-                o.put("straatnaam", bagAdres.get("openbareruimtenaam"));
-                o.put("huisnummer", bagAdres.get("huisnummer"));
-                o.put("huisletter", bagAdres.get("huisletter"));
-                o.put("toevoeging", bagAdres.get("huisnummertoevoeging"));
-                o.put("postcode", bagAdres.get("postcode"));
-                o.put("plaats", bagAdres.get("woonplaatsnaam"));
-                o.put("bagPunt", bagAdres.get("geopunt"));
-            } else {
-                Map<String,Object> adresNietBag = adresNietBagRows.get(vrhBagId);
-                if(adresNietBag != null) {
-                    o.put("locatie", adresNietBag.get("adres_loca"));
-                    o.put("straatnaam", adresNietBag.get("straatnaam"));
-                    o.put("huisnummer", adresNietBag.get("huisnummer"));
-                    o.put("huisletter", adresNietBag.get("huisletter"));
-                    o.put("toevoeging", adresNietBag.get("toevoeging"));
-                    o.put("postcode", adresNietBag.get("postcode"));
-                    o.put("plaats", adresNietBag.get("woonplaats"));
-                    o.put("bagPunt", adresNietBag.get("geopunt"));
-                }
+            Map<String,Object> extent = objectExtents.get(vrhBagId);
+            if(extent != null) {
+                o.put("extent", extent.get("extent"));
             }
 
             JSONArray extraAdressenJson = new JSONArray();
-            addPandAdressen(extraAdressenJson, pandIdAdressen, (String)row.get("hoofdpand_bag_id"));
-            if(row.get("subpanden") != null) {
-                JSONArray subpanden = new JSONArray(row.get("subpanden").toString());
-                for(int i = 0; i < subpanden.length(); i++) {
-                    addPandAdressen(extraAdressenJson, pandIdAdressen, subpanden.getString(i));
+
+            Set<String> pandIds = objectPandIds.get(vrhBagId);
+            if(pandIds != null) {
+                for(String pandId: pandIds) {
+                    List<Map<String,Object>> adressen = pandIdAdressen.get(pandId);
+                    if(adressen != null) {
+                        for(Map<String,Object> bagAdres: adressen) {
+                            String nummeraanduiding = (String)bagAdres.get("nummeraanduiding");
+                            if(vrhBagId.equals(nummeraanduiding)) {
+                                String hoofdpand = (String)bagAdres.get("pandid");
+                                String newId = o.get("id") + "p" + hoofdpand;
+                                o.put("id", newId);
+
+                                o.put("straatnaam", bagAdres.get("openbareruimtenaam"));
+                                o.put("huisnummer", bagAdres.get("huisnummer"));
+                                o.put("huisletter", bagAdres.get("huisletter"));
+                                o.put("toevoeging", bagAdres.get("huisnummertoevoeging"));
+                                o.put("postcode", bagAdres.get("postcode"));
+                                o.put("plaats", bagAdres.get("woonplaatsnaam"));
+                            } else {
+                                addExtraAdres(extraAdressenJson, bagAdres);
+                            }
+                        }
+                    }
                 }
             }
+
             if(extraAdressenJson.length() > 0) {
                 o.put("selectieadressen", extraAdressenJson);
             }
-            
-            objects.put(o);
         }
 
         return objects;
     }
 
-    private static void addPandAdressen(JSONArray extraAdressenJson, Map<String,List<Map<String,Object>>> pandIdAdressen, String bagPandId) {
-        List<Map<String,Object>> adressen = pandIdAdressen.get(bagPandId);
-
-        if(adressen == null) {
-            log.warn("Geen adressen gevonden voor BAG pand ID " + bagPandId);
-            return;
+    private static void addExtraAdres(JSONArray extraAdressenJson, Map<String,Object> adres) {
+        String sn = (String)adres.get("openbareruimtenaam");
+        String pl = (String)adres.get("woonplaatsnaam");
+        String pc = (String)adres.get("postcode");
+        String extraNr = adres.get("huisnummer") + "";
+        if(adres.get("huisletter") != null || adres.get("huisnummertoevoeging") != null ) {
+            extraNr += "|" + ObjectUtils.firstNonNull(adres.get("huisletter"), "");
+            extraNr += "|" + ObjectUtils.firstNonNull(adres.get("huisnummertoevoeging"), "");
         }
-
+        boolean added = false;
         JSONObject extraAdres = null;
-
-        for(Map<String,Object> adres: adressen) {
-            String sn = (String)adres.get("openbareruimtenaam");
-            String pl = (String)adres.get("woonplaatsnaam");
-            String pc = (String)adres.get("postcode");
-            String extraNr = adres.get("huisnummer") + "";
-            if(adres.get("huisletter") != null || adres.get("huisnummertoevoeging") != null ) {
-                extraNr += "|" + ObjectUtils.firstNonNull(adres.get("huisletter"), "");
-                extraNr += "|" + ObjectUtils.firstNonNull(adres.get("huisnummertoevoeging"), "");
+        for(int i = 0; i < extraAdressenJson.length(); i++) {
+            JSONObject ea = extraAdressenJson.getJSONObject(i);
+            if(sn.equals(ea.get("sn")) && pc.equals(ea.get("pc")) && pl.equals(ea.get("pl"))) {
+                extraAdres = ea;
+                break;
             }
-            boolean added = false;
-            if(extraAdres != null && sn.equals(extraAdres.get("sn")) && pc.equals(extraAdres.get("pc")) && pl.equals(extraAdres.get("pl"))) {
-                added = true;
-            } else {
-                for(int i = 0; i < extraAdressenJson.length(); i++) {
-                    JSONObject extraAdresEl = extraAdressenJson.getJSONObject(i);
-                    if(sn.equals(extraAdresEl.get("sn")) && pc.equals(extraAdresEl.get("pc")) && pl.equals(extraAdresEl.get("pl"))) {
-                        extraAdres = extraAdressenJson.getJSONObject(i);
-                        added = true;
-                        break;
-                    }
-                }
-            }
-            if(!added) {
-                extraAdres = new JSONObject();
-                extraAdres.put("pl", adres.get("woonplaatsnaam"));
-                extraAdres.put("pc", adres.get("postcode"));
-                extraAdres.put("sn", adres.get("openbareruimtenaam"));
-                JSONArray nrs = new JSONArray();
-                extraAdres.put("nrs", nrs);
-                extraAdressenJson.put(extraAdres);
-            }
-            // Voeg huisnummer|huisletter|huisnummertoevoeving toe aan nrs array
-            extraAdres.getJSONArray("nrs").put(extraNr);
         }
+        if(extraAdres == null) {
+            extraAdres = new JSONObject();
+            extraAdres.put("pl", pl);
+            extraAdres.put("pc", pc);
+            extraAdres.put("sn", sn);
+            JSONArray nrs = new JSONArray();
+            extraAdres.put("nrs", nrs);
+            extraAdressenJson.put(extraAdres);
+        }
+        // Voeg huisnummer|huisletter|huisnummertoevoeving toe aan nrs array
+        extraAdres.getJSONArray("nrs").put(extraNr);
     }
 
     public static JSONObject dbkJsonNewDbSchema(Connection c, String id) throws Exception {
