@@ -70,7 +70,7 @@ public class PersistentAuthenticationFilter implements Filter {
     private String logoutUrl;
     private List<String> allowedRoles;
 
-    private static final ConcurrentMap<String,HttpSession> containerSessions = new ConcurrentHashMap();
+    private static final ConcurrentMap<String,HttpSession> CONTAINER_SESSIONS = new ConcurrentHashMap();
 
     /**
      * Get a filter init-parameter which can be overriden by a context parameter
@@ -136,7 +136,7 @@ public class PersistentAuthenticationFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse)servletResponse;
         HttpSession session = request.getSession();
 
-        containerSessions.putIfAbsent(session.getId(), session);
+        CONTAINER_SESSIONS.putIfAbsent(session.getId(), session);
 
         if(!enabled) {
             chain.doFilter(request, response);
@@ -261,6 +261,7 @@ public class PersistentAuthenticationFilter implements Filter {
                 cookie.setSecure(request.getScheme().equals("https"));
                 cookie.setMaxAge((int)((c.getTimeInMillis() - System.currentTimeMillis()) / 1000));
                 log.info("Request externally authenticated for user " + principal.getName() + ", setting persistent login cookie " + obfuscateSessionId(id));
+                // TODO: set SameSite=Lax for crossdomain requests from onboard viewer
                 response.addCookie(cookie);
 
                 // Apply additional roles if LDAP user
@@ -343,7 +344,7 @@ public class PersistentAuthenticationFilter implements Filter {
 
     public static void invalidateUserSessions(String name) throws IOException {
         List<String> invalidSessionIds = new ArrayList<>();
-        for(HttpSession session: containerSessions.values()) {
+        for(HttpSession session: CONTAINER_SESSIONS.values()) {
             try {
                 String sessionUser = (String)session.getAttribute(SESSION_USERNAME);
                 log.debug("Checking container session " + session.getId() + " to delete, session user = " + sessionUser);
@@ -358,7 +359,7 @@ public class PersistentAuthenticationFilter implements Filter {
             }
         }
         for(String id: invalidSessionIds) {
-            containerSessions.remove(id);
+            CONTAINER_SESSIONS.remove(id);
         }
         PersistentSessionManager.deleteUserSessions(name);
     }

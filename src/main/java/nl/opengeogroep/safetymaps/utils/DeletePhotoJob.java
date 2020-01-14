@@ -36,7 +36,7 @@ public class DeletePhotoJob implements Job {
                 //get all photos that are older than INTERVAL
                 List<Map<String, Object>> rs = DB.qr().query("select * from wfs.\"FotoFunctie\" where date <=  CURRENT_DATE + INTERVAL '-" + INTERVAL + " day'", new MapListHandler());
 
-                if(rs.isEmpty()) {
+                if(!rs.isEmpty()) {
                     //Loop through photo's and delete it.
                     for (Map<String, Object> photo : rs) {
                         String fileName = photo.get("filename").toString();
@@ -48,7 +48,7 @@ public class DeletePhotoJob implements Job {
                         }
                     }
                     //finally delete Photo's from DB
-                    DB.qr().update("delete from wfs.\"FotoFunctie\" where datum <=  CURRENT_DATE + INTERVAL '-" + INTERVAL + " day'");
+                    DB.qr().update("delete from wfs.\"FotoFunctie\" where date <=  CURRENT_DATE + INTERVAL '-" + INTERVAL + " day'");
                 }
             }
         } catch (Exception ex) {

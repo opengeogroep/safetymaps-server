@@ -11,16 +11,22 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
-import static javafx.scene.input.KeyCode.O;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
+import net.sourceforge.stripes.mock.MockHttpServletRequest;
 import net.sourceforge.stripes.validation.Validate;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.*;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_DRAWING_EDITOR;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_EIGEN_VOERTUIGNUMMER;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_KLADBLOK;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_TABLE;
-import static nl.opengeogroep.safetymaps.server.db.DB.qr;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.getUserDetails;
 import nl.opengeogroep.safetymaps.viewer.ViewerDataExporter;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
@@ -217,12 +223,27 @@ public class ViewerApiActionBean implements ActionBean {
         return j;
     }
 
+    public static JSONObject getOrganisationWithUserAuthorization(final String username, Connection c, int srid) throws Exception {
+        final Set<String> roles = new HashSet<String>(new QueryRunner().query(c, "select role from " + USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), username));
+        return getOrganisationWithAuthorizedModules(new HttpServletRequestWrapper(new MockHttpServletRequest(null, null)) {
+            @Override
+            public String getRemoteUser() {
+                return username;
+            }
+
+            @Override
+            public boolean isUserInRole(String role) {
+                return roles.contains(role);
+            }
+        }, c, srid);
+    }
+
     public static JSONObject getOrganisationWithAuthorizedModules(HttpServletRequest request, Connection c, int srid) throws Exception {
         Object org = new QueryRunner().query(c, "select \"organisation\" from organisation.organisation_nieuw_json(" + srid + ")", new ScalarHandler<>());
         JSONObject organisation = new JSONObject(org.toString());
         organisation.put("integrated", true);
         if(!request.isUserInRole(ROLE_ADMIN)) {
-            List<Map<String,Object>> roles = qr().query("select role, modules from " + ROLE_TABLE + " where modules is not null", new MapListHandler());
+            List<Map<String,Object>> roles = new QueryRunner().query(c, "select role, modules from " + ROLE_TABLE + " where modules is not null", new MapListHandler());
             Set<String> authorizedModules = new HashSet();
             for(Map<String,Object> role: roles) {
                 if(request.isUserInRole(role.get("role").toString())) {
@@ -235,16 +256,44 @@ public class ViewerApiActionBean implements ActionBean {
             for(int i = 0; i < modules.length(); i++) {
                 JSONObject module = modules.getJSONObject(i);
                 if(authorizedModules.contains(module.getString("name"))) {
+                    checkModuleAuthorizations(request, c, module);
                     jaAuthorizedModules.put(module);
                 }
             }
             organisation.put("modules", jaAuthorizedModules);
 
+        } else {
+            JSONArray modules = organisation.getJSONArray("modules");
+            for(int i = 0; i < modules.length(); i++) {
+                // Add settings to options for admin
+                checkModuleAuthorizations(request, c, modules.getJSONObject(i));
+            }
         }
         JSONObject j = new JSONObject();
 
         j.put("organisation", organisation);
         return j;
+    }
+
+    /**
+     * Modify module options to apply authorizations.
+     */
+    private static JSONObject checkModuleAuthorizations(HttpServletRequest request, Connection c, JSONObject module) throws Exception {
+        String name = module.getString("name");
+        JSONObject options = module.isNull("options") ? new JSONObject(): module.getJSONObject("options");
+        if("incidents".equals(name)) {
+            options.put("sourceVrhAGSAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(VrhAGSProxyActionBean.ROLE));
+            options.put("sourceSafetyConnectAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(SafetyConnectProxyActionBean.ROLE));
+            options.put("incidentMonitorAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR));
+            options.put("incidentMonitorKladblokAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_KLADBLOK));
+            options.put("eigenVoertuignummerAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_EIGEN_VOERTUIGNUMMER));
+
+            JSONObject details = getUserDetails(request, c);
+            options.put("userVoertuignummer", details.optString("voertuignummer", null));
+        } else if("drawing".equals(name)) {
+            options.put("editAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_DRAWING_EDITOR));
+        }
+        return module;
     }
 
     private Resolution organisation(Connection c) throws Exception {

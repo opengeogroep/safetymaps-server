@@ -31,6 +31,7 @@ import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter;
+import static nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter.invalidateUserSessions;
 import nl.opengeogroep.safetymaps.server.security.PersistentSessionManager;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
@@ -39,6 +40,7 @@ import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONObject;
 
 /**
  *
@@ -71,6 +73,9 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
 
     @Validate
     private List<String> roles;
+
+    @Validate
+    private String voertuignummer;
 
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
@@ -138,6 +143,14 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
     public void setExpiryTimeUnit(String expiryTimeUnit) {
         this.expiryTimeUnit = expiryTimeUnit;
     }
+
+    public String getVoertuignummer() {
+        return voertuignummer;
+    }
+
+    public void setVoertuignummer(String voertuignummer) {
+        this.voertuignummer = voertuignummer;
+    }
     // </editor-fold>
 
     @Before
@@ -175,6 +188,11 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
             Map<String,Object> data = qr().query("select * from " + USER_TABLE + " where username = ?", new MapHandler(), username);
             expiry = data.containsKey("session_expiry_number") ? (Integer)data.get("session_expiry_number") : null;
             expiryTimeUnit = (String)data.get("session_expiry_timeunit");
+
+            if(data.get("details") != null) {
+                JSONObject details = new JSONObject(data.get("details").toString());
+                voertuignummer = details.optString("voertuignummer", null);
+            }
         }
 
         return new ForwardResolution(JSP);
@@ -185,8 +203,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
             getContext().getValidationErrors().addGlobalError(new SimpleError("Speciale gebruiker kan niet verwijderd worden"));
             return list();
         }
-        // TODO: https://stackoverflow.com/questions/24895177/how-to-access-sessions-in-tomcat-and-terminate-one-of-them
-        PersistentSessionManager.deleteUserSessions(username);
+        invalidateUserSessions(username);
 
         int count = qr().update("delete from " + SESSION_TABLE + " where username = ?", username);
         log.info("Removing user " + username + ", deleted " + count + " persistent sessions");
@@ -198,6 +215,12 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
         } else {
             getContext().getMessages().add(new SimpleMessage("Geen gebruiker gevonden om te verwijderen!"));
         }
+        return new RedirectResolution(this.getClass()).flash(this);
+    }
+
+    public Resolution deleteSessions() throws Exception {
+        invalidateUserSessions(username);
+        getContext().getMessages().add(new SimpleMessage("Inlogsessies zijn verwijderd"));
         return new RedirectResolution(this.getClass()).flash(this);
     }
 
@@ -213,11 +236,20 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
         } else {
             hashedPassword = DigestUtils.sha1Hex(password);
             if(!USER_ADMIN.equals(username)) {
-                PersistentAuthenticationFilter.invalidateUserSessions(username);
+                invalidateUserSessions(username);
             }
         }
 
-        int update = qr().update("update " + USER_TABLE + " set password = ?, session_expiry_number = ?, session_expiry_timeunit = ? where username = ?", hashedPassword, expiry, expiryTimeUnit, username);
+        String detailsString = null;
+        if(voertuignummer != null) {
+            // Assume only we save details, if other places use details, update
+            // result from DB.getUserDetails()
+            JSONObject details = new JSONObject();
+            details.put("voertuignummer", voertuignummer);
+            detailsString = details.toString();
+        }
+
+        int update = qr().update("update " + USER_TABLE + " set password = ?, session_expiry_number = ?, session_expiry_timeunit = ?, details = ?::json where username = ?", hashedPassword, expiry, expiryTimeUnit, detailsString, username);
         if(update == 0) {
             qr().update("insert into " + USER_TABLE + " (username, password, session_expiry_number, session_expiry_timeunit) values(?, ?, ?, ?)", username, hashedPassword, expiry, expiryTimeUnit);
         }

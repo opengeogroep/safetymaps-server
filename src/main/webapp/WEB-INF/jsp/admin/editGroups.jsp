@@ -117,6 +117,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Gebruikers lid van deze groep:</label>
                     <div class="col-sm-10">
+                        <p class="help-block text-warning">Let op: wijzigingen in groeplidmaatschap worden pas toegepast na uit- en inloggen. Als de uitlogknop is
+                            verborgen kan alleen worden uitgelogd door de hele browsercache te legen of door een beheerder met de "Overal uitloggen" knop op de gebruikerspagina.</p>
                         <c:forEach var="user" items="${actionBean.allUsers}" varStatus="status">
                             <div class="custom-control custom-checkbox">
                                 <stripes:checkbox name="users" class="custom-control-input" value="${user}" id="role${status.index}"/>

@@ -540,7 +540,7 @@ public class VrhActionBean implements ActionBean {
                 "    from (select objectid, tekst, symboolgro, symboolhoe, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_tekst t " +
                 "         where t.vrh_bag_id = p.vrh_bag_id) r " +
-                "    ) as teksten " +
+                "    ) as teksten, " +
 /*
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select *, st_astext(t.geom) as geometry " +
@@ -548,6 +548,12 @@ public class VrhActionBean implements ActionBean {
                 "         where t.dbk_object = o.id) r " +
                 "    ) as aanrijroute " +
 */
+                "    (select array_to_json(array_agg(brandinstallaties)) \n" +
+                "    from (select brandinstallaties \n" +
+                "         from vrh_new.brandinstallaties t \n" +
+                "         where t.vrh_bag_id = p.vrh_bag_id) r \n" +
+                "    ) as brandinstallaties " +
+
                 "from vrh_new.vrh_geo_pand p " +
                 "left join vrh_new.vrh_geo_dbk_bag_object o on (o.vrh_bag_id = p.vrh_bag_id) " +
                 "where p.hoofd_sub = 'Hoofdpand' and p.vrh_bag_id = ?", new MapListHandler(), id);
@@ -713,13 +719,13 @@ public class VrhActionBean implements ActionBean {
         List<Map<String,Object>> dedupRows = new ArrayList();
         Set<Long> ids = new HashSet();
         for(Map<String,Object> row: rows) {
-            Object v = row.get("id");
-            Long thisId;
-                // BigDecimal for old JDBC driver
-            if(v instanceof BigDecimal) {
-                thisId = ((BigDecimal)v).longValue();
-            } else {
-                thisId = (Long)v;
+            Object o = row.get("id");
+            Long thisId = null;
+            // BigDecimal for old JDBC driver              
+            if(o instanceof BigDecimal) {
+                thisId = ((BigDecimal)o).longValue();
+            } else if(o instanceof Long) {
+                thisId = (Long)o;
             }
             if(ids.contains(thisId)) {
                 log.warn("Duplicate wbbk row for id " + thisId);
