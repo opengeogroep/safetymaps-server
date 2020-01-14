@@ -8,7 +8,7 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
+import org.apache.commons.codec.binary.Base64;
 
 /*
  * Utility to generate a signature for mod_auth_pubtkt.
@@ -38,7 +38,7 @@ public class ModAuthPubTkt {
         }
         pem = pem.replace(PEM_KEY_START, "").replace(PEM_KEY_END, "");
 
-        byte[] decoded = Base64.getMimeDecoder().decode(pem);
+        byte[] decoded = Base64.decodeBase64(pem);
 
         KeyFactory kf = KeyFactory.getInstance("RSA");
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decoded);
@@ -53,7 +53,7 @@ public class ModAuthPubTkt {
         Signature sig = Signature.getInstance(algorithm);
         sig.initSign(privateKey);
         sig.update(ticket.getBytes());
-        return Base64.getEncoder().encodeToString(sig.sign());
+        return Base64.encodeBase64String(sig.sign());
     }
 
     /**
