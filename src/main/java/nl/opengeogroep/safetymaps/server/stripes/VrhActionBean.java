@@ -26,6 +26,8 @@ import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.logExceptionAndReturnJSONObject;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
+import org.apache.commons.dbutils.handlers.ArrayListHandler;
+import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -157,7 +159,7 @@ public class VrhActionBean implements ActionBean {
     }
 
     private String getIdFromPath(String type) throws Exception {
-        Pattern p = Pattern.compile(type + "\\/([0-9]+)\\.json");
+        Pattern p = Pattern.compile(type + "\\/([\\-0-9p]+)\\.json");
         Matcher m = p.matcher(path);
 
         if(!m.find()) {
@@ -374,6 +376,18 @@ public class VrhActionBean implements ActionBean {
                         }
                     }
                 }
+            } else {
+                Map<String,Object> adresNietBag = new QueryRunner().query(c, "select straatnaam, huisnummer, huisletter, toevoeging, postcode, woonplaats, adres_loca from vrh_new.vrh_geo_adres_niet_bag where id = ?", new MapHandler(), vrhBagId);
+
+                if(adresNietBag != null) {
+                    row.put("locatie", adresNietBag.get("adres_loca"));
+                    row.put("straatnaam", adresNietBag.get("straatnaam"));
+                    row.put("huisnummer", adresNietBag.get("huisnummer"));
+                    row.put("huisletter", adresNietBag.get("huisletter"));
+                    row.put("toevoeging", adresNietBag.get("toevoeging"));
+                    row.put("postcode", adresNietBag.get("postcode"));
+                    row.put("plaats", adresNietBag.get("woonplaats"));
+                }
             }
 
             if(extraAdressenJson.length() > 0) {
@@ -416,60 +430,79 @@ public class VrhActionBean implements ActionBean {
     }
 
     public static JSONObject dbkJsonNewDbSchema(Connection c, String id) throws Exception {
+
+        String hoofdpandId = null;
+        String[] idParts = id.split("p");
+        if(idParts.length == 2) {
+            id = idParts[0];
+            hoofdpandId = idParts[1];
+        }
+
+        List<String> bagpandIds = new QueryRunner().query(c, "select bagpand_id from vrh_new.vrh_geo_pand where vrh_bag_id = ?", new ColumnListHandler<String>(), id);
+        if(hoofdpandId == null && !bagpandIds.isEmpty()) {
+            // for vrh_geo_adres_niet_bag - take the first record
+            hoofdpandId = bagpandIds.get(0);
+        }
+
+        for(int i = 0; i < bagpandIds.size(); i++) {
+            bagpandIds.set(i, "'" + bagpandIds.get(i) + "'");
+        }
+        String bagPandIdsQuery = "in (" + StringUtils.join(bagpandIds.toArray(new String[] {}), ",") + ")";
+
         List<Map<String,Object>> rows = new QueryRunner().query(c, "select " +
                 "    o.*, " +
-                "    (select st_astext(st_collect(sp.geom)) from vrh_new.vrh_geo_pand sp where sp.vrh_bag_id = p.vrh_bag_id) as geometry, " +
+//                "    (select st_astext(st_collect(sp.geom)) from vrh_new.vrh_geo_pand sp where sp.vrh_bag_id = p.vrh_bag_id) as geometry, " +
 //                "    st_astext(p.geom) as geometry, " +
 
                 "    (select row_to_json(r.*) " +
                 "    from (select *, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_pand t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id" +
-                "         and hoofd_sub = 'Hoofdpand'" +
+                "         where t.vrh_bag_id = o.vrh_bag_id" +
+                "         and bagpand_id = ?" +
                 "         limit 1) r " +
                 "    ) as hoofdpand, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                "    from (select objectid, st_astext(t.geom) as geometry " +
+                "    from (select bagpand_id, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_pand t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id" +
-                "         and hoofd_sub = 'Subpand') r " +
+                "         where t.vrh_bag_id = o.vrh_bag_id" +
+                "         and bagpand_id <> ?) r " +
                 "    ) as subpanden, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select *, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_compartimentering t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id) r " +
+                "         where t.bagpand_id " + bagPandIdsQuery + ") r " +
                 "    ) as compartimentering, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select objectid, symboolcod, symboolhoe, symboolgro, omschrijvi, bijzonderh, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_brandweervoorziening t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id) r " +
+                "         where t.bagpand_id " + bagPandIdsQuery + ") r " +
                 "    ) as brandweervoorziening, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select *, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_opstelplaats t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id) r " +
+                "         where t.bagpand_id " + bagPandIdsQuery + ") r " +
                 "    ) as opstelplaats, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select objectid, symboolcod, symboolgro, omschrijvi, bijzonderh, symboolhoe, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_toegang_pand t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id) r " +
+                "         where t.bagpand_id " + bagPandIdsQuery + ") r " +
                 "    ) as toegang_pand, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select *, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_toegang_terrein t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id) r " +
+                "         where t.bagpand_id " + bagPandIdsQuery + ") r " +
                 "    ) as toegang_terrein, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select objectid, symboolcod, symboolgro, bijzonderh, soort_geva, locatie, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_gevaren t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id) r " +
+                "         where t.bagpand_id " + bagPandIdsQuery + ") r " +
                 "    ) as gevaren, " +
 /*
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
@@ -481,14 +514,14 @@ public class VrhActionBean implements ActionBean {
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select *, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_gevaarlijke_stoffen t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id " +
+                "         where t.bagpand_id " + bagPandIdsQuery +
                 "         order by volgnummer) r " +
                 "    ) as gevaarlijke_stoffen, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select objectid, coalesce(type, symboolcod) as type, bijzonderh, opmerkinge, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_dbk_lijn t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id) r " +
+                "         where t.bagpand_id " + bagPandIdsQuery + ") r " +
                 "    ) as overige_lijnen, " +
 /*
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
@@ -506,7 +539,7 @@ public class VrhActionBean implements ActionBean {
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select objectid, tekst, symboolgro, symboolhoe, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_tekst t " +
-                "         where t.vrh_bag_id = p.vrh_bag_id) r " +
+                "         where t.bagpand_id " + bagPandIdsQuery + ") r " +
                 "    ) as teksten, " +
 /*
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
@@ -518,21 +551,19 @@ public class VrhActionBean implements ActionBean {
                 "    (select array_to_json(array_agg(brandinstallaties)) \n" +
                 "    from (select brandinstallaties \n" +
                 "         from vrh_new.brandinstallaties t \n" +
-                "         where t.vrh_bag_id = p.vrh_bag_id) r \n" +
+                "         where t.vrh_bag_id = o.vrh_bag_id) r \n" +
                 "    ) as brandinstallaties " +
 
-                "from vrh_new.vrh_geo_pand p " +
-                "left join vrh_new.vrh_geo_dbk_bag_object o on (o.vrh_bag_id = p.vrh_bag_id) " +
-                "where p.hoofd_sub = 'Hoofdpand' and p.vrh_bag_id = ?", new MapListHandler(), id);
+                "from vrh_new.vrh_geo_dbk_bag_object o where o.vrh_bag_id = ?", new MapListHandler(), hoofdpandId, hoofdpandId, id);
 
         if(rows.isEmpty()) {
             throw new IllegalArgumentException("DBK met ID " + id + " niet gevonden");
         }
 
-        String vrhBagId = (String)rows.get(0).get("vrh_bag_id");
-        Map<String,Object> bagAdres = DB.bagQr().query("select openbareruimtenaam, huisnummer, huisletter, huisnummertoevoeging, postcode, woonplaatsnaam from bag_actueel.adres where nummeraanduiding = ?", new MapHandler(), vrhBagId);
+        Map<String,Object> bagAdres = DB.bagQr().query("select openbareruimtenaam, huisnummer, huisletter, huisnummertoevoeging, postcode, woonplaatsnaam from bag_actueel.adres where nummeraanduiding = ?", new MapHandler(), id);
 
         Map<String,Object> row = rows.get(0);
+        row.remove("geom");
 
         if(bagAdres != null) {
             row.put("straatnaam", bagAdres.get("openbareruimtenaam"));
@@ -543,7 +574,7 @@ public class VrhActionBean implements ActionBean {
             row.put("plaats", bagAdres.get("woonplaatsnaam"));
             row.put("bagPunt", bagAdres.get("geopunt"));
         } else {
-            Map<String,Object> adresNietBag = new QueryRunner().query(c, "select straatnaam, huisnummer, huisletter, toevoeging, postcode, woonplaats, adres_loca, st_astext(st_force2d(geom)) as geopunt from vrh_new.vrh_geo_adres_niet_bag where id = ?", new MapHandler(), vrhBagId);
+            Map<String,Object> adresNietBag = new QueryRunner().query(c, "select straatnaam, huisnummer, huisletter, toevoeging, postcode, woonplaats, adres_loca from vrh_new.vrh_geo_adres_niet_bag where id = ?", new MapHandler(), id);
 
             if(adresNietBag != null) {
                 row.put("locatie", adresNietBag.get("adres_loca"));
@@ -553,12 +584,20 @@ public class VrhActionBean implements ActionBean {
                 row.put("toevoeging", adresNietBag.get("toevoeging"));
                 row.put("postcode", adresNietBag.get("postcode"));
                 row.put("plaats", adresNietBag.get("woonplaats"));
-                row.put("bagPunt", adresNietBag.get("geopunt"));
             }
-
         }
 
-        return rowToJson(row, true, true);
+        JSONObject obj = rowToJson(row, true, true);
+        JSONObject hoofdpand = obj.getJSONObject("hoofdpand");
+        hoofdpand.remove("geom");
+        JSONArray subpanden = obj.optJSONArray("subpanden");
+        if(subpanden != null) {
+            for(int i = 0; i < subpanden.length(); i++) {
+                subpanden.getJSONObject(i).remove("geom");
+            }
+        }
+
+        return obj;
     }
 
     public static JSONObject dbkJson(Connection c, int id) throws Exception {
