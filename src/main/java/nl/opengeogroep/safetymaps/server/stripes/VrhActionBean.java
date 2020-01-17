@@ -598,6 +598,12 @@ public class VrhActionBean implements ActionBean {
                 "         where t.vrh_bag_id = o.vrh_bag_id) r \n" +
                 "    ) as brandinstallaties, " +
 
+                "    (select array_to_json(array_agg(compartimentering)) \n" +
+                "    from (select compartimentering \n" +
+                "         from vrh_new.compartimentering_beschrijving t \n" +
+                "         where t.bagpand_id = ? order by objectid) r \n" +
+                "    ) as compartimentering_beschrijving, " +
+
                 "    (select array_to_json(array_agg(naam_bijlage)) \n" +
                 "    from (select naam_bijlage \n" +
                 "         from vrh_new.bijlage_voertuigviewer b \n" +
@@ -605,7 +611,7 @@ public class VrhActionBean implements ActionBean {
                 "         order by naam_bijlage) r \n" +
                 "    ) as media " +
 
-                "from vrh_new.vrh_geo_dbk_bag_object o where o.vrh_bag_id = ?", new MapListHandler(), id);
+                "from vrh_new.vrh_geo_dbk_bag_object o where o.vrh_bag_id = ?", new MapListHandler(), hoofdpandId, id);
 
         if(rows.isEmpty()) {
             throw new IllegalArgumentException("DBK met ID " + id + " niet gevonden");
