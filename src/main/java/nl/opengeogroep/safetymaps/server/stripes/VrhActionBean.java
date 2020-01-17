@@ -328,6 +328,9 @@ public class VrhActionBean implements ActionBean {
         });
 
         List<Map<String,Object>> pandAdresRows = DB.bagQr().query("select pandid, nummeraanduiding, openbareruimtenaam, huisnummer, huisletter, huisnummertoevoeging, postcode, woonplaatsnaam, st_astext(st_force2d(geopunt)) as geopunt from bag_actueel.adres_full where pandid in (" + StringUtils.repeat("?", ", ", allPandIds.size()) + ")", new MapListHandler(), (Object[])allPandIds.toArray(new String[] {}));
+
+        Map<String,Map<String,Object>> pandAdresRowsNietBag = (Map<String,Map<String,Object>>)qr.query(c, "select id, straatnaam, huisnummer, huisletter, toevoeging, postcode, woonplaats, adres_loca from vrh_new.vrh_geo_adres_niet_bag", new KeyedHandler("id"));
+
         Map<String,List<Map<String,Object>>> pandIdAdressen = new HashMap();
         for(Map<String,Object> r: pandAdresRows) {
             String pandId = (String)r.get("pandid");
@@ -377,16 +380,19 @@ public class VrhActionBean implements ActionBean {
                     }
                 }
             } else {
-                Map<String,Object> adresNietBag = new QueryRunner().query(c, "select straatnaam, huisnummer, huisletter, toevoeging, postcode, woonplaats, adres_loca from vrh_new.vrh_geo_adres_niet_bag where id = ?", new MapHandler(), vrhBagId);
+                Map<String,Object> adresNietBag = pandAdresRowsNietBag.get(vrhBagId);
 
                 if(adresNietBag != null) {
-                    row.put("locatie", adresNietBag.get("adres_loca"));
-                    row.put("straatnaam", adresNietBag.get("straatnaam"));
-                    row.put("huisnummer", adresNietBag.get("huisnummer"));
-                    row.put("huisletter", adresNietBag.get("huisletter"));
-                    row.put("toevoeging", adresNietBag.get("toevoeging"));
-                    row.put("postcode", adresNietBag.get("postcode"));
-                    row.put("plaats", adresNietBag.get("woonplaats"));
+                    o.put("locatie", adresNietBag.get("adres_loca"));
+                    o.put("straatnaam", adresNietBag.get("straatnaam"));
+                    BigDecimal huisnummer = (BigDecimal)adresNietBag.get("huisnummer");
+                    if(huisnummer != null && huisnummer.longValue() != 0) {
+                        o.put("huisnummer", huisnummer);
+                    }
+                    o.put("huisletter", adresNietBag.get("huisletter"));
+                    o.put("toevoeging", adresNietBag.get("toevoeging"));
+                    o.put("postcode", adresNietBag.get("postcode"));
+                    o.put("plaats", adresNietBag.get("woonplaats"));
                 }
             }
 
