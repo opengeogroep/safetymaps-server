@@ -587,7 +587,10 @@ public class VrhActionBean implements ActionBean {
             if(adresNietBag != null) {
                 row.put("locatie", adresNietBag.get("adres_loca"));
                 row.put("straatnaam", adresNietBag.get("straatnaam"));
-                row.put("huisnummer", adresNietBag.get("huisnummer"));
+                BigDecimal huisnummer = (BigDecimal)adresNietBag.get("huisnummer");
+                if(huisnummer != null && huisnummer.longValue() != 0) {
+                    row.put("huisnummer", huisnummer);
+                }
                 row.put("huisletter", adresNietBag.get("huisletter"));
                 row.put("toevoeging", adresNietBag.get("toevoeging"));
                 row.put("postcode", adresNietBag.get("postcode"));
