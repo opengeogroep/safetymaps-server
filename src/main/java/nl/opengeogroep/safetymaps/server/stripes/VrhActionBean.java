@@ -445,10 +445,15 @@ public class VrhActionBean implements ActionBean {
         }
 
         List<String> bagpandIds = new QueryRunner().query(c, "select bagpand_id from vrh_new.vrh_geo_pand where vrh_bag_id = ? order by st_area(geom) desc", new ColumnListHandler<String>(), id);
+        Map<String,Object> hoofdpandProperties = null;
         if(hoofdpandId == null && !bagpandIds.isEmpty()) {
             // for vrh_geo_adres_niet_bag - take the first record, ordered by
             // area
             hoofdpandId = bagpandIds.get(0);
+        } else {
+
+            // Get hoofdpand BAG attributes
+            hoofdpandProperties =  DB.bagQr().query("select verblijfsobjectgebruiksdoel, oppervlakteverblijfsobject, pandbouwjaar from bag_actueel.adres_full where nummeraanduiding = ?", new MapHandler(), id);
         }
 
         for(int i = 0; i < bagpandIds.size(); i++) {
@@ -607,6 +612,10 @@ public class VrhActionBean implements ActionBean {
         JSONObject obj = rowToJson(row, true, true);
         JSONObject hoofdpand = obj.getJSONObject("hoofdpand");
         hoofdpand.remove("geom");
+        if(hoofdpandProperties != null) {
+            hoofdpand.put("bag", rowToJson(hoofdpandProperties, true, true));
+        }
+
         JSONArray subpanden = obj.optJSONArray("subpanden");
         if(subpanden != null) {
             for(int i = 0; i < subpanden.length(); i++) {
