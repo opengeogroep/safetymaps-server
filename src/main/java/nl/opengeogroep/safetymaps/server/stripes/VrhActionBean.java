@@ -444,16 +444,48 @@ public class VrhActionBean implements ActionBean {
             hoofdpandId = idParts[1];
         }
 
-        List<String> bagpandIds = new QueryRunner().query(c, "select bagpand_id from vrh_new.vrh_geo_pand where vrh_bag_id = ? order by st_area(geom) desc", new ColumnListHandler<String>(), id);
+        List<Map<String,Object>> bagpanden = new QueryRunner().query(c, "select *, st_astext(geom) as geometry from vrh_new.vrh_geo_pand where vrh_bag_id = ? order by st_area(geom) desc", new MapListHandler(), id);
+        JSONArray subpanden = new JSONArray();
+        JSONObject hoofdpand = new JSONObject();
+        List<String> bagpandIds = new ArrayList();
         Map<String,Object> hoofdpandProperties = null;
-        if(hoofdpandId == null && !bagpandIds.isEmpty()) {
+        if(hoofdpandId == null && !bagpanden.isEmpty()) {
             // for vrh_geo_adres_niet_bag - take the first record, ordered by
             // area
-            hoofdpandId = bagpandIds.get(0);
-        } else {
+            hoofdpandId = (String)bagpanden.get(0).get("bagpand_id");
+            bagpandIds.add(hoofdpandId);
+            hoofdpand = rowToJson(bagpanden.get(0), true, true);
+            for(int i = 1; i < bagpanden.size(); i++) {
+                Map<String,Object> bagpand = bagpanden.get(i);
+                JSONObject subpand = new JSONObject();
+                subpand.put("geometry", (String)bagpand.get("geometry"));
+                subpand.put("objectid", bagpand.get("objectid"));
+                subpand.put("bagpand_id", (String)bagpand.get("bagpand_id"));
+                bagpandIds.add((String)bagpand.get("bagpand_id"));
+                subpanden.put(subpand);
+            }
+        } else if(hoofdpandId != null) {
 
             // Get hoofdpand BAG attributes
             hoofdpandProperties =  DB.bagQr().query("select verblijfsobjectgebruiksdoel, oppervlakteverblijfsobject, pandbouwjaar from bag_actueel.adres_full where nummeraanduiding = ?", new MapHandler(), id);
+
+            // Add subpanden and hoofdpand. If hoofdpand occurs multiple times
+            // get the first record, ordered by area
+            for(int i = 0; i < bagpanden.size(); i++) {
+                Map<String,Object> bagpand = bagpanden.get(i);
+                String pandid = (String)bagpand.get("bagpand_id");
+                bagpandIds.add(pandid);
+                if(hoofdpandId.equals(pandid) && hoofdpand == null) {
+                    hoofdpand = rowToJson(bagpand, true, true);
+                } else {
+                    // Subpanden sorted from large area to small
+                    JSONObject subpand = new JSONObject();
+                    subpand.put("geometry", (String)bagpand.get("geometry"));
+                    subpand.put("objectid", bagpand.get("objectid"));
+                    subpand.put("bagpand_id", (String)bagpand.get("bagpand_id"));
+                    subpanden.put(subpand);
+                }
+            }
         }
 
         for(int i = 0; i < bagpandIds.size(); i++) {
@@ -465,7 +497,7 @@ public class VrhActionBean implements ActionBean {
                 "    o.*, " +
 //                "    (select st_astext(st_collect(sp.geom)) from vrh_new.vrh_geo_pand sp where sp.vrh_bag_id = p.vrh_bag_id) as geometry, " +
 //                "    st_astext(p.geom) as geometry, " +
-
+/*
                 "    (select row_to_json(r.*) " +
                 "    from (select *, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_pand t " +
@@ -480,7 +512,7 @@ public class VrhActionBean implements ActionBean {
                 "         where t.vrh_bag_id = o.vrh_bag_id" +
                 "         and bagpand_id <> ?) r " +
                 "    ) as subpanden, " +
-
+*/
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
                 "    from (select *, st_astext(t.geom) as geometry " +
                 "         from vrh_new.vrh_geo_compartimentering t " +
@@ -573,7 +605,7 @@ public class VrhActionBean implements ActionBean {
                 "         order by naam_bijlage) r \n" +
                 "    ) as media " +
 
-                "from vrh_new.vrh_geo_dbk_bag_object o where o.vrh_bag_id = ?", new MapListHandler(), hoofdpandId, hoofdpandId, id);
+                "from vrh_new.vrh_geo_dbk_bag_object o where o.vrh_bag_id = ?", new MapListHandler(), id);
 
         if(rows.isEmpty()) {
             throw new IllegalArgumentException("DBK met ID " + id + " niet gevonden");
@@ -610,18 +642,12 @@ public class VrhActionBean implements ActionBean {
         }
 
         JSONObject obj = rowToJson(row, true, true);
-        JSONObject hoofdpand = obj.getJSONObject("hoofdpand");
-        hoofdpand.remove("geom");
+        obj.put("hoofdpand", hoofdpand);
         if(hoofdpandProperties != null) {
             hoofdpand.put("bag", rowToJson(hoofdpandProperties, true, true));
         }
 
-        JSONArray subpanden = obj.optJSONArray("subpanden");
-        if(subpanden != null) {
-            for(int i = 0; i < subpanden.length(); i++) {
-                subpanden.getJSONObject(i).remove("geom");
-            }
-        }
+        obj.put("subpanden", subpanden);
 
         return obj;
     }
