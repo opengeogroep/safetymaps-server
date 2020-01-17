@@ -137,6 +137,7 @@ public class VrhActionBean implements ActionBean {
                 if(lastModified != null) {
                     response.addDateHeader("Last-Modified", lastModified * 1000);
                 }
+                response.addHeader("Cache-Control", "must-revalidate");
 
                 OutputStream out;
                 String acceptEncoding = request.getHeader("Accept-Encoding");
