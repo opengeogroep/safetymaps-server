@@ -558,7 +558,7 @@ public class VrhActionBean implements ActionBean {
                 "    from (select naam_bijlage \n" +
                 "         from vrh_new.bijlage_voertuigviewer b \n" +
                 "         where b.vrh_bag_id = o.vrh_bag_id" +
-                "         order by objectid) r \n" +
+                "         order by naam_bijlage) r \n" +
                 "    ) as media " +
 
                 "from vrh_new.vrh_geo_dbk_bag_object o where o.vrh_bag_id = ?", new MapListHandler(), hoofdpandId, hoofdpandId, id);
