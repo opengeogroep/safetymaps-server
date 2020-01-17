@@ -446,7 +446,7 @@ public class VrhActionBean implements ActionBean {
 
         List<Map<String,Object>> bagpanden = new QueryRunner().query(c, "select *, st_astext(geom) as geometry from vrh_new.vrh_geo_pand where vrh_bag_id = ? order by st_area(geom) desc", new MapListHandler(), id);
         JSONArray subpanden = new JSONArray();
-        JSONObject hoofdpand = new JSONObject();
+        JSONObject hoofdpand = null;
         List<String> bagpandIds = new ArrayList();
         Map<String,Object> hoofdpandProperties = null;
         if(hoofdpandId == null && !bagpanden.isEmpty()) {
