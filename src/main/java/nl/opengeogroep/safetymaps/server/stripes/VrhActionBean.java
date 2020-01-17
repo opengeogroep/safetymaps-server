@@ -438,9 +438,10 @@ public class VrhActionBean implements ActionBean {
             hoofdpandId = idParts[1];
         }
 
-        List<String> bagpandIds = new QueryRunner().query(c, "select bagpand_id from vrh_new.vrh_geo_pand where vrh_bag_id = ?", new ColumnListHandler<String>(), id);
+        List<String> bagpandIds = new QueryRunner().query(c, "select bagpand_id from vrh_new.vrh_geo_pand where vrh_bag_id = ? order by st_area(geom) desc", new ColumnListHandler<String>(), id);
         if(hoofdpandId == null && !bagpandIds.isEmpty()) {
-            // for vrh_geo_adres_niet_bag - take the first record
+            // for vrh_geo_adres_niet_bag - take the first record, ordered by
+            // area
             hoofdpandId = bagpandIds.get(0);
         }
 
