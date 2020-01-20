@@ -26,8 +26,6 @@ import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.logExceptionAndReturnJSONObject;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
-import org.apache.commons.dbutils.handlers.ArrayListHandler;
-import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -386,8 +384,16 @@ public class VrhActionBean implements ActionBean {
                 if(adresNietBag != null) {
                     o.put("locatie", adresNietBag.get("adres_loca"));
                     o.put("straatnaam", adresNietBag.get("straatnaam"));
-                    BigDecimal huisnummer = (BigDecimal)adresNietBag.get("huisnummer");
-                    if(huisnummer != null && huisnummer.longValue() != 0) {
+                    Object v = adresNietBag.get("huisnummer");
+                    Long huisnummer = null;
+                    if(v != null) {
+                        if(v instanceof BigDecimal) {
+                            huisnummer = ((BigDecimal)v).longValue();
+                        } else {
+                            huisnummer = (Long)v;
+                        }
+                    }
+                    if(huisnummer != null && huisnummer != 0) {
                         o.put("huisnummer", huisnummer);
                     }
                     o.put("huisletter", adresNietBag.get("huisletter"));
@@ -637,8 +643,16 @@ public class VrhActionBean implements ActionBean {
             if(adresNietBag != null) {
                 row.put("locatie", adresNietBag.get("adres_loca"));
                 row.put("straatnaam", adresNietBag.get("straatnaam"));
-                BigDecimal huisnummer = (BigDecimal)adresNietBag.get("huisnummer");
-                if(huisnummer != null && huisnummer.longValue() != 0) {
+                Object v = adresNietBag.get("huisnummer");
+                Long huisnummer = null;
+                if(v != null) {
+                    if(v instanceof BigDecimal) {
+                        huisnummer = ((BigDecimal)v).longValue();
+                    } else {
+                        huisnummer = (Long)v;
+                    }
+                }
+                if(huisnummer != null && huisnummer != 0) {
                     row.put("huisnummer", huisnummer);
                 }
                 row.put("huisletter", adresNietBag.get("huisletter"));
