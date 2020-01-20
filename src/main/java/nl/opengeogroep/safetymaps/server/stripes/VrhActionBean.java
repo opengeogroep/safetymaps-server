@@ -347,6 +347,10 @@ public class VrhActionBean implements ActionBean {
 
             String vrhBagId = (String)row.get("id");
 
+            if(vrhBagId == null) {
+                continue;
+            }
+
             Map<String,Object> extent = objectExtents.get(vrhBagId);
             if(extent != null) {
                 o.put("extent", extent.get("extent"));
