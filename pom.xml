@@ -52,6 +52,7 @@
             <artifactId>javax.servlet-api</artifactId>
             <version>3.0.1</version>
             <type>jar</type>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
