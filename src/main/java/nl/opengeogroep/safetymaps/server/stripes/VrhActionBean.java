@@ -208,7 +208,7 @@ public class VrhActionBean implements ActionBean {
     private long getCachedLastImportTime(Connection c) throws Exception {
         long now = System.currentTimeMillis();
         if(lastImportTime == null || now - lastImportTimeCheckedAt > LAST_IMPORT_TIME_CACHE_MAX_AGE_MILLIS) {
-            lastImportTime = new QueryRunner().query(c, "select time from vrh.import_metadata limit 1", new ScalarHandler<Timestamp>()).getTime() / 1000;
+            lastImportTime = new QueryRunner().query(c, "select time from " + (newDbSchema ? "vrh_new" : "vrh") + ".import_metadata limit 1", new ScalarHandler<Timestamp>()).getTime() / 1000;
             lastImportTimeCheckedAt = now;
         }
         return lastImportTime;
