@@ -298,9 +298,14 @@ public class VrhActionBean implements ActionBean {
         QueryRunner qr = new QueryRunner();
         JSONArray objects = new JSONArray();
 
+        Map<String,Map<String,Object>> rowsByVrhBagId = new HashMap();
+
         List<Map<String,Object>> objectRows = qr.query(c, "select vrh_bag_id as id, naam, oms_nummer, st_astext(geom) as pand_centroid " +
                 "from vrh_new.vrh_geo_dbk_bag_object o " +
                 "order by naam", new MapListHandler());
+        for(Map<String,Object> row: objectRows) {
+            rowsByVrhBagId.put((String)row.get("id"), row);
+        }
 
         Map<String,Map<String,Object>> objectExtents = (Map<String,Map<String,Object>>)qr.query(c, "select vrh_bag_id, st_extent(geom) as extent from vrh_new.vrh_geo_pand group by vrh_bag_id", new KeyedHandler("vrh_bag_id"));
 
@@ -333,6 +338,23 @@ public class VrhActionBean implements ActionBean {
         Map<String,List<Map<String,Object>>> pandIdAdressen = new HashMap();
         for(Map<String,Object> r: pandAdresRows) {
             String pandId = (String)r.get("pandid");
+
+            // Voor 1-N relatie van vrh_geo_dbk_bag_object naar vrh_geo_pand via
+            // BAG: voeg pand toe indien er een vrh_geo_dbk_bag_object is voor die
+            // nummeraanduiding maar dat hoeft niet het vrh_bag_id van vrh_geo_pand
+            // te zijn
+
+            String nummeraanduiding = (String)r.get("nummeraanduiding");
+            // Alleen panden toevoegen voor bestaande vrh_geo_dbk_bag_object records
+            if(rowsByVrhBagId.containsKey(nummeraanduiding)) {
+                Set<String> thisObjectPandIds = objectPandIds.get(nummeraanduiding);
+                if(thisObjectPandIds == null) {
+                    thisObjectPandIds = new HashSet();
+                    objectPandIds.put(nummeraanduiding, thisObjectPandIds);
+                }
+                thisObjectPandIds.add(pandId);
+            }
+
             List<Map<String,Object>> pandAdressen = pandIdAdressen.get(pandId);
             if(pandAdressen == null) {
                 pandAdressen = new ArrayList();
@@ -455,7 +477,7 @@ public class VrhActionBean implements ActionBean {
             hoofdpandId = idParts[1];
         }
 
-        List<Map<String,Object>> bagpanden = new QueryRunner().query(c, "select *, st_astext(geom) as geometry from vrh_new.vrh_geo_pand where vrh_bag_id = ? order by st_area(geom) desc", new MapListHandler(), id);
+        List<Map<String,Object>> bagpanden = new QueryRunner().query(c, "select *, st_astext(geom) as geometry from vrh_new.vrh_geo_pand where vrh_bag_id = ? or bagpand_id = ? order by st_area(geom) desc", new MapListHandler(), id, hoofdpandId);
         JSONArray subpanden = new JSONArray();
         JSONObject hoofdpand = null;
         List<String> bagpandIds = new ArrayList();
@@ -501,6 +523,10 @@ public class VrhActionBean implements ActionBean {
 
         for(int i = 0; i < bagpandIds.size(); i++) {
             bagpandIds.set(i, "'" + bagpandIds.get(i) + "'");
+        }
+        if(bagpandIds.isEmpty()) {
+            // No pand found for object - make sure query is ok
+            throw new IllegalStateException("Geen pand(en) gevonden bij object id " + id);
         }
         String bagPandIdsQuery = "in (" + StringUtils.join(bagpandIds.toArray(new String[] {}), ",") + ")";
 
