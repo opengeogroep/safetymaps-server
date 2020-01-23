@@ -363,6 +363,8 @@ public class VrhActionBean implements ActionBean {
             pandAdressen.add(r);
         }
 
+        List<JSONObject> withoutExtent = new ArrayList();
+
         for(Map<String,Object> row: objectRows) {
             JSONObject o = JSONUtils.rowToJson(row, true, true);
             objects.put(o);
@@ -376,6 +378,10 @@ public class VrhActionBean implements ActionBean {
             Map<String,Object> extent = objectExtents.get(vrhBagId);
             if(extent != null) {
                 o.put("extent", extent.get("extent"));
+            } else {
+                // vrhBagId was not present in vrh_geo_pand, will get extent
+                // from BAG pand later
+                withoutExtent.add(o);
             }
 
             JSONArray extraAdressenJson = new JSONArray();
@@ -434,7 +440,44 @@ public class VrhActionBean implements ActionBean {
             }
         }
 
-        return objects;
+        if(!withoutExtent.isEmpty()) {
+            final Set<String> extentPandIds = new HashSet();
+            final Map<String,JSONObject> pandIdToObject = new HashMap();
+            for(JSONObject object: withoutExtent) {
+                String newId = object.getString("id");
+                int i = newId.indexOf("p");
+                if(i != -1) {
+                    String pandId = newId.substring(newId.indexOf("p")+1);
+                    pandIdToObject.put(pandId, object);
+                    extentPandIds.add(pandId);
+                } else {
+                    // Currently objects without pand are not supported
+                    //log.debug("Object " + object.toString() + " has no pand!");
+                }
+            }
+
+            List<Map<String,Object>> pandExtentRows = DB.bagQr().query("select identificatie as pandid, st_extent(geovlak) as extent from bag_actueel.pandactueeltoekomst where identificatie in (" + StringUtils.repeat("?", ", ", extentPandIds.size()) + ") group by identificatie", new MapListHandler(), (Object[])extentPandIds.toArray(new String[] {}));
+
+            for(Map<String,Object> row: pandExtentRows) {
+                String pandId = (String)row.get("pandid");
+                String extent = row.get("extent").toString();
+                JSONObject object = pandIdToObject.get(pandId);
+                if(object != null) {
+                    object.put("extent", extent);
+                }
+            }
+        }
+
+        // Currently objects without pand are not supported - don't return them
+        JSONArray validObjects = new JSONArray();
+        for(int i = 0; i < objects.length(); i++) {
+            JSONObject o = objects.getJSONObject(i);
+            if(o.has("extent")) {
+                validObjects.put(o);
+            }
+        }
+
+        return validObjects;
     }
 
     private static void addExtraAdres(JSONArray extraAdressenJson, Map<String,Object> adres) {
