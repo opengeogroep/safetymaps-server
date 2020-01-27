@@ -684,6 +684,13 @@ public class VrhActionBean implements ActionBean {
                 "         where t.bagpand_id = ? order by objectid) r \n" +
                 "    ) as compartimentering_beschrijving, " +
 
+                "    (select array_to_json(array_agg(bijzonderheid)) \n" +
+                "    from (select bijzonderheid \n" +
+                "         from vrh_new.bijzonderheden_aanwezigheid t \n" +
+                "         where t.vrh_bag_id = o.vrh_bag_id and bijzonderheid is not null \n" +
+                "         order by objectid) r \n" +
+                "    ) as bijzonderheden_aanwezigheid, " +
+
                 "    (select array_to_json(array_agg(naam_bijlage)) \n" +
                 "    from (select naam_bijlage \n" +
                 "         from vrh_new.bijlage_voertuigviewer b \n" +
