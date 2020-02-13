@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
 import nl.opengeogroep.safetymaps.server.stripes.ViewerApiActionBean;
-import nl.opengeogroep.safetymaps.server.stripes.VrhActionBean;
 import nl.opengeogroep.safetymaps.server.stripes.VrlnActionBean;
 import nl.opengeogroep.safetymaps.viewer.ViewerDataExporter;
 import org.apache.commons.cli.*;
@@ -52,9 +51,6 @@ public class Main {
                     .argName("id")
                     .desc("Write single creator object details JSON to stdout")
                     .build());
-        commands.addOption(Option.builder("vrh")
-                .desc("Write vrh_objects module JSON to api dir")
-                .build());
         commands.addOption(Option.builder("vrln")
                 .desc("Write vrln brandkranen module JSON to api dir")
                 .build());
@@ -103,9 +99,6 @@ public class Main {
             }
             if(cl.hasOption("object")) {
                 cmdWriteObject(c, Integer.parseInt(cl.getOptionValue("object")), indent);
-            }
-            if(cl.hasOption("vrh")) {
-                cmdWriteVrh(c, indent);
             }
             if(cl.hasOption("vrln")) {
                 cmdWriteVrln(c, indent);
@@ -199,91 +192,6 @@ public class Main {
         JSONObject o = vde.getViewerObjectDetails(id);
         System.out.println(o.toString(indent));
         System.exit(0);
-    }
-
-    private static void cmdWriteVrh(Connection c, int indent) throws Exception {
-
-        boolean fail = false;
-
-        JSONObject o = new JSONObject();
-        JSONArray dbks = new JSONArray();
-        boolean success = true;
-        try {
-            dbks = VrhActionBean.dbksJson(c);
-            o.put("results", dbks);
-        } catch(Exception e) {
-            success = false;
-            fail = true;
-            String msg = e.getClass() + ": " + e.getMessage();
-            if(e.getCause() != null) {
-                msg += ", " + e.getCause().getMessage();
-            }
-            o.put("error", msg);
-            System.err.println("Fout bij ophalen DBKs");
-            e.printStackTrace();
-        }
-        o.put("success", success);
-        FileUtils.writeByteArrayToFile(new File("api/vrh/dbks.json"), o.toString(indent).getBytes("UTF-8"));
-
-        for(int i = 0; i < dbks.length(); i++) {
-            int id = dbks.getJSONObject(i).getInt("id");
-            o.put("results", VrhActionBean.dbkJson(c, id));
-            FileUtils.writeByteArrayToFile(new File("api/vrh/dbk/" + id + ".json"), o.toString(indent).getBytes("UTF-8"));
-        }
-
-        o = new JSONObject();
-        JSONArray evenementen = new JSONArray();
-        success = true;
-        try {
-            evenementen = VrhActionBean.evenementenJson(c);
-            o.put("results", evenementen);
-        } catch(Exception e) {
-            success = false;
-            fail = true;
-            String msg = e.getClass() + ": " + e.getMessage();
-            if(e.getCause() != null) {
-                msg += ", " + e.getCause().getMessage();
-            }
-            o.put("error", msg);
-            System.err.println("Fout bij ophalen evenementen");
-            e.printStackTrace();
-        }
-        o.put("success", success);
-        FileUtils.writeByteArrayToFile(new File("api/vrh/evenementen.json"), o.toString(indent).getBytes("UTF-8"));
-
-        for(int i = 0; i < evenementen.length(); i++) {
-            int id = evenementen.getJSONObject(i).getInt("id");
-            o.put("results", VrhActionBean.evenementJson(c, id));
-            FileUtils.writeByteArrayToFile(new File("api/vrh/evenement/" + id + ".json"), o.toString(indent).getBytes("UTF-8"));
-        }
-
-        o = new JSONObject();
-        JSONArray waterongevallen = new JSONArray();
-        success = true;
-        try {
-            waterongevallen = VrhActionBean.waterongevallenJson(c, false);
-            o.put("results", waterongevallen);
-        } catch(Exception e) {
-            success = false;
-            fail = true;
-            String msg = e.getClass() + ": " + e.getMessage();
-            if(e.getCause() != null) {
-                msg += ", " + e.getCause().getMessage();
-            }
-            o.put("error", msg);
-            System.err.println("Fout bij ophalen waterongevallen");
-            e.printStackTrace();
-        }
-        o.put("success", success);
-        FileUtils.writeByteArrayToFile(new File("api/vrh/waterongevallen.json"), o.toString(indent).getBytes("UTF-8"));
-
-        for(int i = 0; i < waterongevallen.length(); i++) {
-            int id = waterongevallen.getJSONObject(i).getInt("id");
-            o.put("results", VrhActionBean.waterongevallenkaartJson(c, id, false));
-            FileUtils.writeByteArrayToFile(new File("api/vrh/waterongevallenkaart/" + id + ".json"), o.toString(indent).getBytes("UTF-8"));
-        }
-
-        System.exit(success ? 0 : 1);
     }
 
     private static void cmdWriteVrln(Connection c, int indent) throws Exception {
