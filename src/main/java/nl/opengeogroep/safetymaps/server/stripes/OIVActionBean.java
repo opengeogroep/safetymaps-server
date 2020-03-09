@@ -229,19 +229,19 @@ public class OIVActionBean implements ActionBean {
         "            where ap.bouwlaag_id = basic.bouwlaag_id) cc " +
         "     ) as communication_coverage " +
         "	, (select array_to_json(array_agg(row_to_json(s.*))) " +
-        "      from (select ap.symbol_name as code, coalesce(ap.label, '') as omschrijving, coalesce(ap.rotatie, 0) as rotation, '' as picture, st_astext(ap.geom) as location " +
+        "      from (select ap.symbol_name as code, coalesce(ap.label, '') as omschrijving, abs(coalesce(ap.rotatie, 0)) as rotation, '' as picture, st_astext(ap.geom) as location " +
         "		     from objecten.view_veiligh_install ap " +	         
         "		   	 where ap.geom is not null and ap.bouwlaag_id = basic.bouwlaag_id " +
         "		     union " +
-        "		     select ap.symbol_name as code, coalesce(ap.label, '') as omschrijving, coalesce(ap.rotatie, 0) as rotation, '' as picture, st_astext(ap.geom) as location " +
+        "		     select ap.symbol_name as code, coalesce(ap.label, '') as omschrijving, abs(coalesce(ap.rotatie, 0)) as rotation, '' as picture, st_astext(ap.geom) as location " +
         "		     from objecten.view_veiligh_ruimtelijk ap " +	         
         "		     where ap.geom is not null and ap.object_id = basic.object_id " +
         "            union " +
-        "            select ap.symbol_name as code, coalesce(ap.label, '') as omschrijving, coalesce(ap.rotatie, 0) as rotation, '' as picture, st_astext(ap.geom) as location " +
+        "            select ap.symbol_name as code, coalesce(ap.label, '') as omschrijving, abs(coalesce(ap.rotatie, 0)) as rotation, '' as picture, st_astext(ap.geom) as location " +
         "            from objecten.view_ingang_bouwlaag ap " + 
         "            where ap.geom is not null and ap.bouwlaag_id = basic.bouwlaag_id " +
         "            union " +
-        "            select ap.symbol_name as code, coalesce(ap.label, '') as omschrijving, coalesce(ap.rotatie, 0) as rotation, '' as picture, st_astext(ap.geom) as location " +
+        "            select ap.symbol_name as code, coalesce(ap.label, '') as omschrijving, abs(coalesce(ap.rotatie, 0)) as rotation, '' as picture, st_astext(ap.geom) as location " +
         "            from objecten.view_ingang_ruimtelijk ap " +
         "            where ap.geom is not null and ap.object_id = basic.object_id " +
         "		  	) s " +
