@@ -324,15 +324,20 @@ public class VrhActionBean implements ActionBean {
                             String nummeraanduiding = (String)bagAdres.get("nummeraanduiding");
                             if(vrhBagId.equals(nummeraanduiding)) {
                                 String hoofdpand = (String)bagAdres.get("pandid");
-                                String newId = o.get("id") + "p" + hoofdpand;
-                                o.put("id", newId);
+                                if(((String)o.get("id")).indexOf("p") != -1) {
+                                    log.warn("DBK ID multiple pand IDs: " + o.get("id") + ", also pand ID " + hoofdpand);
+                                    addExtraAdres(extraAdressenJson, bagAdres);
+                                } else {
+                                    String newId = o.get("id") + "p" + hoofdpand;
+                                    o.put("id", newId);
 
-                                o.put("straatnaam", bagAdres.get("openbareruimtenaam"));
-                                o.put("huisnummer", bagAdres.get("huisnummer"));
-                                o.put("huisletter", bagAdres.get("huisletter"));
-                                o.put("toevoeging", bagAdres.get("huisnummertoevoeging"));
-                                o.put("postcode", bagAdres.get("postcode"));
-                                o.put("plaats", bagAdres.get("woonplaatsnaam"));
+                                    o.put("straatnaam", bagAdres.get("openbareruimtenaam"));
+                                    o.put("huisnummer", bagAdres.get("huisnummer"));
+                                    o.put("huisletter", bagAdres.get("huisletter"));
+                                    o.put("toevoeging", bagAdres.get("huisnummertoevoeging"));
+                                    o.put("postcode", bagAdres.get("postcode"));
+                                    o.put("plaats", bagAdres.get("woonplaatsnaam"));
+                                }
                             } else {
                                 addExtraAdres(extraAdressenJson, bagAdres);
                             }
