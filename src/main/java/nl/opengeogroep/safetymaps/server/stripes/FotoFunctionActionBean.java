@@ -129,7 +129,7 @@ public class FotoFunctionActionBean implements ActionBean {
     @DefaultHandler
     public Resolution foto() throws IOException, ServletException {
         JSONObject response = new JSONObject();
-        context.getResponse().addHeader("Access-Control-Allow-Origin", "http://localhost");
+        context.getResponse().addHeader("Access-Control-Allow-Origin", context.getRequest().getHeader("origin"));
         context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
         try {
             PATH = Cfg.getSetting("fotofunctie");
@@ -159,7 +159,7 @@ public class FotoFunctionActionBean implements ActionBean {
     }
 
     public Resolution download() throws Exception {
-        context.getResponse().addHeader("Access-Control-Allow-Origin", "http://localhost");
+        context.getResponse().addHeader("Access-Control-Allow-Origin", context.getRequest().getHeader("origin"));
         context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
         // First pathname security check: must exist in db
         boolean exists = DB.qr().query("select 1 from wfs." + TABLE + " where filename = ?", new ScalarHandler<>(), fileName) != null;
@@ -188,7 +188,7 @@ public class FotoFunctionActionBean implements ActionBean {
     }
 
     public Resolution fotoForIncident() throws Exception {      
-        context.getResponse().addHeader("Access-Control-Allow-Origin", "http://localhost");
+        context.getResponse().addHeader("Access-Control-Allow-Origin", context.getRequest().getHeader("origin"));
         context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
         
         JSONArray response = new JSONArray();
