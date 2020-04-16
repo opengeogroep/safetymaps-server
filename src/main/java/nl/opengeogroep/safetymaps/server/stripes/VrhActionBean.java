@@ -324,7 +324,7 @@ public class VrhActionBean implements ActionBean {
                             String nummeraanduiding = (String)bagAdres.get("nummeraanduiding");
                             if(vrhBagId.equals(nummeraanduiding)) {
                                 String hoofdpand = (String)bagAdres.get("pandid");
-                                if(((String)o.get("id")).indexOf("p") != -1) {
+                                if(((String)o.get("id")).contains("p")) {
                                     log.warn("DBK ID multiple pand IDs: " + o.get("id") + ", also pand ID " + hoofdpand);
                                     addExtraAdres(extraAdressenJson, bagAdres);
                                 } else {
