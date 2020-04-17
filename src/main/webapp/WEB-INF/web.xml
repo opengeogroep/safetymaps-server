@@ -83,16 +83,32 @@
             <param-value>org.stripesstuff.plugin.security.J2EESecurityManager</param-value>
         </init-param-->
     </filter>
+  <filter>
+        <filter-name>MellonHeaderAuthenticationFilter</filter-name>
+        <filter-class>nl.opengeogroep.safetymaps.server.security.MellonHeaderAuthenticationFilter</filter-class>
+        <init-param>
+            <param-name>commonRole</param-name>
+            <param-value>SAMLUser</param-value>
+        </init-param>
+        <init-param>
+            <param-name>saveExtraHeaders</param-name>
+            <param-value>_SESSION</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>SetCharacterEncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>MellonHeaderAuthenticationFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
     <filter>
         <display-name>mod_auth_pubtkt SSO filter</display-name>
         <filter-name>ModAuthPubTktSSOFilter</filter-name>
         <filter-class>nl.opengeogroep.safetymaps.security.ModAuthPubTktSSOFilter</filter-class>
         <!-- enabled/disabled by safetymaps.settings database config -->
     </filter>
-    <filter-mapping>
-        <filter-name>SetCharacterEncodingFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
     <filter-mapping>
         <filter-name>PersistentAuthenticationFilter</filter-name>
         <url-pattern>/*</url-pattern>
@@ -129,6 +145,10 @@
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
         <url-pattern>/viewer/api/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>StripesDispatcher</servlet-name>
+        <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>StripesDispatcher</servlet-name>
