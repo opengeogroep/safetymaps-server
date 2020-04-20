@@ -197,11 +197,7 @@
         <role-name>admin</role-name>
     </security-role>
     <login-config>
-        <auth-method>FORM</auth-method>
-        <form-login-config>
-            <form-login-page>/login.jsp</form-login-page>
-            <form-error-page>/loginfail.jsp</form-error-page>
-        </form-login-config>
+        <auth-method>BASIC</auth-method>
     </login-config>
     <error-page>
         <error-code>403</error-code>
