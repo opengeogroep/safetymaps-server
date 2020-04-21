@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.mock.MockHttpServletRequest;
 import net.sourceforge.stripes.validation.Validate;
+import nl.opengeogroep.safetymaps.server.db.Cfg;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.*;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
@@ -286,7 +287,8 @@ public class ViewerApiActionBean implements ActionBean {
             options.put("sourceVrhAGSAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(VrhAGSProxyActionBean.ROLE));
             options.put("sourceSafetyConnectAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(SafetyConnectProxyActionBean.ROLE));
             options.put("incidentMonitorAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR));
-            options.put("incidentMonitorKladblokAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_KLADBLOK));
+            boolean kladbklokAlwaysAuthorized = "true".equals(Cfg.getSetting("kladblok_always_authorized", "false"));
+            options.put("incidentMonitorKladblokAuthorized", kladbklokAlwaysAuthorized || request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_KLADBLOK));
             options.put("eigenVoertuignummerAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_EIGEN_VOERTUIGNUMMER));
 
             JSONObject details = getUserDetails(request, c);
