@@ -228,11 +228,13 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 + "from "
                 + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'Voordruk aanwezig: ' || coalesce(initcap(voordruk),'Niet bekend') || coalesce(', ' || bar || ' bar', '') as info from vrh.brandkranen_eigen_terrein where lower(\"type\") <> 'afsluiter omloopleiding' "
                 + "  union all "
-                + "  select geom, 'brandkranen_dunea' as tabel, lower(producttyp) || case when lower(verbinding) = 'draadstuk' then ' schroef' else '' end as \"type\", '' as info from vrh.brandkranen_dunea "
-                + "  union all "
-                + "  select geom, 'brandkranen_evides' as tabel, case when id_brandkr = 'BB' then 'bovengronds' else 'ondergronds' end as \"type\", '' as info from vrh.brandkranen_evides "
-                + "  union all "
-                + "  select geom, 'brandkranen_oasen' as tabel, case when lower(ondergrnds) = 'nee' then 'bovengronds' else 'ondergronds' end as \"type\", '' as info from vrh.brandkranen_oasen "
+//                + "  select geom, 'brandkranen_dunea' as tabel, lower(producttyp) || case when lower(verbinding) = 'draadstuk' then ' schroef' else '' end as \"type\", '' as info from vrh.brandkranen_dunea "
+//                + "  union all "
+//                + "  select geom, 'brandkranen_evides' as tabel, case when id_brandkr = 'BB' then 'bovengronds' else 'ondergronds' end as \"type\", '' as info from vrh.brandkranen_evides "
+//                + "  union all "
+//                + "  select geom, 'brandkranen_oasen' as tabel, case when lower(ondergrnds) = 'nee' then 'bovengronds' else 'ondergronds' end as \"type\", '' as info from vrh.brandkranen_oasen "
+//                + "  union all "
+                + "  select geom, 'brandkranen_landelijk' as tabel, case when lower(ligging) = 'bovengronds' then 'bovengronds' else 'ondergronds' end as \"type\", 'Diameter: ' || diameter as info from vrh_new.brandkranen_landelijk "
                 + "  union all "
                 + "  select geom, 'geboorde_putten' as tabel, 'geboorde_put' as \"type\", overige_in as info from vrh.geboorde_putten) b "
                 + "where st_distance(b.geom, st_setsrid(st_point(?, ?),?)) < ? "
@@ -260,6 +262,27 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                     opbrengst = 1500;
                 }
                 o.put("info", "&plusmn; " + opbrengst + " &#8467;/min");
+            }
+            if("brandkranen_landelijk".equals(row.get("tabel"))) {
+                String s = (String)row.get("info");
+                String info = "";
+                if(s != null) {
+                    s = s.substring("Diameter: ".length());
+                    try {
+                        double diameter = Double.parseDouble(s);
+
+                        int opbrengst = 500;
+                        if(diameter > 90) {
+                            opbrengst = 1000;
+                        }
+                        if(diameter > 190) {
+                            opbrengst = 1500;
+                        }
+                        info = "&plusmn; " + opbrengst + " &#8467;/min";
+                    } catch(NumberFormatException e) {
+                    }
+                }
+                o.put("info", info);
             }
             a.put(o);
         }
