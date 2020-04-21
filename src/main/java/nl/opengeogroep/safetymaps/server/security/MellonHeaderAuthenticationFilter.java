@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import javax.naming.NamingException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -103,6 +102,7 @@ public class MellonHeaderAuthenticationFilter implements Filter {
     private FilterConfig filterConfig = null;
 
     private static final String CFG_HEADER_PREFIX = "sso_mellon_header_prefix";
+
     /**
      * Prefix for context global parameters which can be set to override filter
      * init params for easier deployments without overwriting web.xml.
@@ -306,7 +306,7 @@ public class MellonHeaderAuthenticationFilter implements Filter {
 
                 // Get more roles by getting the roles using the SAML role as username
                 try {
-                    List<String> extraRoles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username = ANY (?)", new ColumnListHandler<String>(), (Object)roles.toArray(new String[] {}));
+                    List<String> extraRoles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username in (" + StringUtils.repeat("?", ", ", roles.size()) + ")", new ColumnListHandler<String>(), (Object[])roles.toArray(new String[] {}));
 
                     if(extraRoles.isEmpty()) {
                         log.info("Did not find any additional roles for SAML user using the SAML role names as username in table " + DB.USER_ROLE_TABLE);
