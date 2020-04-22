@@ -1,0 +1,71 @@
+package nl.opengeogroep.safetymaps.server.stripes;
+
+import java.util.Map;
+import javax.servlet.http.Cookie;
+import net.sourceforge.stripes.action.ActionBean;
+import net.sourceforge.stripes.action.ActionBeanContext;
+import net.sourceforge.stripes.action.RedirectResolution;
+import net.sourceforge.stripes.action.Resolution;
+import net.sourceforge.stripes.action.StreamingResolution;
+import net.sourceforge.stripes.action.UrlBinding;
+import nl.opengeogroep.safetymaps.server.db.Cfg;
+
+/**
+ *
+ * @author matthijsln
+ */
+@UrlBinding("/api/sso")
+public class SSOActionBean implements ActionBean {
+    private ActionBeanContext context;
+
+    private static final String COOKIE_NAME = "sm-saml2-passive-tried";
+
+    @Override
+    public ActionBeanContext getContext() {
+        return context;
+    }
+
+    @Override
+    public void setContext(ActionBeanContext context) {
+        this.context = context;
+    }
+
+    public Resolution redirect() {
+
+        String ssoPassiveUrl = null;
+        try {
+            ssoPassiveUrl = Cfg.getSetting("sso_passive_url");
+        } catch(Exception e) {
+        }
+
+        String url = "/viewer/api/login";
+
+        // Check if SSO is configured/enabled
+        if(ssoPassiveUrl != null) {
+
+            // Redirect only once per browser session.
+            // We use a cookie instead of a session attribute here, because that
+            // would get cleared after logout.
+
+            Cookie cookie = null;
+            if(getContext().getRequest().getCookies() != null) {
+                for(Cookie c: getContext().getRequest().getCookies()) {
+                    if(COOKIE_NAME.equals(c.getName())) {
+                        cookie = c;
+                    }
+                }
+            }
+
+            if(cookie == null) {
+                cookie = new Cookie(COOKIE_NAME, "true");
+                cookie.setHttpOnly(false);
+                cookie.setSecure(context.getRequest().getScheme().equals("https"));
+                getContext().getResponse().addCookie(cookie);
+
+                url = ssoPassiveUrl;
+            }
+        }
+
+        return new RedirectResolution(url);
+    }
+}

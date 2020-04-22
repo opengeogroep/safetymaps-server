@@ -50,15 +50,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                         out.write(ssoManualHtml);
                                     }
                                 %>
-                            <script>
-                                    var ssoPassiveUrl = "<%= nl.opengeogroep.safetymaps.server.db.Cfg.getSetting("sso_passive_url") %>";
-
-                                    // XXX naar /api/sso
-                                    if(ssoPassiveUrl) {
-                                        ssoPassiveUrl = "${contextPath}" + ssoPassiveUrl;
-                                        console.log("Passive URL: " + ssoPassiveUrl);
-                                    }
-                                </script>
                             </c:catch>
 
                             <c:if test="${!empty loginFailMessage}">
