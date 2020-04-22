@@ -351,7 +351,7 @@ public class MellonHeaderAuthenticationFilter implements Filter {
                         response.sendRedirect(returnTo);
                     } else {
                         log.info("Redirecting to default page after successful login");
-                        response.sendRedirect(request.getContextPath());
+                        response.sendRedirect(request.getContextPath() + "/");
                     }
                 }
                 return;

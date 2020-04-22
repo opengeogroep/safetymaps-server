@@ -1,12 +1,15 @@
 package nl.opengeogroep.safetymaps.server.stripes;
 
-import java.util.Map;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import net.sourceforge.stripes.action.ActionBean;
 import net.sourceforge.stripes.action.ActionBeanContext;
 import net.sourceforge.stripes.action.RedirectResolution;
 import net.sourceforge.stripes.action.Resolution;
-import net.sourceforge.stripes.action.StreamingResolution;
 import net.sourceforge.stripes.action.UrlBinding;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 
@@ -30,7 +33,7 @@ public class SSOActionBean implements ActionBean {
         this.context = context;
     }
 
-    public Resolution redirect() {
+    public Resolution redirect() throws MalformedURLException, UnsupportedEncodingException {
 
         String ssoPassiveUrl = null;
         try {
@@ -63,6 +66,11 @@ public class SSOActionBean implements ActionBean {
                 getContext().getResponse().addCookie(cookie);
 
                 url = ssoPassiveUrl;
+
+                HttpServletRequest request = getContext().getRequest();
+                String returnUrl = new URL(request.getScheme(), request.getServerName(), request.getContextPath() + "/auth/saml?returnTo=/viewer/").toString();
+                String returnUrlParam = URLEncoder.encode(returnUrl, "UTF-8");
+                url = url.replace("[returnUrl]", returnUrlParam);
             }
         }
 
