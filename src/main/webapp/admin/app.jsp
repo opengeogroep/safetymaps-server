@@ -37,7 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <td><c:out value="${s.key}"/></td>
                     <td>
                         <c:choose>
-                            <c:when test="${fn:contains(s.key, 'private_key') || s.key == 'edit' }">
+                            <c:when test="${fn:contains(s.key, '_key') || fn:contains(s.key, '_secret') || fn:contains(s.key, '_authorization') || fn:contains(s.key, 'sso_mellon') || s.key == 'edit' }">
                                 <i>Waarde verborgen</i>
                             </c:when>
                             <c:otherwise>
