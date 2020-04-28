@@ -5,6 +5,11 @@
         <description>The class which initializes deletePhoto schedules</description>
         <listener-class>nl.opengeogroep.safetymaps.utils.DeletePhotoScheduler</listener-class>
     </listener>
+    <!-- Context listener for deleting drawings -->
+    <listener>
+        <description>The class which initializes deleteDrawing schedules</description>
+        <listener-class>nl.opengeogroep.safetymaps.utils.DeleteDrawingScheduler</listener-class>
+    </listener>
 
     <!-- Localization context voor o.a. de <fmt:message> JSTL tag -->
     <context-param>
