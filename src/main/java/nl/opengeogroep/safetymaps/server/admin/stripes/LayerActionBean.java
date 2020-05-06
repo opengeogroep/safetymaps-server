@@ -41,6 +41,8 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.apache.commons.codec.digest.DigestUtils;
+import java.util.Base64;
 
 /**
  *
@@ -110,6 +112,12 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     private String mapFilesJson = "{}";
 
     private boolean vrhObjectsEnabled = false;
+
+    @Validate
+    private String auth;
+
+    @Validate
+    private String username;
 
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
@@ -226,6 +234,22 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
         this.layersParam = layersParam;
     }
 
+    public String getAuth() {
+        return auth;
+    }
+
+    public void setAuth(String auth) {
+        this.auth = auth;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public boolean isDpiConversionEnabled() {
         return dpiConversionEnabled;
     }
@@ -334,6 +358,8 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
                 }
             }
 
+            username = layer.getUsername();
+
             JSONObject options = null;
             if(layer.getOptions() != null) {
                 try {
@@ -423,6 +449,18 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
             options.remove("maxResolution");
         }
 
+        String newAuth = "";
+        if (username == null || username == "") {
+            newAuth = null;
+        } else {
+            if (auth == null || auth == "") {
+                newAuth = layer.getAuth();
+            } else {
+                //newAuth = DigestUtils.sha1Hex(username + ":" + auth);
+                newAuth = Base64.getEncoder().encodeToString((username + ":" + auth).getBytes());
+            }
+        }
+
         Object[] qparams = new Object[] {
             name,
             layer.getUrl(),
@@ -437,14 +475,16 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
             layer.getLayertype(),
             layer.getIndex(),
             layer.getNotes(),
-            layer.getLegend()
+            layer.getLegend(),
+            username,
+            newAuth
         };
         if(layer.getGid() == null) {
             log.debug("inserting new layer: " + Arrays.toString(qparams));
             Integer newId = qr().insert(
                     "insert into " + TABLE
-                    + "(name,url,proxy,enabled,baselayer,params,options,getcapabilities,parent,pl,layertype,index,abstract,legend) "
-                    + "values(?,?,?,?,?,?::json,?::json,?,?,?,?,?,?,?)",
+                    + "(name,url,proxy,enabled,baselayer,params,options,getcapabilities,parent,pl,layertype,index,abstract,legend,username,auth) "
+                    + "values(?,?,?,?,?,?::json,?::json,?,?,?,?,?,?,?,?,?)",
                     new ScalarHandler<Integer>(),
                     qparams);
             layer.setGid(newId);
@@ -453,7 +493,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
             log.debug("updating layer id " + layer.getGid() + ": " + Arrays.toString(qparams));
             qr().update(
                     "update " + TABLE
-                    + "set name=?,url=?,proxy=?,enabled=?,baselayer=?,params=?::json,options=?::json,getcapabilities=?,parent=?,pl=?,layertype=?,index=?,abstract=?,legend=? "
+                    + "set name=?,url=?,proxy=?,enabled=?,baselayer=?,params=?::json,options=?::json,getcapabilities=?,parent=?,pl=?,layertype=?,index=?,abstract=?,legend=?,username=?,auth=? "
                     + "where gid=" + layer.getGid(),
                     qparams);
         }
