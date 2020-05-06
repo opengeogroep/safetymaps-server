@@ -1,14 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package nl.opengeogroep.safetymaps.server.stripes;
 
 import net.sourceforge.stripes.action.ActionBean;
 import net.sourceforge.stripes.action.ActionBeanContext;
-import net.sourceforge.stripes.action.RedirectResolution;
 import net.sourceforge.stripes.action.Resolution;
+import net.sourceforge.stripes.action.StreamingResolution;
 import net.sourceforge.stripes.action.UrlBinding;
 
 /**
@@ -19,16 +14,21 @@ import net.sourceforge.stripes.action.UrlBinding;
 public class LoginActionBean implements ActionBean {
     private ActionBeanContext context;
 
+    @Override
     public ActionBeanContext getContext() {
         return context;
     }
 
+    @Override
     public void setContext(ActionBeanContext context) {
         this.context = context;
     }
 
     public Resolution redirect() {
-        return new RedirectResolution("/viewer/api/organisation.json", true);
+        return new StreamingResolution("text/html",
+            "<html><head>" +
+                "<meta http-equiv=\"refresh\" content=\"0;url=" + context.getRequest().getContextPath() + "/viewer/\">" +
+            "</head></html>"
+        );
     }
-
 }
