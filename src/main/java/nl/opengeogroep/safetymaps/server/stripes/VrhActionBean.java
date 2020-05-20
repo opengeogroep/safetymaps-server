@@ -240,14 +240,19 @@ public class VrhActionBean implements ActionBean {
 
         final Map<String,Set<String>> objectPandIds = new HashMap();
         final Set<String> allPandIds = new HashSet();
+        final Set<String> vrhBagIdWithCustomBagPand = new HashSet();
 
         // Geen negatieve of verkeerd ingevulde niet-numerieke "ids"
-        qr.query(c, "select vrh_bag_id, bagpand_id from " + VRH_SCHEMA + ".vrh_geo_pand where bagpand_id ~ '^[0-9]+$'", new ResultSetHandler() {
+        qr.query(c, "select vrh_bag_id, bagpand_id, bagpand_id ~ '^[0-9]+$' as real_bag_id from " + VRH_SCHEMA + ".vrh_geo_pand ", new ResultSetHandler() {
             @Override
             public Object handle(ResultSet rs) throws SQLException {
                 while(rs.next()) {
                     String vrhBagId = rs.getString(1);
                     String pandId = rs.getString(2);
+                    if(!rs.getBoolean(3)) {
+                        vrhBagIdWithCustomBagPand.add(vrhBagId);
+                        continue;
+                    }
                     Set<String> thisObjectPandIds = objectPandIds.get(vrhBagId);
                     if(thisObjectPandIds == null) {
                         thisObjectPandIds = new HashSet();
@@ -328,8 +333,12 @@ public class VrhActionBean implements ActionBean {
                                     log.warn("DBK ID multiple pand IDs: " + o.get("id") + ", also pand ID " + hoofdpand);
                                     addExtraAdres(extraAdressenJson, bagAdres);
                                 } else {
-                                    String newId = o.get("id") + "p" + hoofdpand;
-                                    o.put("id", newId);
+                                    // Geen hoofdpanden uit BAG toevoegen als voor de nummeraanduiding al
+                                    // een pand(en) aanwezig was uit vrh_geo_pand tabel
+                                    if(!vrhBagIdWithCustomBagPand.contains(nummeraanduiding)) {
+                                        String newId = o.get("id") + "p" + hoofdpand;
+                                        o.put("id", newId);
+                                    }
 
                                     o.put("straatnaam", bagAdres.get("openbareruimtenaam"));
                                     o.put("huisnummer", bagAdres.get("huisnummer"));
