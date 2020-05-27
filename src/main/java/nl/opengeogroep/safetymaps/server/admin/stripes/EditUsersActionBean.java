@@ -32,6 +32,7 @@ import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter;
 import static nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter.invalidateUserSessions;
+import static nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter.updateRolesInUserSessions;
 import nl.opengeogroep.safetymaps.server.security.PersistentSessionManager;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
@@ -227,6 +228,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
     public Resolution save() throws Exception {
 
         String hashedPassword;
+        Boolean userSessionsAreInvalid = false;
         if(password == null) {
             hashedPassword = qr().query("select password from " + USER_TABLE + " where username = ?", new ScalarHandler<String>(), username);
             if(hashedPassword == null) {
@@ -236,7 +238,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
         } else {
             hashedPassword = DigestUtils.sha1Hex(password);
             if(!USER_ADMIN.equals(username)) {
-                invalidateUserSessions(username);
+                userSessionsAreInvalid = true;
             }
         }
 
@@ -259,7 +261,12 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
                 qr().update("insert into " + USER_ROLE_TABLE + " (username, role) values (?, ?)", username, r);
             }
         }
-        // TODO: update role list in sessions, access Sessions by shared Map username ?
+
+        if(userSessionsAreInvalid) {
+            invalidateUserSessions(username);
+        } else {
+            updateRolesInUserSessions(username);
+        }
 
         getContext().getMessages().add(new SimpleMessage("Gebruiker is opgeslagen"));
         return new RedirectResolution(this.getClass()).flash(this);

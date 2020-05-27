@@ -4,6 +4,8 @@ import java.io.IOException;
 import javax.servlet.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.taglibs.standard.tag.rt.sql.SetDataSourceTag;
+
 import java.security.Principal;
 import java.sql.SQLException;
 import java.time.Duration;
@@ -366,13 +368,42 @@ public class PersistentAuthenticationFilter implements Filter {
         PersistentSessionManager.deleteUserSessions(name);
     }
 
+    public static void updateRolesInUserSessions(String name) throws IOException {
+        List<String> roles;
+        List<String> invalidSessionIds = new ArrayList<>();
+        try {
+            roles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), name);
+
+            for(HttpSession session: CONTAINER_SESSIONS.values()) {
+                try {
+                    String sessionUser = (String)session.getAttribute(SESSION_USERNAME);
+                    AuthenticatedPrincipal persistentPrincipal = (AuthenticatedPrincipal)session.getAttribute(SESSION_PRINCIPAL);
+        
+                    log.debug("Checking container session " + session.getId() + " to update roles, session user = " + sessionUser);
+        
+                    if(name.equals(sessionUser)) {
+                        persistentPrincipal.setRoles(new HashSet(roles));
+                        session.setAttribute(SESSION_PRINCIPAL, persistentPrincipal);
+                    }
+                } catch(IllegalStateException e) {
+                    invalidSessionIds.add(session.getId());
+                }
+            }
+            for(String id: invalidSessionIds) {
+                CONTAINER_SESSIONS.remove(id);
+            }
+        } catch(javax.naming.NamingException | java.sql.SQLException e) {
+            throw new IOException(e);
+        }
+    }
+
     private static String obfuscateSessionId(String id) {
         return StringUtils.repeat("x", id.length() / 2) + id.substring(id.length() / 2);
     }
 
     private class AuthenticatedPrincipal implements Principal {
         private final String name;
-        private final Set<String> roles;
+        private Set<String> roles;
 
         public AuthenticatedPrincipal(String name, Set<String> roles) {
             this.name = name;
@@ -393,7 +424,7 @@ public class PersistentAuthenticationFilter implements Filter {
         }
 
         public void setRoles(Set<String> roles) {
-            throw new UnsupportedOperationException();
+            this.roles = roles;
         }
     }
 }
