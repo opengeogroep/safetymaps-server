@@ -242,7 +242,7 @@ public class VrhActionBean implements ActionBean {
         final Set<String> allPandIds = new HashSet();
         final Set<String> vrhBagIdWithCustomBagPand = new HashSet();
 
-        // Geen negatieve of verkeerd ingevulde niet-numerieke "ids"
+        // Niet-numerieke "ids" zijn custom getekende panden
         qr.query(c, "select vrh_bag_id, bagpand_id, bagpand_id ~ '^[0-9]+$' as real_bag_id from " + VRH_SCHEMA + ".vrh_geo_pand ", new ResultSetHandler() {
             @Override
             public Object handle(ResultSet rs) throws SQLException {
@@ -385,13 +385,18 @@ public class VrhActionBean implements ActionBean {
 
         if(!withoutExtent.isEmpty()) {
             final Set<String> extentPandIds = new HashSet();
-            final Map<String,JSONObject> pandIdToObject = new HashMap();
+            final Map<String,List<JSONObject>> pandIdToObjects = new HashMap();
             for(JSONObject object: withoutExtent) {
                 String newId = object.getString("id");
                 int i = newId.indexOf("p");
                 if(i != -1) {
                     String pandId = newId.substring(newId.indexOf("p")+1);
-                    pandIdToObject.put(pandId, object);
+                    List objectsForPand = pandIdToObjects.get(pandId);
+                    if(objectsForPand == null) {
+                        objectsForPand = new ArrayList();
+                        pandIdToObjects.put(pandId, objectsForPand);
+                    }
+                    objectsForPand.add(object);
                     extentPandIds.add(pandId);
                 } else {
                     // Currently objects without pand are not supported
@@ -404,9 +409,11 @@ public class VrhActionBean implements ActionBean {
             for(Map<String,Object> row: pandExtentRows) {
                 String pandId = (String)row.get("pandid");
                 String extent = row.get("extent").toString();
-                JSONObject object = pandIdToObject.get(pandId);
-                if(object != null) {
-                    object.put("extent", extent);
+                List<JSONObject> objectsForPand = pandIdToObjects.get(pandId);
+                if(objectsForPand != null) {
+                    for(JSONObject object: objectsForPand) {
+                        object.put("extent", extent);
+                    }
                 }
             }
         }
