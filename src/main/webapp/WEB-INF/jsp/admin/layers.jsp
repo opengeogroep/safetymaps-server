@@ -186,7 +186,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                             <div class="col-sm-2" style="padding-top: 5px">Niet weergeven boven resolutie</div>
                             <div class="col-sm-10"><stripes-dynattr:text name="maxResolution" class="form-control input-sm" style="width: 80px" type="number" step="0.0001" min="0"/></div>
                             <div class="col-sm-12">
-                                (Wanneer een kaart niet zichtbaar hoeft te zijn, vermindert dit het dataverbruik. <a href="<c:out value="${s.settings['static_url']}?res=true"/>" target="_blank">Open voertuigviewer met resolutie weergave</a>)
+                                (Wanneer een kaart niet zichtbaar hoeft te zijn, vermindert dit het dataverbruik. <a href="<c:out value="${contextPath}/viewer/?res=true"/>" target="_blank">Open voertuigviewer met resolutie weergave</a>)
                             </div>
                         </div>
                     </div>
