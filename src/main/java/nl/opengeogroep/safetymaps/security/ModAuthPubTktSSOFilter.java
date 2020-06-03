@@ -59,6 +59,7 @@ public class ModAuthPubTktSSOFilter implements Filter {
 
     private boolean enabled = false;
     private PrivateKey privateKey;
+    private String name = "auth_pubtkt";
     private String domain;
     private boolean assumeExternallyAuthenticated = false;
     private int validitySeconds = 10 * 60;
@@ -83,10 +84,11 @@ public class ModAuthPubTktSSOFilter implements Filter {
                 enabled = false;
                 return;
             }
+            name = Cfg.getSetting("mod_auth_pubtkt_name", name);
             domain = Cfg.getSetting("mod_auth_pubtkt_domain");
             validitySeconds = Integer.parseInt(Cfg.getSetting("mod_auth_pubtkt_validity_seconds", validitySeconds + ""));
             assumeExternallyAuthenticated = "true".equals(Cfg.getSetting("mod_auth_pubtkt_externally_secured"));
-            LOG.info("Filter enabled to set mod_auth_pubtkt SSO cookie for domain " + domain + (assumeExternallyAuthenticated ? ", assuming secured externally by webserver / private network" : ", using container authentication"));
+            LOG.info("Filter enabled to set mod_auth_pubtkt SSO cookie with name " + name + " for domain " + domain + (assumeExternallyAuthenticated ? ", assuming secured externally by webserver / private network" : ", using container authentication"));
         } catch(Exception e) {
             LOG.error("Exception checking mod_auth_pubtkt config", e);
             enabled = false;
@@ -102,7 +104,7 @@ public class ModAuthPubTktSSOFilter implements Filter {
 
         if(enabled) {
             try {
-                addSSOCookie(request, response, privateKey, domain, validitySeconds, assumeExternallyAuthenticated);
+                addSSOCookie(request, response, privateKey, name, domain, validitySeconds, assumeExternallyAuthenticated);
             } catch(Exception e) {
                 LOG.error("Exception adding SSO cookie, disabled", e);
                 enabled = false;
@@ -112,7 +114,7 @@ public class ModAuthPubTktSSOFilter implements Filter {
         chain.doFilter(request, response);
     }
 
-    public static void addSSOCookie(HttpServletRequest request, HttpServletResponse response, PrivateKey privateKey, String domain, int validitySeconds, boolean assumeExternallyAuthenticated) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException {
+    public static void addSSOCookie(HttpServletRequest request, HttpServletResponse response, PrivateKey privateKey, String name, String domain, int validitySeconds, boolean assumeExternallyAuthenticated) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, UnsupportedEncodingException {
         String user = request.getRemoteUser();
         if(user == null) {
             if(!assumeExternallyAuthenticated) {
@@ -145,7 +147,7 @@ public class ModAuthPubTktSSOFilter implements Filter {
         String ticket = "uid=" + user + ";validuntil=" + cookieExpiry;
 
         ticket += ";sig=" + ModAuthPubTkt.getSignature(ticket, privateKey);
-        Cookie cookie = new Cookie("auth_pubtkt", URLEncoder.encode(ticket, "US-ASCII"));
+        Cookie cookie = new Cookie(name, URLEncoder.encode(ticket, "US-ASCII"));
         cookie.setMaxAge(validitySeconds);
         cookie.setPath("/");
         cookie.setDomain(domain);
