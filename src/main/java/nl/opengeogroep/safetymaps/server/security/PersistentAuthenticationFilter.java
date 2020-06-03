@@ -6,12 +6,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import java.security.Principal;
 import java.sql.SQLException;
-import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +25,7 @@ import static nl.opengeogroep.safetymaps.server.db.DB.USERNAME_LDAP;
 import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 import static nl.opengeogroep.safetymaps.server.security.PersistentSessionManager.LDAP_GROUP;
+import static nl.opengeogroep.safetymaps.utils.SameSiteCookieUtil.addCookieWithSameSite;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.lang3.ObjectUtils;
@@ -122,38 +118,6 @@ public class PersistentAuthenticationFilter implements Filter {
                 return request.isUserInRole(role) || principal.isUserInRole(role);
             }
         }, response);
-    }
-
-    private void addCookieWithSameSite(HttpServletRequest request, HttpServletResponse response, Cookie cookie, String sameSite) {
-
-        OffsetDateTime expires = OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(cookie.getMaxAge()));
-        String cookieExpires = DateTimeFormatter.RFC_1123_DATE_TIME.format(expires);
-
-        String value = String.format("%s=%s; Max-Age=%d; Expires=%s; Path=%s",
-                cookie.getName(),
-                cookie.getValue(),
-                cookie.getMaxAge(),
-                cookieExpires,
-                cookie.getPath());
-
-        List attributes = new ArrayList();
-        if(cookie.getDomain() != null) {
-            attributes.add("Domain=" + cookie.getDomain());
-        }
-        if(cookie.isHttpOnly()) {
-            attributes.add("HttpOnly");
-        }
-        if(cookie.getSecure()) {
-            attributes.add("Secure");
-        }
-        if(sameSite != null) {
-            attributes.add("SameSite=" + sameSite);
-        }
-        if(!attributes.isEmpty()) {
-            value += "; " + String.join("; ", attributes);
-        }
-
-        response.addHeader("Set-Cookie", value);
     }
 
     @Override
@@ -278,7 +242,7 @@ public class PersistentAuthenticationFilter implements Filter {
                 cookie.setSecure(request.getScheme().equals("https"));
                 cookie.setMaxAge((int)((c.getTimeInMillis() - System.currentTimeMillis()) / 1000));
                 log.info(request.getRequestURI() + ": Request externally authenticated for user " + principal.getName() + ", setting persistent login cookie " + obfuscateSessionId(id));
-                addCookieWithSameSite(request, response, cookie, "None");
+                addCookieWithSameSite(response, cookie, "None");
 
                 // Apply additional roles if LDAP user
                 if(request.isUserInRole(LDAP_GROUP)) {

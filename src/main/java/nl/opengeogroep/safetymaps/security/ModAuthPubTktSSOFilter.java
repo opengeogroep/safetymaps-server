@@ -28,6 +28,7 @@ import javax.servlet.http.HttpSession;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import static nl.opengeogroep.safetymaps.utils.SameSiteCookieUtil.addCookieWithSameSite;
 
 /**
  * Generate ticket cookie for mod_auth_pubtkt (https://github.com/manuelkasper/mod_auth_pubtkt).
@@ -149,9 +150,9 @@ public class ModAuthPubTktSSOFilter implements Filter {
         cookie.setPath("/");
         cookie.setDomain(domain);
         cookie.setHttpOnly(true);
-        //cookie.setSecure(true); // don't set secure, for dev testing from http:// local URL
-        response.addCookie(cookie);
-        LOG.info("Added cookie with ticket for domain " + domain + " valid until " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(validUntil.getTime()));
+        cookie.setSecure(request.getScheme().equals("https"));
+        addCookieWithSameSite(response, cookie, "None");
+        LOG.info("Added cookie with ticket for domain " + domain + " (SameSite=None) valid until " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(validUntil.getTime()));
 
         request.getSession().setAttribute(SESSION_COOKIE_EXPIRY, cookieExpiry);
     }
