@@ -129,7 +129,7 @@
     </filter-mapping>
     <filter-mapping>
         <filter-name>ModAuthPubTktSSOFilter</filter-name>
-        <url-pattern>/api/organisation.json</url-pattern>
+        <url-pattern>/viewer/api/organisation.json</url-pattern>
     </filter-mapping>
     <filter-mapping>
         <filter-name>StripesFilter</filter-name>
