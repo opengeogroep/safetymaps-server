@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Date;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import net.sourceforge.stripes.action.ActionBean;
@@ -22,6 +23,8 @@ public class SSOActionBean implements ActionBean {
     private ActionBeanContext context;
 
     private static final String COOKIE_NAME = "sm-saml2-passive-tried";
+
+    private static final long SSO_PASSIVE_TIMER = 5 * 60 * 1000;
 
     @Override
     public ActionBeanContext getContext() {
@@ -46,7 +49,15 @@ public class SSOActionBean implements ActionBean {
         // Check if SSO is configured/enabled
         if(ssoPassiveUrl != null) {
 
-            // Redirect only once per browser session.
+            // Set a cookie with the time the SSO redirect was tried so it can
+            // be done only once per timeout. When a user suspends his session
+            // and restarts it later, the browser and mellon session may be expired
+            // but a passive login may succeed again.
+
+            // We don't want to redirect every time, because when a SSO error
+            // occurs (IdP offline, configuration issue) a user still needs to be
+            // able to login with a safetymaps account.
+
             // We use a cookie instead of a session attribute here, because that
             // would get cleared after logout.
 
@@ -59,8 +70,21 @@ public class SSOActionBean implements ActionBean {
                 }
             }
 
-            if(cookie == null) {
-                cookie = new Cookie(COOKIE_NAME, "true");
+            boolean trySso = cookie == null;
+
+            // Check if SSO was tried more than a timeout ago, so it can be tried
+            // again in this browser session
+            if(cookie != null) {
+                try {
+                    Date lastSsoTried = new Date(Long.parseLong(cookie.getValue()));
+
+                    trySso = new Date().getTime() - lastSsoTried.getTime() > SSO_PASSIVE_TIMER;
+                } catch(Exception e) {
+                }
+            }
+
+            if(trySso) {
+                cookie = new Cookie(COOKIE_NAME, new Date().getTime() + "");
                 cookie.setHttpOnly(false);
                 cookie.setSecure(context.getRequest().getScheme().equals("https"));
                 getContext().getResponse().addCookie(cookie);
