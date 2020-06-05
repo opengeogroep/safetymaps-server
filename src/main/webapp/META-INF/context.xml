@@ -46,7 +46,7 @@
             userBase="o=MyOrg"
             userSubtree="true"
             userSearch="cn={0}"
-            commonRole="ExtendedUser"
+            commonRole="LDAP"
         /-->
   </Realm>
 </Context>

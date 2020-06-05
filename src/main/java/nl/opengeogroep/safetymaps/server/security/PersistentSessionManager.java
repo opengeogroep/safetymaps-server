@@ -55,17 +55,12 @@ public class PersistentSessionManager {
         return new String(buf);
     }
 
-    public static String createPersistentSession(HttpServletRequest request, java.util.Date expiresAt) throws IOException {
+    public static String createPersistentSession(HttpServletRequest request, String loginSource, java.util.Date expiresAt) throws IOException {
 
         String id = getNewSessionID();
         String username = request.getRemoteUser();
         Objects.requireNonNull(username);
         String remoteIpLogin = request.getRemoteAddr();
-
-        String loginSource = "userDatabase";
-        if(request.isUserInRole(LDAP_GROUP)) {
-            loginSource = "LDAP";
-        }
 
         try {
             qr().update("insert into " + SESSION_TABLE + "(id, username, created_at, expires_at, remote_ip_login, remote_ip_last, login_source) values (?, ?, ?, ?, ?, ?, ?)",
@@ -83,27 +78,37 @@ public class PersistentSessionManager {
         return id;
     }
 
+    private static long lastRemovedInvalidSessions = System.currentTimeMillis();
+
+    private static final long REMOVE_INVALID_SESSIONS_TIMEOUT = 1 * 60;
+
     public static void removeInvalidSessions() throws SQLException, NamingException {
-        // TODO: for performance maybe only every x seconds
+        long current = System.currentTimeMillis();
 
-        log.debug("Checking for invalid sessions to remove");
-        List<Map<String,Object>> expiredSessions = qr().query("select * from " + SESSION_TABLE + " where expires_at < now()", new MapListHandler());
-        if(!expiredSessions.isEmpty()) {
-            log.info("Removing " + expiredSessions.size() + " expired sessions");
-            for(Map<String,Object> session: expiredSessions) {
-                log.info(String.format("Removing session id %s, expired at %tc for user %s", session.get("id"), new Date(((java.sql.Timestamp)session.get("expires_at")).getTime()), session.get("username")));
-            }
-            qr().update("delete from " + SESSION_TABLE + " where expires_at < now()");
-        }
+        // For performance maybe only remove invalid sessions once every TIMEOUT seconds
+        if(current - lastRemovedInvalidSessions > REMOVE_INVALID_SESSIONS_TIMEOUT * 1000) {
 
-        // Double check; do not rely on row being deleted when removing a user via user interface, maybe direct db delete by dba!
-        List<Map<String,Object>> removedUserSessions = qr().query("select * from " + SESSION_TABLE + " ps where login_source = 'userDatabase' and not exists (select 1 from " + USER_TABLE + " u where u.username = ps.username)", new MapListHandler());
-        if(!removedUserSessions.isEmpty()) {
-            log.info("Removing " + removedUserSessions.size() + " sessions for deleted users");
-            for(Map<String,Object> session: expiredSessions) {
-                log.info(String.format("Removing session id %s for non-existant user %s", session.get("id"), session.get("username")));
+            lastRemovedInvalidSessions = current;
+
+            log.debug("Checking for invalid sessions to remove");
+            List<Map<String,Object>> expiredSessions = qr().query("select * from " + SESSION_TABLE + " where expires_at < now()", new MapListHandler());
+            if(!expiredSessions.isEmpty()) {
+                log.info("Removing " + expiredSessions.size() + " expired sessions");
+                for(Map<String,Object> session: expiredSessions) {
+                    log.info(String.format("Removing session id %s, expired at %tc for user %s", session.get("id"), new Date(((java.sql.Timestamp)session.get("expires_at")).getTime()), session.get("username")));
+                }
+                qr().update("delete from " + SESSION_TABLE + " where expires_at < now()");
             }
-            qr().update("delete from " + SESSION_TABLE + " ps where login_source = 'userDatabase' and not exists (select 1 from " + USER_TABLE + " u where u.username = ps.username)");
+
+            // Double check; do not rely on row being deleted when removing a user via user interface, maybe direct db delete by dba!
+            List<Map<String,Object>> removedUserSessions = qr().query("select * from " + SESSION_TABLE + " ps where login_source = 'userDatabase' and not exists (select 1 from " + USER_TABLE + " u where u.username = ps.username)", new MapListHandler());
+            if(!removedUserSessions.isEmpty()) {
+                log.info("Removing " + removedUserSessions.size() + " sessions for deleted users");
+                for(Map<String,Object> session: expiredSessions) {
+                    log.info(String.format("Removing session id %s for non-existant user %s", session.get("id"), session.get("username")));
+                }
+                qr().update("delete from " + SESSION_TABLE + " ps where login_source = 'userDatabase' and not exists (select 1 from " + USER_TABLE + " u where u.username = ps.username)");
+            }
         }
     }
 
@@ -112,6 +117,7 @@ public class PersistentSessionManager {
         try {
             removeInvalidSessions();
 
+            // TODO cache
             Map result = qr().query("select * from " + SESSION_TABLE + " where id = ?", new MapHandler(), id);
             log.debug("Result: " + result);
             if(result != null && !request.getRemoteAddr().equals(result.get("remote_ip_last"))) {
