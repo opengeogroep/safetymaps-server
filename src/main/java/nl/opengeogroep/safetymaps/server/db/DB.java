@@ -35,7 +35,7 @@ public class DB {
     public static final String ROLE_EIGEN_VOERTUIGNUMMER = "eigen_voertuignummer";
     public static final String ROLE_DRAWING_EDITOR = "drawing_editor";
 
-    public static final String USERNAME_LDAP = "ldap_gebruiker";
+    public static final String USERNAME_LDAP = "LDAP";
 
     public static final DataSource getDataSource(String jndiName) throws NamingException {
         InitialContext cxt = new InitialContext();
