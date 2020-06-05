@@ -99,7 +99,7 @@
     <filter>
         <display-name>mod_auth_pubtkt SSO filter</display-name>
         <filter-name>ModAuthPubTktSSOFilter</filter-name>
-        <filter-class>nl.opengeogroep.safetymaps.security.ModAuthPubTktSSOFilter</filter-class>
+        <filter-class>nl.opengeogroep.safetymaps.server.security.ModAuthPubTktSSOFilter</filter-class>
         <!-- enabled/disabled by safetymaps.settings database config -->
     </filter>
     <filter>

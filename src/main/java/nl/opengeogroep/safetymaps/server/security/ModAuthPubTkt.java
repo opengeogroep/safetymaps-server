@@ -1,4 +1,4 @@
-package nl.opengeogroep.safetymaps.security;
+package nl.opengeogroep.safetymaps.server.security;
 
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
