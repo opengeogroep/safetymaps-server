@@ -261,9 +261,9 @@ public class UpdatableLoginSessionFilter implements Filter {
             return;
         }
 
-        synchronized(CONTAINER_SESSIONS) {
-            Map<String, Collection<String>> rolesByUsername = roleProvider.getAllRolesByUsername();
+        Map<String, Collection<String>> rolesByUsername = roleProvider.getAllRolesByUsername();
 
+        synchronized(CONTAINER_SESSIONS) {
             for(HttpSession session: CONTAINER_SESSIONS.values()) {
                 try {
                     String username = (String)session.getAttribute(SESSION_ATTR_USERNAME);
