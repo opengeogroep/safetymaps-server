@@ -92,7 +92,12 @@ public class UpdatableLoginSessionFilter implements Filter {
                 List<String> sessionIdsToRemove = new ArrayList();
                 for(Map.Entry<String,HttpSession> entry: CONTAINER_SESSIONS.entrySet()) {
                     HttpSession session = entry.getValue();
-                    if(current - session.getLastAccessedTime() > session.getMaxInactiveInterval() * 1000) {
+                    try {
+                        if(current - session.getLastAccessedTime() > session.getMaxInactiveInterval() * 1000) {
+                            sessionIdsToRemove.add(entry.getKey());
+                        }
+                    } catch(IllegalStateException e) {
+                        // Session already invalidated
                         sessionIdsToRemove.add(entry.getKey());
                     }
                 }
