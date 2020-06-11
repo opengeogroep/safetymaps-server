@@ -30,9 +30,7 @@ import static nl.opengeogroep.safetymaps.server.db.DB.USER_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
-import nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter;
-import static nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter.invalidateUserSessions;
-import nl.opengeogroep.safetymaps.server.security.PersistentSessionManager;
+import nl.opengeogroep.safetymaps.server.security.UpdatableLoginSessionFilter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
@@ -203,7 +201,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
             getContext().getValidationErrors().addGlobalError(new SimpleError("Speciale gebruiker kan niet verwijderd worden"));
             return list();
         }
-        invalidateUserSessions(username);
+        UpdatableLoginSessionFilter.invalidateUserSessions(username);
 
         int count = qr().update("delete from " + SESSION_TABLE + " where username = ?", username);
         log.info("Removing user " + username + ", deleted " + count + " persistent sessions");
@@ -219,7 +217,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
     }
 
     public Resolution deleteSessions() throws Exception {
-        invalidateUserSessions(username);
+        UpdatableLoginSessionFilter.invalidateUserSessions(username);
         getContext().getMessages().add(new SimpleMessage("Inlogsessies zijn verwijderd"));
         return new RedirectResolution(this.getClass()).flash(this);
     }
@@ -236,7 +234,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
         } else {
             hashedPassword = DigestUtils.sha1Hex(password);
             if(!USER_ADMIN.equals(username)) {
-                invalidateUserSessions(username);
+                UpdatableLoginSessionFilter.invalidateUserSessions(username);
             }
         }
 
@@ -259,7 +257,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
                 qr().update("insert into " + USER_ROLE_TABLE + " (username, role) values (?, ?)", username, r);
             }
         }
-        // TODO: update role list in sessions, access Sessions by shared Map username ?
+        UpdatableLoginSessionFilter.updateUserSessionRoles(username);
 
         getContext().getMessages().add(new SimpleMessage("Gebruiker is opgeslagen"));
         return new RedirectResolution(this.getClass()).flash(this);

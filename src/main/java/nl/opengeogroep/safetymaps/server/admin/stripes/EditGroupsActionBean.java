@@ -31,6 +31,7 @@ import static nl.opengeogroep.safetymaps.server.db.DB.USER_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
+import nl.opengeogroep.safetymaps.server.security.UpdatableLoginSessionFilter;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -179,6 +180,8 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         log.info("Removing role " + role + ", deleted " + count + " user roles ");
         count = qr().update("delete from " + ROLE_TABLE + " where role = ?", role);
 
+        UpdatableLoginSessionFilter.updateAllSessionRoles();
+
         if(count != 0) {
             getContext().getMessages().add(new SimpleMessage("Groep is verwijderd"));
         } else {
@@ -206,6 +209,8 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         for(String u: users) {
             qr().update("insert into " + USER_ROLE_TABLE + "(username,role) values (?,?)", u, role);
         }
+
+        UpdatableLoginSessionFilter.updateAllSessionRoles();
 
         getContext().getMessages().add(new SimpleMessage("Groep is opgeslagen"));
         return new RedirectResolution(this.getClass()).flash(this);

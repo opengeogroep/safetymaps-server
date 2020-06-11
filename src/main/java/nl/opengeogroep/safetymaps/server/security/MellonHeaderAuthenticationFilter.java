@@ -5,7 +5,6 @@ import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -20,9 +19,6 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
-import nl.opengeogroep.safetymaps.server.db.DB;
-import static nl.opengeogroep.safetymaps.server.db.DB.qr;
-import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -304,20 +300,6 @@ public class MellonHeaderAuthenticationFilter implements Filter {
 
                 log.info("Authenticated user from header [prefix]" + userHeader + ": " + user + ", roles: " + roles);
 
-                // Get more roles by getting the roles using the SAML role as username
-                try {
-                    List<String> extraRoles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username in (" + StringUtils.repeat("?", ", ", roles.size()) + ")", new ColumnListHandler<String>(), (Object[])roles.toArray(new String[] {}));
-
-                    if(extraRoles.isEmpty()) {
-                        log.info("Did not find any additional roles for SAML user using the SAML role names as username in table " + DB.USER_ROLE_TABLE);
-                    } else {
-                        log.info("Adding additional roles using SAML role names as username found in table " + DB.USER_ROLE_TABLE + ": " + extraRoles.toString());
-                        roles.addAll(extraRoles);
-                    }
-                } catch(Exception e) {
-                    log.error("Error getting roles for SAML user", e);
-                }
-
                 session.setAttribute(ATTR_PRINCIPAL, new HeaderAuthenticatedPrincipal(user, roles));
 
                 Map<String,String> extraHeaders = new HashMap();
@@ -357,8 +339,6 @@ public class MellonHeaderAuthenticationFilter implements Filter {
                 return;
             }
         }
-
-        // XXX principal verdwijnt na aanroepen api/organisation.json ?
 
         final HeaderAuthenticatedPrincipal principal = (HeaderAuthenticatedPrincipal)session.getAttribute(ATTR_PRINCIPAL);
         if(principal != null) {

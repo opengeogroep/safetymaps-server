@@ -22,19 +22,6 @@
         <param-value>nl</param-value>
     </context-param>
     <filter>
-        <description>Persistent logins across browser sessions</description>
-        <filter-name>PersistentAuthenticationFilter</filter-name>
-        <filter-class>nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter</filter-class>
-        <init-param>
-            <param-name>enabled</param-name>
-            <param-value>true</param-value>
-        </init-param>
-        <init-param>
-            <param-name>persistentLoginPathPrefix</param-name>
-            <param-value>/viewer/api/</param-value>
-        </init-param>
-    </filter>
-    <filter>
         <description>Filter from Tomcat 6 distribution, see http://wiki.apache.org/tomcat/FAQ/CharacterEncoding</description>
         <filter-name>SetCharacterEncodingFilter</filter-name>
         <filter-class>nl.b3p.web.filter.SetCharacterEncodingFilter</filter-class>
@@ -89,7 +76,7 @@
         <filter-class>nl.opengeogroep.safetymaps.server.security.MellonHeaderAuthenticationFilter</filter-class>
         <init-param>
             <param-name>commonRole</param-name>
-            <param-value>SAMLUser</param-value>
+            <param-value>SAML</param-value>
         </init-param>
         <init-param>
             <param-name>saveExtraHeaders</param-name>
@@ -97,9 +84,39 @@
         </init-param>
     </filter>
     <filter>
+        <description>Persistent logins across browser sessions</description>
+        <filter-name>PersistentAuthenticationFilter</filter-name>
+        <filter-class>nl.opengeogroep.safetymaps.server.security.PersistentAuthenticationFilter</filter-class>
+        <init-param>
+            <param-name>enabled</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>persistentLoginPathPrefix</param-name>
+            <param-value>/viewer/api/</param-value>
+        </init-param>
+        <init-param>
+            <param-name>rolesAsDbUsernames</param-name>
+            <param-value>LDAP</param-value>
+        </init-param>
+    </filter>
+    <filter>
+        <description>Updatable roles and invalidatable login sessions</description>
+        <filter-name>UpdatableLoginSessionFilter</filter-name>
+        <filter-class>nl.opengeogroep.safetymaps.server.security.UpdatableLoginSessionFilter</filter-class>
+        <init-param>
+            <param-name>externalRolesForGroupMembership</param-name>
+            <param-value>LDAP,SAML</param-value>
+        </init-param>
+        <init-param>
+            <param-name>roleProviderClass</param-name>
+            <param-value>nl.opengeogroep.safetymaps.server.security.SafetyMapsRoleProvider</param-value>
+        </init-param>
+    </filter>
+    <filter>
         <display-name>mod_auth_pubtkt SSO filter</display-name>
         <filter-name>ModAuthPubTktSSOFilter</filter-name>
-        <filter-class>nl.opengeogroep.safetymaps.security.ModAuthPubTktSSOFilter</filter-class>
+        <filter-class>nl.opengeogroep.safetymaps.server.security.ModAuthPubTktSSOFilter</filter-class>
         <!-- enabled/disabled by safetymaps.settings database config -->
     </filter>
     <filter>
@@ -121,6 +138,10 @@
     </filter-mapping>
     <filter-mapping>
         <filter-name>PersistentAuthenticationFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>UpdatableLoginSessionFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
     <filter-mapping>

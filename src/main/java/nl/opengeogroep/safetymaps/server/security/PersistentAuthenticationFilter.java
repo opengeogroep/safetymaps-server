@@ -6,27 +6,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import java.security.Principal;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import javax.naming.NamingException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import nl.opengeogroep.safetymaps.server.db.DB;
-import static nl.opengeogroep.safetymaps.server.db.DB.USERNAME_LDAP;
 import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
-import static nl.opengeogroep.safetymaps.server.security.PersistentSessionManager.LDAP_GROUP;
 import static nl.opengeogroep.safetymaps.utils.SameSiteCookieUtil.addCookieWithSameSite;
-import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -50,7 +42,8 @@ public class PersistentAuthenticationFilter implements Filter {
 
     private static final String COOKIE_NAME = "sm-plogin";
 
-    private static final String SESSION_USERNAME = PersistentAuthenticationFilter.class.getName() + ".USERNAME";
+    private static final String DEFAULT_LOGIN_SOURCE = "SafetyMaps";
+
     private static final String SESSION_PRINCIPAL = PersistentAuthenticationFilter.class.getName() + ".PRINCIPAL";
     
     private static final int EXPIRY_DEFAULT_UNIT = Calendar.YEAR;
@@ -59,15 +52,15 @@ public class PersistentAuthenticationFilter implements Filter {
     private static final String PARAM_ENABLED = "enabled";
     private static final String PARAM_PERSISTENT_LOGIN_PATH_PREFIX = "persistentLoginPathPrefix";
     private static final String PARAM_LOGOUT_URL = "logoutUrl";
+    private static final String PARAM_ROLES_AS_DB_USERNAMES = "rolesAsDbUsernames";
 
     private String persistentLoginPrefix;
+    private String[] rolesAsDbUsernames;
     private boolean enabled;
     private String logoutUrl;
 
-    private static final ConcurrentMap<String,HttpSession> CONTAINER_SESSIONS = new ConcurrentHashMap();
-
     /**
-     * Get a filter init-parameter which can be overriden by a context parameter
+     * Get a filter init-parameter which can be overridden by a context parameter
      * when prefixed with "persistentAuth".
      */
     private String getInitParameter(String paramName) {
@@ -88,7 +81,20 @@ public class PersistentAuthenticationFilter implements Filter {
 
         this.enabled = "true".equals(ObjectUtils.firstNonNull(getInitParameter(PARAM_ENABLED), "true"));
         this.persistentLoginPrefix = ObjectUtils.firstNonNull(getInitParameter(PARAM_PERSISTENT_LOGIN_PATH_PREFIX), "/");
+        this.rolesAsDbUsernames =  ObjectUtils.firstNonNull(getInitParameter(PARAM_ROLES_AS_DB_USERNAMES), "").split(",");
         this.logoutUrl = ObjectUtils.firstNonNull(getInitParameter(PARAM_LOGOUT_URL), "/logout.jsp");
+
+        UpdatableLoginSessionFilter.monitorSessionInvalidation(new SessionInvalidateMonitor() {
+            @Override
+            public void invalidateUserSessions(String username) {
+                try {
+                    PersistentSessionManager.deleteUserSessions(username);
+                } catch(Exception e) {
+                    log.error("Error removing persistent sessions for user " + username, e);
+                }
+            }
+        });
+
         log.info("Initialized - " + toString());
     }
 
@@ -126,8 +132,6 @@ public class PersistentAuthenticationFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest)servletRequest;
         HttpServletResponse response = (HttpServletResponse)servletResponse;
         HttpSession session = request.getSession();
-
-        CONTAINER_SESSIONS.putIfAbsent(session.getId(), session);
 
         if(!enabled) {
             chain.doFilter(request, response);
@@ -171,28 +175,30 @@ public class PersistentAuthenticationFilter implements Filter {
 
         Principal principal = request.getUserPrincipal();
         if(principal != null) {
-            session.setAttribute(SESSION_USERNAME, principal.getName());
 
             // If valid persistent session already set, do nothing
             if(persistentSession != null) {
                 log.trace(request.getRequestURI() + ": Request external authenticated for user " + principal.getName() + ", persistent session verified, path: " + request.getRequestURI());
 
-                // If LDAP user, apply additional roles from DB user set in session
-                // in other branch of this if statement
-                AuthenticatedPrincipal ldapPrincipal = (AuthenticatedPrincipal)session.getAttribute(SESSION_PRINCIPAL);
-                if(ldapPrincipal != null) {
-                    chainWithPrincipal(request, response, chain, ldapPrincipal);
-                } else {
-                    chain.doFilter(servletRequest, servletResponse);
-                }
+                chain.doFilter(servletRequest, servletResponse);
                 return;
-
             } else {
 
-                // Create new persistent session
+                // Create new persistent session, if the user exists in the database.
+
+                // If the request.getRemoteUser() name does not exist in the database
+                // (authenticated externally), no persistent session is created, unless
+                // the request is in a role which we will use as a db username instead
+                // to get the persistent session settings.
+
                 String dbUsername = request.getRemoteUser();
-                if(request.isUserInRole(LDAP_GROUP)) {
-                    dbUsername = USERNAME_LDAP;
+
+                for(String role: rolesAsDbUsernames) {
+                    if(request.isUserInRole(role)) {
+                        log.trace(request.getRequestURI() + ": Request external authenticated and in role " + role + " which will be used as username to get persistent session settings");
+                        dbUsername = role;
+                        break;
+                    }
                 }
 
                 Map<String,Object> data;
@@ -201,10 +207,12 @@ public class PersistentAuthenticationFilter implements Filter {
                 } catch(SQLException | NamingException e) {
                     throw new IOException(e);
                 }
-                // If user is deleted or from external source and not in LDAP_GROUP, or USERNAME_LDAP does not exist
+                // If user is deleted or from external source not in a rule that was configured
+                // to use as a username to get persistent login settings, do not create a persistent
+                // session
                 if(data == null) {
                     if(log.isTraceEnabled()) {
-                        log.trace(request.getRequestURI() + ": Request authenticated but not creating persistent session cookie because could not find username " + dbUsername + " in db, pass through");
+                        log.trace(request.getRequestURI() + ": Request authenticated but not creating persistent session because could not find username " + dbUsername + " in db");
                     }
                     chain.doFilter(request, response);
                     return;
@@ -228,7 +236,11 @@ public class PersistentAuthenticationFilter implements Filter {
                 } else {
                     c.add(EXPIRY_DEFAULT_UNIT, EXPIRY_DEFAULT);
                 }
-                String id = PersistentSessionManager.createPersistentSession(request, c.getTime());
+                String loginSource = DEFAULT_LOGIN_SOURCE;
+                if(!dbUsername.equals(request.getRemoteUser())) {
+                    loginSource = dbUsername;
+                }
+                String id = PersistentSessionManager.createPersistentSession(request, loginSource, c.getTime());
                 Cookie cookie = new Cookie(COOKIE_NAME, id);
                 String path = request.getServletContext().getContextPath();
                 if("".equals(path)) {
@@ -243,20 +255,6 @@ public class PersistentAuthenticationFilter implements Filter {
                 cookie.setMaxAge((int)((c.getTimeInMillis() - System.currentTimeMillis()) / 1000));
                 log.info(request.getRequestURI() + ": Request externally authenticated for user " + principal.getName() + ", setting persistent login cookie " + obfuscateSessionId(id));
                 addCookieWithSameSite(response, cookie, "None");
-
-                // Apply additional roles if LDAP user
-                if(request.isUserInRole(LDAP_GROUP)) {
-                    try {
-                        List<String> roles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), dbUsername);
-                        AuthenticatedPrincipal ldapPrincipal = new AuthenticatedPrincipal(principal.getName(), new HashSet<>(roles));
-                        log.info("Apply additional roles for this LDAP user in this session: " + roles);
-                        session.setAttribute(SESSION_PRINCIPAL, ldapPrincipal);
-                        chainWithPrincipal(request, response, chain, ldapPrincipal);
-                        return;
-                    } catch(SQLException | NamingException e) {
-                        throw new IOException(e);
-                    }
-                }
             }
         }
 
@@ -275,26 +273,16 @@ public class PersistentAuthenticationFilter implements Filter {
                 String obfuscatedSession = obfuscateSessionId((String)persistentSession.get("id"));
                 log.info(request.getRequestURI() + ": Using authentication from cookie session for user " + persistentSession.get("username") + " from session id " + obfuscatedSession + ", saving principal in session: " + request.getRequestURI());
 
-                try {
-                    // Changes in authorizations
-                    List<String> roles;
-                    if("LDAP".equals(persistentSession.get("login_source"))) {
-                        roles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), USERNAME_LDAP);
-                        // XXX original LDAP roles lost. Maybe
-                        // - Save to database (needs reflection to get list (see authinfo.jsp), role changes in LDAP never propagated)
-                        // - Recheck using JNDI.. (double LDAP config, extra code)
-                        // For now only grant roles special user has
-                        roles.add("LDAPUser");
-                        log.warn("Returning LDAP user " + persistentSession.get("username") + " using persistent session cookie, only granting LDAPUser role and roles granted to special user '" + USERNAME_LDAP + "', roles: " + roles.toString());
-                    } else {
-                        roles = qr().query("select role from " + DB.USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), persistentSession.get("username"));
-                    }
+                // Make sure principal has role from login source if different from DEFAULT_LOGIN_SOURCE,
+                // so UpdatableLoginSessionFilter can get roles using that role name as username
 
-                    persistentPrincipal = new AuthenticatedPrincipal((String)persistentSession.get("username"), new HashSet(roles));
-                    request.getSession().setAttribute(SESSION_PRINCIPAL, persistentPrincipal);
-                } catch(javax.naming.NamingException | java.sql.SQLException e) {
-                    throw new IOException(e);
+                Set<String> roles = new HashSet();
+                if(!DEFAULT_LOGIN_SOURCE.equals(persistentSession.get("login_source"))) {
+                    roles.add((String)persistentSession.get("login_source"));
                 }
+
+                persistentPrincipal = new AuthenticatedPrincipal((String)persistentSession.get("username"), roles);
+                request.getSession().setAttribute(SESSION_PRINCIPAL, persistentPrincipal);
             } else {
                 log.info(request.getRequestURI() + "User not authenticated externally, persistent cookie is not valid, pass through (auth must be checked after this filter)");
                 chain.doFilter(request, response);
@@ -302,32 +290,7 @@ public class PersistentAuthenticationFilter implements Filter {
             }
         }
 
-        session.setAttribute(SESSION_USERNAME, persistentPrincipal.getName());
-
-        final AuthenticatedPrincipal thePrincipal = persistentPrincipal;
-        chainWithPrincipal(request, response, chain, thePrincipal);
-    }
-
-    public static void invalidateUserSessions(String name) throws IOException {
-        List<String> invalidSessionIds = new ArrayList<>();
-        for(HttpSession session: CONTAINER_SESSIONS.values()) {
-            try {
-                String sessionUser = (String)session.getAttribute(SESSION_USERNAME);
-                log.debug("Checking container session " + session.getId() + " to delete, session user = " + sessionUser);
-                if(name.equals(sessionUser)) {
-                    log.info("Invalidating container session for user " + name + ": " + session.getId());
-                    session.invalidate();
-                    invalidSessionIds.add(session.getId());
-                }
-            } catch(IllegalStateException e) {
-                log.info("Session already invalid: " + session.getId());
-                invalidSessionIds.add(session.getId());
-            }
-        }
-        for(String id: invalidSessionIds) {
-            CONTAINER_SESSIONS.remove(id);
-        }
-        PersistentSessionManager.deleteUserSessions(name);
+        chainWithPrincipal(request, response, chain, persistentPrincipal);
     }
 
     private static String obfuscateSessionId(String id) {
