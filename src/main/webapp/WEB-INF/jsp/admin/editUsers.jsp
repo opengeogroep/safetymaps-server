@@ -124,9 +124,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Incidentkoppeling:</label>
                     <div class="col-sm-10">
-                        Voertuignummer: <stripes:text name="voertuignummer" size="26" maxlength="20"/>
-                        <p class="help-block">Voor incidentinformatie in de voertuigviewer een voertuignummer invullen of gebruiker lid maken van groep &quot;eigen_voertuignummer&quot;.
-                            Voertuignummer is niet vereist als gebruiker de Incidentmonitor kan gebruiken of geen incidentinformatie voor zijn voertuig nodig heeft.</p>
+                        Voertuignummer(s): <stripes:text name="voertuignummer" size="26" maxlength="20"/> (max 3, spatie of kommagescheiden)
+                        <p class="help-block">Voor incidentinformatie in de voertuigviewer voertuignummer(s) invullen of gebruiker lid maken van groep &quot;eigen_voertuignummer&quot;.
+                            Voertuignummer is niet vereist als gebruiker de Incidentmonitor kan gebruiken of geen incidentinformatie voor zijn voertuig nodig heeft. De status wordt
+                            weergegeven van het eerste voertuignummer of het voertuignummer dat gekoppeld is aan een incident.</p>
                     </div>
                 </div>
                 <div class="form-group">
