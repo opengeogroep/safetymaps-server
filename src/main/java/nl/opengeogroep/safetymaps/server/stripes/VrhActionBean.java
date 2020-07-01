@@ -566,11 +566,11 @@ public class VrhActionBean implements ActionBean {
                 "    from (select *, st_astext(t.geom) as geometry " +
                 "         from " + VRH_SCHEMA + ".vrh_geo_gevaarlijke_stoffen t " +
                 "         where t.bagpand_id " + bagPandIdsQuery +
-                "         order by volgnummer) r " +
+                "         order by symboolcod) r " +
                 "    ) as gevaarlijke_stoffen, " +
 
                 "    (select array_to_json(array_agg(row_to_json(r.*))) " +
-                "    from (select objectid, coalesce(type, symboolcod) as type, bijzonderh, opmerkinge, st_astext(t.geom) as geometry " +
+                "    from (select objectid, symboolcod as type, bijzonderh, opmerkinge, st_astext(t.geom) as geometry " +
                 "         from " + VRH_SCHEMA + ".vrh_geo_dbk_lijn t " +
                 "         where t.bagpand_id " + bagPandIdsQuery + ") r " +
                 "    ) as overige_lijnen, " +
