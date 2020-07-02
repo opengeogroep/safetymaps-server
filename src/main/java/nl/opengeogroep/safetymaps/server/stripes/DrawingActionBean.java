@@ -92,6 +92,8 @@ public class DrawingActionBean  implements ActionBean {
     }
 
     public Resolution load() throws Exception {
+        getContext().getResponse().addHeader("Access-Control-Allow-Origin", getContext().getRequest().getHeader("origin"));
+        getContext().getResponse().addHeader("Access-Control-Allow-Credentials", "true");
 
         // TODO check user is admin or has drawing module authorized, need to
         // cache db query results for that, refresh after timeout
@@ -209,6 +211,9 @@ public class DrawingActionBean  implements ActionBean {
 
     public Resolution save() throws Exception {
         HttpServletRequest request = getContext().getRequest();
+
+        getContext().getResponse().addHeader("Access-Control-Allow-Origin", request.getHeader("origin"));
+        getContext().getResponse().addHeader("Access-Control-Allow-Credentials", "true");
 
         // TODO must re-check database, using cached info
         if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_DRAWING_EDITOR)) {
