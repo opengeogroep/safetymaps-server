@@ -83,10 +83,7 @@ public class DrawingActionBean  implements ActionBean {
     }
 
     @DefaultHandler
-    public Resolution defaultHander() throws Exception {
-        context.getResponse().addHeader("Access-Control-Allow-Origin", context.getRequest().getHeader("origin"));
-        context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
-
+    public Resolution defaultHander() throws Exception {        
         if("POST".equals(context.getRequest().getMethod())) {
             return save();
         } else {
@@ -134,6 +131,8 @@ public class DrawingActionBean  implements ActionBean {
                 response.setContentType("application/json");
                 response.addDateHeader("Last-Modified", fDc.lastModified.getTime());
                 response.addHeader("Cache-Control", "must-revalidate");
+                response.addHeader("Access-Control-Allow-Origin", request.getHeader("origin"));
+                response.addHeader("Access-Control-Allow-Credentials", "true");
 
                 OutputStream out;
                 String acceptEncoding = request.getHeader("Accept-Encoding");
