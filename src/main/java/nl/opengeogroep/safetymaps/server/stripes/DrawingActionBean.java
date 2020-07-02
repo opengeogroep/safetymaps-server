@@ -131,8 +131,6 @@ public class DrawingActionBean  implements ActionBean {
                 response.setContentType("application/json");
                 response.addDateHeader("Last-Modified", fDc.lastModified.getTime());
                 response.addHeader("Cache-Control", "must-revalidate");
-                response.addHeader("Access-Control-Allow-Origin", request.getHeader("origin"));
-                response.addHeader("Access-Control-Allow-Credentials", "true");
 
                 OutputStream out;
                 String acceptEncoding = request.getHeader("Accept-Encoding");
@@ -244,15 +242,7 @@ public class DrawingActionBean  implements ActionBean {
                 }
 
                 dc = updateDrawing();
-                ErrorMessageResolution res = new ErrorMessageResolution(HttpServletResponse.SC_OK, "") {
-                    @Override
-                        protected void stream(HttpServletResponse response) throws Exception {
-                            response.addHeader("Access-Control-Allow-Origin", getContext().getRequest().getHeader("origin"));
-                            response.addHeader("Access-Control-Allow-Credentials", "true");
-                            super.stream(response);
-                        }
-                };
-                return res.setLastModified(dc.lastModified.getTime());
+                return new ErrorMessageResolution(HttpServletResponse.SC_OK, "").setLastModified(dc.lastModified.getTime());
             }
 
         } catch(Exception e) {
