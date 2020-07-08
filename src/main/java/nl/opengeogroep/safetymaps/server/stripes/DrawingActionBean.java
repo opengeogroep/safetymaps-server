@@ -82,8 +82,16 @@ public class DrawingActionBean  implements ActionBean {
         this.features = features;
     }
 
+    @Before
+    public void addCorsHeaders() {
+        System.out.println("Request: " + context.getRequest().getMethod() + ", origin: " + getContext().getRequest().getHeader("origin"));
+        getContext().getResponse().addHeader("Access-Control-Allow-Origin", getContext().getRequest().getHeader("origin"));
+        getContext().getResponse().addHeader("Access-Control-Allow-Credentials", "true");
+    }
+
     @DefaultHandler
     public Resolution defaultHander() throws Exception {
+
         if("POST".equals(context.getRequest().getMethod())) {
             return save();
         } else {
