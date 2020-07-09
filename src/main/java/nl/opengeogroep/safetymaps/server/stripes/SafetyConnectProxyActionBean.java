@@ -57,7 +57,8 @@ public class SafetyConnectProxyActionBean implements ActionBean {
         // Allow online access to webservice from onboard safetymaps-viewer using
         // mobile data connection. On the device the browser must be logged in
         // using a persistent login session to the safetymaps-server integrated version
-        context.getResponse().addHeader("Access-Control-Allow-Origin", "http://localhost");
+        getContext().getResponse().addHeader("Access-Control-Allow-Origin", getContext().getRequest().getHeader("origin"));
+        //context.getResponse().addHeader("Access-Control-Allow-Origin", "http://localhost");
         context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
 
         if(!context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN)) {

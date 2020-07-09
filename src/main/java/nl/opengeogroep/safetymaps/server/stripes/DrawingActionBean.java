@@ -84,7 +84,7 @@ public class DrawingActionBean  implements ActionBean {
 
     @Before
     public void addCorsHeaders() {
-        System.out.println("Request: " + context.getRequest().getMethod() + ", origin: " + getContext().getRequest().getHeader("origin"));
+        //System.out.println("Request: " + context.getRequest().getMethod() + ", origin: " + getContext().getRequest().getHeader("origin"));
         getContext().getResponse().addHeader("Access-Control-Allow-Origin", getContext().getRequest().getHeader("origin"));
         getContext().getResponse().addHeader("Access-Control-Allow-Credentials", "true");
     }
