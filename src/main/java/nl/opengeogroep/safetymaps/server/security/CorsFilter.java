@@ -40,7 +40,7 @@ public class CorsFilter implements Filter {
 
             String allowedOrigins[] = Cfg.getSetting("cors_allowed_origins", "http://localhost").split(",");
 
-            String origin = request.getHeader("Origin");
+            String origin = request.getHeader("origin");
             if (origin != null) {
                 for (String allowedOrigin: allowedOrigins) {
                     if (allowedOrigin.equalsIgnoreCase(origin)) {
