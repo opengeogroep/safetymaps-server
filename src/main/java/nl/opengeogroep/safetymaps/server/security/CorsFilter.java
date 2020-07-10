@@ -38,7 +38,7 @@ public class CorsFilter implements Filter {
             response.addHeader("Access-Control-Allow-Headers", Cfg.getSetting("cors_allowed_headers", "If-Modified-Since"));
             response.addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
 
-            String allowedOrigins[] = Cfg.getSetting("cors_allowed_origins", "http://localhost,http://192.168.100.2").split(",");
+            String allowedOrigins[] = Cfg.getSetting("cors_allowed_origins", "http://localhost").split(",");
 
             String origin = request.getHeader("Origin");
             if (origin != null) {
