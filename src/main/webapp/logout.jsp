@@ -35,10 +35,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <a href="<c:url value="/"/>">Startpagina</a>
 
         <script>
+            var ssoLogoutUrl = null;
+            <c:catch>
+            <%
+                String ssoLogoutUrl = nl.opengeogroep.safetymaps.server.db.Cfg.getSetting("sso_logout_url");
+                if(ssoLogoutUrl != null) {
+                    out.write("ssoLogoutUrl = '" + ssoLogoutUrl + "';");
+                }
+            %>
+            </c:catch>
+
             var url = new URL(window.location.href);
             var r = url.searchParams.get("returnTo");
             if(r) {
-                window.location.href = r;
+                if(ssoLogoutUrl) {
+                    var absoluteReturn = new URL(r, document.URL);
+                    var ssoLogout = ssoLogoutUrl.replace('[returnUrl]', encodeURIComponent(absoluteReturn.toString()));
+                    window.location.href = ssoLogout;
+                } else {
+                    window.location.href = r;
+                }
             }
         </script>
     </body>
