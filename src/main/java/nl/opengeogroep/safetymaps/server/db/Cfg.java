@@ -1,25 +1,57 @@
 package nl.opengeogroep.safetymaps.server.db;
 
+import org.apache.commons.dbutils.handlers.ScalarHandler;
+
+import javax.naming.NamingException;
 import java.io.File;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
-import javax.naming.NamingException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static nl.opengeogroep.safetymaps.server.db.DB.qr;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 
 /**
  *
  * @author Matthijs Laan
  */
 public class Cfg {
+    private static final long CACHE_FRESHNESS = 30 * 1000; // Cache setting values for 30 seconds
+
+    static class CachedValue {
+        private long timestamp;
+        private Object value;
+
+        public CachedValue(Object value) {
+            this.value = value;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public boolean isFresh() {
+            return System.currentTimeMillis() - this.timestamp < CACHE_FRESHNESS;
+        }
+    }
+
+    private static Map<String,CachedValue> settingsCache = new ConcurrentHashMap<>();
+
     public static final void updateSetting(String name, Object value, String sql) throws NamingException, SQLException {
         qr().update("delete from safetymaps.settings where name=?", name);
         qr().update("insert into safetymaps.settings (name, value) values(?, " + (sql != null ? sql : "?") + ")", name, value);
+        settingsCache.remove(name);
     }
 
     public static final String getSetting(String name) throws NamingException, SQLException {
-        return qr().query("select value from safetymaps.settings where name=?", new ScalarHandler<String>(), name);
+        CachedValue cached = settingsCache.get(name);
+        if(cached != null && cached.isFresh()) {
+            return (String)cached.value;
+        } else {
+            settingsCache.remove(name);
+        }
+
+        String value = qr().query("select value from safetymaps.settings where name=?", new ScalarHandler<String>(), name);
+        settingsCache.put(name, new CachedValue(value));
+        return value;
     }
 
     public static final String getSetting(String name, String defaultValue) throws NamingException, SQLException {
@@ -49,5 +81,4 @@ public class Cfg {
         Timestamp timestamp = qr().query("select value::timestamp from safetymaps.settings where name='last_config_update'", new ScalarHandler<Timestamp>());
         return timestamp == null ? null : new Date(timestamp.getTime());
     }
-
 }
