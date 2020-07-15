@@ -13,6 +13,9 @@ import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -106,9 +109,12 @@ public class KladblokActionBean implements ActionBean {
     public Resolution save() throws Exception {
         HttpServletRequest request = getContext().getRequest();
         
+        Date today = Calendar.getInstance().getTime(); 
+        DateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm");
+
         Object[] qparams = new Object[] {
             incident,
-            new Date(),
+            df.format(today),
             "(" + vehicle + ") " + rule
         };
 
