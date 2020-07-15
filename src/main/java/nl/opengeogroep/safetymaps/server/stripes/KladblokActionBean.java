@@ -13,16 +13,19 @@ import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.json.JSONArray;
+
 /**
  *
  * @author Bart Verhaar
@@ -106,12 +109,12 @@ public class KladblokActionBean implements ActionBean {
     public Resolution save() throws Exception {
         HttpServletRequest request = getContext().getRequest();
         
-        LocalDateTime myDate = LocalDateTime.now();
-        DateTimeFormatter myFormat = DateTimeFormatter.ofPattern("HH:mm");
+        Date today = Calendar.getInstance().getTime();
+        DateFormat df = new SimpleDateFormat("HH:mm");
 
         Object[] qparams = new Object[] {
             incident,
-            myDate.format(myFormat),
+            df.format(today),
             vehicle,
             rule
         };
