@@ -117,7 +117,7 @@ public class KladblokActionBean implements ActionBean {
         }
 
         try {
-            DB.qr().insert("insert into safetymaps.kladblok (incident, DTG, Inhoud) values (?,?,?,?)", new MapListHandler(), qparams);
+            DB.qr().insert("insert into safetymaps.kladblok (incident, DTG, Inhoud) values (?,?,?)", new MapListHandler(), qparams);
             return new ErrorMessageResolution(200, "");
         } catch(Exception e) {
             return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getClass() + ": " + e.getMessage());
