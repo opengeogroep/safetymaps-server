@@ -116,7 +116,7 @@ public class KladblokActionBean implements ActionBean {
         HttpServletRequest request = getContext().getRequest();
         
         Date today = Calendar.getInstance().getTime(); 
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         Object[] qparams = new Object[] {
             incident,
