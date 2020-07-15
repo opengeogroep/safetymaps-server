@@ -37,6 +37,9 @@ public class DB {
     public static final String ROLE_DRAWING_EDITOR = "drawing_editor";
     public static final String ROLE_INCIDENT_GOOGLEMAPSNAVIGATION = "incident_googlemapsnavigation";
 
+    public static final String ROLE_KLADBLOKCHAT_EDITOR = "kladblokchat_editor";
+    public static final String ROLE_KLADBLOKCHAT_VIEWER = "kladblokchat_viewer";
+
     public static final String USERNAME_LDAP = "LDAP";
 
     public static final DataSource getDataSource(String jndiName) throws NamingException {

@@ -26,6 +26,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.json.JSONArray;
 
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_EDITOR;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_VIEWER;
+
 /**
  *
  * @author Bart Verhaar
@@ -78,9 +82,6 @@ public class KladblokActionBean implements ActionBean {
         this.vehicle = vehicle;
     }
 
-    public static final String ROLE_ADMIN = "admin";
-    public static final String ROLE_KLADBLOKCHAT_EDITOR = "kladblokchat_editor";
-
     @DefaultHandler
     public Resolution defaultHander() throws Exception {
         if("POST".equals(context.getRequest().getMethod())) {
@@ -91,7 +92,12 @@ public class KladblokActionBean implements ActionBean {
     }
 
     public Resolution load() throws Exception {
+        HttpServletRequest request = getContext().getRequest();
         JSONArray response = new JSONArray();
+
+        if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_KLADBLOKCHAT_VIEWER) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR)) {
+            return new ErrorResolution(HttpServletResponse.SC_FORBIDDEN);
+        }
 
         try {
             List<Map<String,Object>> results = DB.qr().query("select DTG, Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
