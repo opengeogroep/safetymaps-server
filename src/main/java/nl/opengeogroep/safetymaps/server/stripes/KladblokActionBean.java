@@ -91,7 +91,7 @@ public class KladblokActionBean implements ActionBean {
         JSONArray response = new JSONArray();
 
         try {
-            List<Map<String,Object>> results = DB.qr().query("select rule, vehicle, created from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
+            List<Map<String,Object>> results = DB.qr().query("select DTG, Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
 
             for (Map<String, Object> resultRow : results) {
                 response.put(rowToJson(resultRow, false, false));
@@ -109,8 +109,7 @@ public class KladblokActionBean implements ActionBean {
         Object[] qparams = new Object[] {
             incident,
             new Date(),
-            vehicle,
-            rule
+            "(" + vehicle + ") " + rule
         };
 
         if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR)) {
@@ -118,7 +117,7 @@ public class KladblokActionBean implements ActionBean {
         }
 
         try {
-            DB.qr().insert("insert into safetymaps.kladblok (incident, created, vehicle, rule) values (?,?,?,?)", new MapListHandler(), qparams);
+            DB.qr().insert("insert into safetymaps.kladblok (incident, DTG, Inhoud) values (?,?,?,?)", new MapListHandler(), qparams);
             return new ErrorMessageResolution(200, "");
         } catch(Exception e) {
             return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getClass() + ": " + e.getMessage());
