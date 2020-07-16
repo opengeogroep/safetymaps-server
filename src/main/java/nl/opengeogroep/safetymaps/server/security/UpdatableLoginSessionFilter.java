@@ -271,8 +271,11 @@ public class UpdatableLoginSessionFilter implements Filter {
                     if(username != null) {
                         Collection<String> previousRoles = (Collection<String>)session.getAttribute(SESSION_ATTR_ROLES);
                         Collection<String> newRoles = new HashSet();
+                        Collection<String> myRoles = rolesByUsername.get(username);
 
-                        newRoles.addAll(rolesByUsername.get(username));
+                        if (myRoles != null) {
+                            newRoles.addAll(rolesByUsername.get(username));
+                        }
 
                         for(String role: externalRoleNamesForGroupMembership) {
                             if(previousRoles.contains(role)) {
