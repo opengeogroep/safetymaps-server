@@ -490,6 +490,12 @@ public class VrhActionBean implements ActionBean {
                 bagpandIds.add((String)bagpand.get("bagpand_id"));
                 subpanden.put(subpand);
             }
+
+            // Get hoofdpand BAG attributes based on pand id
+            // When a niet-BAG pand exists, BAG pand will not be pre-selected as hoofdpand, but it still may be
+            if (hoofdpandId.matches("^[0-9]+$")) {
+                hoofdpandProperties = DB.bagQr().query("select verblijfsobjectgebruiksdoel, oppervlakteverblijfsobject, pandbouwjaar from bag_actueel.adres_full where pandid = ?", new MapHandler(), hoofdpandId);
+            }
         } else if(hoofdpandId != null) {
 
             // Get hoofdpand BAG attributes
