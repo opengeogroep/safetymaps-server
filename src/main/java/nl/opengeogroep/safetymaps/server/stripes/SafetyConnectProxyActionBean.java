@@ -97,10 +97,10 @@ public class SafetyConnectProxyActionBean implements ActionBean {
                 @Override
                 public String handleResponse(HttpResponse hr) {
                     log.debug("proxy for user " + context.getRequest().getRemoteUser() + " URL " + req.getURI() + ", response: " + hr.getStatusLine().getStatusCode() + " " + hr.getStatusLine().getReasonPhrase());
-					contentType.setValue(hr.getEntity().getContentType().getValue());
 					if("POST".equals(context.getRequest().getMethod())) {
 						return "OK";
 					} else {
+						contentType.setValue(hr.getEntity().getContentType().getValue());
 						try {
 							return IOUtils.toString(hr.getEntity().getContent(), "UTF-8");
 						} catch(IOException e) {
