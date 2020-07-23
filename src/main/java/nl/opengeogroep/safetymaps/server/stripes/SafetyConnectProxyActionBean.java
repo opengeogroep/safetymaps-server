@@ -75,10 +75,18 @@ public class SafetyConnectProxyActionBean implements ActionBean {
         // eigen_voertuignummer roles and use voertuignummer from user details
 
         String qs = context.getRequest().getQueryString();
-        final HttpUriRequest req = RequestBuilder.get()
-                .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
-                .addHeader("Authorization", authorization)
-                .build();
+		final HttpUriRequest req;		
+		if("POST".equals(context.getRequest().getMethod())) {
+			req = RequestBuilder.post()
+				.setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
+				.addHeader("Authorization", authorization)
+				.build();
+		} else {
+			req = RequestBuilder.get()
+				.setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
+				.addHeader("Authorization", authorization)
+				.build();
+		}
 
         try(CloseableHttpClient client = HttpClients.createDefault()) {
             final MutableObject<String> contentType = new MutableObject<>("text/plain");
