@@ -18,6 +18,8 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
@@ -80,6 +82,7 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 			req = RequestBuilder.post()
 				.setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
 				.addHeader("Authorization", authorization)
+				.setEntity(new StringEntity(qs, ContentType.APPLICATION_FORM_URLENCODED))
 				.build();
 		} else {
 			req = RequestBuilder.get()
