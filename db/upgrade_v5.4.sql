@@ -5,3 +5,6 @@ create table safetymaps.drawing(incident varchar primary key, features text, las
 
 insert into role(role, protected, description) values
 ('incident_googlemapsnavigation', true, 'Benodigd voor Google Maps navigatie icoon bij Incident Adres')
+
+insert into role(role, protected, description) values
+('incidentmonitor_training', true, 'Benodigd om trainings incidenten vanuit Safety Connect ook te tonen')
