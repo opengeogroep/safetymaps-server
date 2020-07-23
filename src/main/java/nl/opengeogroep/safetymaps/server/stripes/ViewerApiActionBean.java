@@ -292,8 +292,8 @@ public class ViewerApiActionBean implements ActionBean {
             boolean kladbklokAlwaysAuthorized = "true".equals(Cfg.getSetting("kladblok_always_authorized", "false"));
             options.put("incidentMonitorKladblokAuthorized", kladbklokAlwaysAuthorized || request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_KLADBLOK));
             options.put("eigenVoertuignummerAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_EIGEN_VOERTUIGNUMMER));
-			options.put("googleMapsNavigationAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENT_GOOGLEMAPSNAVIGATION));
-			options.put("excludeManuallyCreatedIncidents", !request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_INCIDENTMONITOR_MANUALLYCREATED));
+            options.put("googleMapsNavigationAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENT_GOOGLEMAPSNAVIGATION));
+            options.put("excludeManuallyCreatedIncidents", !request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_INCIDENTMONITOR_MANUALLYCREATED));
 
             JSONObject details = getUserDetails(request, c);
             options.put("userVoertuignummer", details.optString("voertuignummer", null));
