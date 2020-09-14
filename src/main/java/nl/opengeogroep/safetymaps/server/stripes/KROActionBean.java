@@ -158,6 +158,6 @@ public class KROActionBean implements ActionBean {
     }
 
     private String[] splitAddress() {
-        return this.address.split(ADDRESS_DELIM, 5);
+        return this.address.split("\\" + ADDRESS_DELIM, 5);
     }
 }
