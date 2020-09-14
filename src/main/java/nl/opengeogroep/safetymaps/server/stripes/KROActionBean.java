@@ -36,8 +36,8 @@ public class KROActionBean implements ActionBean {
 
     static final String ROLE = "kro";
     static final String ADDRESS_DELIM = "|";
-    static final String VIEW_OBJECTINFO = "object_info";
-    static final String TABLE_OBJECTTYPES = "objecttypering_type";
+    static final String VIEW_OBJECTINFO = "oovkro.object_info";
+    static final String TABLE_OBJECTTYPES = "oovkro.objecttypering_type";
     static final String COLUMN_TYPECODE = "code";
     static final String COLUMN_TYPESCORE = "risico_score";
     static final String COLUMN_TYPEDESCRIPTION = "omschrijving";
