@@ -124,7 +124,7 @@ public class KROActionBean implements ActionBean {
             rows = qr.query(sql, new MapListHandler(), this.bagId);
         } else {
             String[] address = splitAddress();
-            sql += COLUMN_STRAAT + "=? and " + COLUMN_HUISNR + "=? and " + COLUMN_HUISLET + "=? and " + COLUMN_HUISTOEV + "=? and " + COLUMN_PLAATS + "=?";
+            sql += COLUMN_STRAAT + "='?' and " + COLUMN_HUISNR + "='?' and " + COLUMN_HUISLET + "='?' and " + COLUMN_HUISTOEV + "='?' and " + COLUMN_PLAATS + "='?'";
             rows = qr.query(sql, new MapListHandler(), address[0], address[1], address[2], address[3], address[4]);
         }
         return rows;
