@@ -116,17 +116,22 @@ public class KROActionBean implements ActionBean {
     }
 
     private List<Map<String, Object>> getKroFromDb() throws NamingException, SQLException {
-        List<Map<String, Object>> rows;
         QueryRunner qr = DB.kroQr();
         String sql = "select * from " + VIEW_OBJECTINFO + " where ";
+        Object[] qparams;
         if (useBagId()) {
             sql += COLUMN_BAGVBID + "=?";
-            rows = qr.query(sql, new MapListHandler(), this.bagId);
+            qparams = new Object[] {
+                this.bagId
+            };
         } else {
             String[] address = splitAddress();
             sql += COLUMN_STRAAT + "='?' and " + COLUMN_HUISNR + "=? and " + COLUMN_HUISLET + "='?' and " + COLUMN_HUISTOEV + "='?' and " + COLUMN_PLAATS + "='?'";
-            rows = qr.query(sql, new MapListHandler(), address[0], address[1], address[2], address[3], address[4]);
+            qparams = new Object[] {
+                address[0], address[1], address[2], address[3], address[4]
+            };
         }
+        List<Map<String, Object>> rows = qr.query(sql, new MapListHandler(), qparams);
         return rows;
     }
 
