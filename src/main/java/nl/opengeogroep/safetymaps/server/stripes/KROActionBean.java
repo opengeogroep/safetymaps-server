@@ -108,7 +108,7 @@ public class KROActionBean implements ActionBean {
         return !context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN);
     } 
 
-    private void addCORSHeaders() throws NamingException, SQLException {
+    private void addCORSHeaders() throws Exception {
         String allowedOrigins = Cfg.getSetting("cors_allowed_origins");
 
         context.getResponse().addHeader("Access-Control-Allow-Origin", allowedOrigins);
@@ -126,9 +126,9 @@ public class KROActionBean implements ActionBean {
             };
         } else {
             String[] address = splitAddress();
-            sql += COLUMN_STRAAT + "='?' and " + COLUMN_HUISNR + "=? and " + COLUMN_HUISLET + "='?' and " + COLUMN_HUISTOEV + "='?' and " + COLUMN_PLAATS + "='?'";
+            sql += COLUMN_STRAAT + "=? and " + COLUMN_HUISNR + "=? and " + COLUMN_HUISLET + "=? and " + COLUMN_HUISTOEV + "=? and " + COLUMN_PLAATS + "=?";
             qparams = new Object[] {
-                address[0], address[1], address[2], address[3], address[4]
+                address[0], Integer.parseInt(address[1]), address[2], address[3], address[4]
             };
         }
         List<Map<String, Object>> rows = qr.query(sql, new MapListHandler(), qparams);
