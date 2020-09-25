@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.dbutils.handlers.MapListHandler;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONArray;
 
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
@@ -121,7 +122,7 @@ public class KladblokActionBean implements ActionBean {
         Object[] qparams = new Object[] {
             incident,
             df.format(today),
-            "(" + vehicle + ") " + row
+            "(" + vehicle + ") " + StringEscapeUtils.escapeJava(row)
         };
 
         if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR)) {
