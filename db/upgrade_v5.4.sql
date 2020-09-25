@@ -8,3 +8,19 @@ insert into role(role, protected, description) values
 
 insert into role(role, protected, description) values
 ('incidentmonitor_training', true, 'Benodigd om trainings incidenten vanuit Safety Connect ook te tonen')
+
+insert into role(role, protected, description) values
+('kladblokchat_editor', true, 'Benodigd voor het kunnen toevoegen van kladblokregels in de viewer')
+
+insert into role(role, protected, description) values
+('kladblokchat_viewer', true, 'Benodigd voor het kunnen zien van toegevoegde kladblokregels vanuit de viewer')
+
+CREATE TABLE safetymaps.kladblok (
+	incident varchar NOT NULL,
+	dtg varchar NOT NULL,
+	inhoud varchar NULL
+);
+
+ALTER TABLE safetymaps.kladblok OWNER TO webdev;
+GRANT ALL ON TABLE safetymaps.kladblok TO webdev;
+GRANT ALL ON TABLE safetymaps.kladblok TO postgres;
