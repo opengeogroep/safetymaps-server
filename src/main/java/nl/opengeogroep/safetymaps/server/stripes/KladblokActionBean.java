@@ -43,7 +43,7 @@ public class KladblokActionBean implements ActionBean {
     private String incident;
 
     @Validate
-    private String rule;
+    private String row;
 
     @Validate
     private String vehicle;
@@ -66,12 +66,12 @@ public class KladblokActionBean implements ActionBean {
         this.incident = incident;
     }
 
-    public String getRule() {
-        return rule;
+    public String getRow() {
+        return row;
     }
 
-    public void setRule(String rule) {
-        this.rule = rule;
+    public void setRow(String row) {
+        this.row = row;
     }
 
     public String getVehicle() {
@@ -121,7 +121,7 @@ public class KladblokActionBean implements ActionBean {
         Object[] qparams = new Object[] {
             incident,
             df.format(today),
-            "(" + vehicle + ") " + rule
+            "(" + vehicle + ") " + row
         };
 
         if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR)) {
