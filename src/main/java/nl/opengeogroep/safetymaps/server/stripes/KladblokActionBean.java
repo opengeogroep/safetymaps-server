@@ -115,25 +115,29 @@ public class KladblokActionBean implements ActionBean {
 
     public Resolution save() throws Exception {
         HttpServletRequest request = getContext().getRequest();
-        
-        Date today = Calendar.getInstance().getTime(); 
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        Object[] qparams = new Object[] {
-            incident,
-            df.format(today),
-            "(" + vehicle + ") " + StringEscapeUtils.escapeJava(row)
-        };
 
         if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR)) {
             return new ErrorResolution(HttpServletResponse.SC_FORBIDDEN);
         }
 
-        try {
-            DB.qr().insert("insert into safetymaps.kladblok (incident, DTG, Inhoud) values (?,?,?)", new MapListHandler(), qparams);
-            return new ErrorMessageResolution(200, "");
-        } catch(Exception e) {
-            return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getClass() + ": " + e.getMessage());
+        if(row.length() > 0 && row.length() <= 500) {
+            Date today = Calendar.getInstance().getTime(); 
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+            Object[] qparams = new Object[] {
+                incident,
+                df.format(today),
+                "(" + vehicle + ") " + StringEscapeUtils.escapeJava(row)
+            };
+
+            try {
+                DB.qr().insert("insert into safetymaps.kladblok (incident, DTG, Inhoud) values (?,?,?)", new MapListHandler(), qparams);
+                return new ErrorMessageResolution(200, "");
+            } catch(Exception e) {
+                return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getClass() + ": " + e.getMessage());
+            }
+        } else {
+            return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Notepad row must contain at least 1 character and no more then 500 characters.");
         }
     }
 }
