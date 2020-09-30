@@ -182,8 +182,8 @@ public class KROActionBean implements ActionBean {
 
     private List<Map<String, Object>> getKroAddressesFromDb() throws NamingException, SQLException {
         QueryRunner qr = DB.kroQr();
-        String sql = "select distinct g.*, a.* from " + TABLE_AANZIEN + " a left join " + TABLE_GEBRUIK + 
-            " g on g." + COLUMN_AANZIEN_SLEUTEL + " = a." + COLUMN_SLEUTEL + " where ";
+        String sql = "select distinct g.*, a.*, ot." + COLUMN_TYPEDESCRIPTION + " from " + TABLE_AANZIEN + " a left join " + TABLE_GEBRUIK + 
+            " g on g." + COLUMN_AANZIEN_SLEUTEL + " = a." + COLUMN_SLEUTEL + " left join " + TABLE_OBJECTTYPES + " ot on ot." + COLUMN_TYPECODE + " = g." + COLUMN_GEBRUIK_TYPERING + " where ";
         Object[] qparams;
 
         sql += "a." + COLUMN_BAGPANDID + "=?";
