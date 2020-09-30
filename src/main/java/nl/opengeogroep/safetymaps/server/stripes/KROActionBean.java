@@ -31,7 +31,8 @@ import nl.opengeogroep.safetymaps.server.db.DB;
 public class KROActionBean implements ActionBean {
     private static final Log log = LogFactory.getLog(SafetyConnectProxyActionBean.class);
     private ActionBeanContext context;
-    private String bagId;
+    private String bagVboId;
+    private String bagPandId;
     private String address;
 
     static final String ROLE = "kro";
@@ -60,12 +61,20 @@ public class KROActionBean implements ActionBean {
         this.context = context;
     }
     
-    public String getBagId() {
-        return bagId;
+    public String getBagVboId() {
+        return bagVboId;
     }
 
-    public void setBagId(String bagId) {
-        this.bagId = bagId;
+    public void setBagVboId(String bagVboId) {
+        this.bagVboId = bagVboId;
+    }
+
+    public String getBagPandId() {
+        return bagPandId;
+    }
+
+    public void setBagPandId(String bagPandId) {
+        this.bagPandId = bagPandId;
     }
 
     public String getAddress() {
@@ -94,13 +103,19 @@ public class KROActionBean implements ActionBean {
         return new StreamingResolution("application/json", response.toString());
     }
 
-    public Resolution detailed() throws Exception {
+    public Resolution addresses() throws Exception {
         if(isNotAuthorized()) {
             return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot kro");
         }
         addCORSHeaders();
 
         JSONArray response = new JSONArray();
+        List<Map<String, Object>> rows = getKroAddressesFromDb();
+        for (Map<String, Object> row : rows) {
+            JSONObject kroFromDb = rowToJson(row, false, false);
+            response.put(kroFromDb);
+        }
+
         return new StreamingResolution("application/json", response.toString());
     }
 
@@ -122,7 +137,7 @@ public class KROActionBean implements ActionBean {
         if (useBagId()) {
             sql += COLUMN_BAGVBID + "=?";
             qparams = new Object[] {
-                this.bagId
+                this.bagVboId
             };
         } else {
             String[] address = splitAddress();
@@ -152,14 +167,22 @@ public class KROActionBean implements ActionBean {
         return objectTypes;
     }
 
-    private List<Map<String, Object>> getKroDetailsFromDb() throws NamingException, SQLException {
+    private List<Map<String, Object>> getKroAddressesFromDb() throws NamingException, SQLException {
         QueryRunner qr = DB.kroQr();
-        List<Map<String, Object>> rows = qr.query("", new MapListHandler());
+        String sql = "select * from " + VIEW_OBJECTINFO + " where ";
+        Object[] qparams;
+
+        sql += COLUMN_BAGPANDID + "=?";
+        qparams = new Object[] {
+            this.bagPandId
+        };
+
+        List<Map<String, Object>> rows = qr.query(sql, new MapListHandler(), qparams);
         return rows;
     }
 
     private Boolean useBagId() {
-        return (this.bagId != null && this.bagId != "");
+        return (this.bagVboId != null && this.bagVboId != "");
     }
 
     private String[] splitAddress() {
