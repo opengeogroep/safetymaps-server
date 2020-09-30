@@ -37,6 +37,7 @@ public class KROActionBean implements ActionBean {
 
     static final String ROLE = "kro";
     static final String ADDRESS_DELIM = "|";
+    static final String VIEW_OBJECT_ADDRESS_INFO = "oovkro.object_address_info";
     static final String VIEW_OBJECTINFO = "oovkro.object_info";
     static final String TABLE_OBJECTTYPES = "oovkro.objecttypering_type";
     static final String TABLE_AANZIEN = "oovkro.aanzien";
@@ -52,8 +53,6 @@ public class KROActionBean implements ActionBean {
     static final String COLUMN_HUISTOEV = "huistoevg";
     static final String COLUMN_PLAATS = "plaatsnaam";
     static final String COLUMN_OBJECTTYPERING = "adres_objecttypering";
-    static final String COLUMN_SLEUTEL = "bronsleutel";
-    static final String COLUMN_AANZIEN_SLEUTEL = "aanzien_id";
     static final String COLUMN_GEBRUIK_TYPERING = "objecttypering_gebruik";
 
     @Override
@@ -182,10 +181,7 @@ public class KROActionBean implements ActionBean {
 
     private List<Map<String, Object>> getKroAddressesFromDb() throws NamingException, SQLException {
         QueryRunner qr = DB.kroQr();
-        String sql = "select distinct concat(a.straatnaam, ' ', a.huisnr, ' ', a.huisletter, ' ', a.huistoevg, ' ', a.plaatsnaam, ' ', a.gemnaam) as adres," +
-            " g." + COLUMN_GEBRUIK_TYPERING + ", g.naam_vol, concat(g.contacttel::text, ', ', g.contactmob::text) as contact, g.personen," +
-            " ot." + COLUMN_TYPEDESCRIPTION + " as omschrijving_typering from " + TABLE_AANZIEN + " a left join " + TABLE_GEBRUIK + 
-            " g on g." + COLUMN_AANZIEN_SLEUTEL + " = a." + COLUMN_SLEUTEL + " left join " + TABLE_OBJECTTYPES + " ot on ot." + COLUMN_TYPECODE + " = g." + COLUMN_GEBRUIK_TYPERING + " where ";
+        String sql = "select * from " + VIEW_OBJECT_ADDRESS_INFO + " where ";
         Object[] qparams;
 
         sql += "a." + COLUMN_BAGPANDID + "=?";
