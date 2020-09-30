@@ -124,7 +124,6 @@ public class KROActionBean implements ActionBean {
         rows = getKroAddressesFromDb();
         for (Map<String, Object> row : rows) {
             JSONObject kroFromDb = rowToJson(row, false, false);
-            kroFromDb.put("objecttypering_order", orderedTypes.indexOf((String)row.get(COLUMN_GEBRUIK_TYPERING)));
             response.put(kroFromDb);
         }
 
