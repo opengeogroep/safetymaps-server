@@ -39,6 +39,8 @@ public class KROActionBean implements ActionBean {
     static final String ADDRESS_DELIM = "|";
     static final String VIEW_OBJECTINFO = "oovkro.object_info";
     static final String TABLE_OBJECTTYPES = "oovkro.objecttypering_type";
+    static final String TABLE_AANZIEN = "oovkro.aanzien";
+    static final String TABLE_GEBRUIK = "oovkro.gebruik";
     static final String COLUMN_TYPECODE = "code";
     static final String COLUMN_TYPESCORE = "risico_score";
     static final String COLUMN_TYPEDESCRIPTION = "omschrijving";
@@ -50,6 +52,9 @@ public class KROActionBean implements ActionBean {
     static final String COLUMN_HUISTOEV = "huistoevg";
     static final String COLUMN_PLAATS = "plaatsnaam";
     static final String COLUMN_OBJECTTYPERING = "adres_objecttypering";
+    static final String COLUMN_SLEUTEL = "bronsleutel";
+    static final String COLUMN_AANZIEN_SLEUTEL = "aanzien_id";
+    static final String COLUMN_GEBRUIK_TYPERING = "objecttypering_gebruik";
 
     @Override
     public ActionBeanContext getContext() {
@@ -109,10 +114,18 @@ public class KROActionBean implements ActionBean {
         }
         addCORSHeaders();
 
+        List<Map<String, Object>> rows;
+        List<String> orderedTypes= new ArrayList<String>();
+        rows = getObjectTypesOrderedPerScoreFromDb();
+        for (Map<String, Object> row : rows) {
+            orderedTypes.add((String)row.get(COLUMN_TYPECODE));
+        }
+
         JSONArray response = new JSONArray();
-        List<Map<String, Object>> rows = getKroAddressesFromDb();
+        rows = getKroAddressesFromDb();
         for (Map<String, Object> row : rows) {
             JSONObject kroFromDb = rowToJson(row, false, false);
+            kroFromDb.put("objecttypering_order", orderedTypes.indexOf((String)row.get(COLUMN_GEBRUIK_TYPERING)));
             response.put(kroFromDb);
         }
 
@@ -169,10 +182,11 @@ public class KROActionBean implements ActionBean {
 
     private List<Map<String, Object>> getKroAddressesFromDb() throws NamingException, SQLException {
         QueryRunner qr = DB.kroQr();
-        String sql = "select * from " + VIEW_OBJECTINFO + " where ";
+        String sql = "select distinct g.*, a.* from " + TABLE_AANZIEN + " a left join " + TABLE_GEBRUIK + 
+            " g on g." + COLUMN_AANZIEN_SLEUTEL + " = a." + COLUMN_SLEUTEL + " where ";
         Object[] qparams;
 
-        sql += COLUMN_BAGPANDID + "=?";
+        sql += "a." + COLUMN_BAGPANDID + "=?";
         qparams = new Object[] {
             this.bagPandId
         };
