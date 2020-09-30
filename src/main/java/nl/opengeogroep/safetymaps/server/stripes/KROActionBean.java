@@ -184,7 +184,7 @@ public class KROActionBean implements ActionBean {
         String sql = "select * from " + VIEW_OBJECT_ADDRESS_INFO + " where ";
         Object[] qparams;
 
-        sql += "a." + COLUMN_BAGPANDID + "=?";
+        sql += COLUMN_BAGPANDID + "=?";
         qparams = new Object[] {
             this.bagPandId
         };
