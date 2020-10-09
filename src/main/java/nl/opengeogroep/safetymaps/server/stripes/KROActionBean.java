@@ -56,6 +56,7 @@ public class KROActionBean implements ActionBean {
     static final String COLUMN_PLAATS = "plaatsnaam";
     static final String COLUMN_OBJECTTYPERING = "pand_objecttypering";
     static final String COLUMN_GEBRUIK_TYPERING = "objecttypering_gebruik";
+    static final String COLUMN_BEDRIJFSNAAM = "adres_bedrijfsnaam";
 
     @Override
     public ActionBeanContext getContext() {
@@ -102,7 +103,19 @@ public class KROActionBean implements ActionBean {
         List<Map<String, Object>> rows = getKroFromDb();
         for (Map<String, Object> row : rows) {
             JSONObject kroFromDb = rowToJson(row, false, false);
-            kroFromDb.put("pand_objecttypering_ordered", getAndCountObjectTypesOrderedByScore((String)row.get(COLUMN_OBJECTTYPERING)));
+            List<String> orderedObjectTypes = getAndCountObjectTypesOrderedByScore((String)row.get(COLUMN_OBJECTTYPERING));
+
+            if (orderedObjectTypes.size() > 0) {
+                kroFromDb.put("pand_objecttypering_ordered", orderedObjectTypes);
+            } else {
+                String text = (String)row.get(COLUMN_BEDRIJFSNAAM);
+                if (text == null || text.isBlank()) {
+                    text = "Onbekend";
+                }
+                kroFromDb.put("pand_objecttypering_ordered", text);
+            }
+
+            
             response.put(kroFromDb);
         }
 
@@ -171,7 +184,6 @@ public class KROActionBean implements ActionBean {
 
     private List<String> getAndCountObjectTypesOrderedByScore(String objectTypesDelimited) throws Exception {
         String[] objectTypesPerAddress = splitObjectTypesPerAddress(objectTypesDelimited);
-        String[] objectTypesPerObjectType = splitObjectTypesPerObjectType(objectTypesDelimited);
         List<String> objectTypes = new ArrayList<String>();
         List<Map<String, Object>> rows = getObjectTypesOrderedPerScoreFromDb();
         for (Map<String, Object> row : rows) {
@@ -179,11 +191,6 @@ public class KROActionBean implements ActionBean {
             if (objectTypesDelimited.contains(rowObjectType)) {
                 int count = getItemsFromStringArrayContainingText(objectTypesPerAddress, rowObjectType).size();
                 objectTypes.add((String)row.get(COLUMN_TYPEDESCRIPTION) + " (" + count + ")");
-            }
-        }
-        for (int i = 0; i < objectTypesPerObjectType.length; i++) {
-            if (objectTypesPerObjectType[i].contains(OBJECTTYPEISCOMPANYNAME_DELIM)) {
-                objectTypes.add(objectTypesPerObjectType[i].substring(OBJECTTYPEISCOMPANYNAME_DELIM.length(), (objectTypesPerObjectType[i].length() - OBJECTTYPEISCOMPANYNAME_DELIM.length())));
             }
         }
         return objectTypes;
@@ -213,10 +220,6 @@ public class KROActionBean implements ActionBean {
 
     private String[] splitObjectTypesPerAddress(String objectTypesDelimitedPerAddress) {
         return objectTypesDelimitedPerAddress.split("\\" + OBJECTTYPEPERADRESS_DELIM);
-    }
-
-    private String[] splitObjectTypesPerObjectType(String objectTypesDelimitedPerAddress) {
-        return objectTypesDelimitedPerAddress.split("\\" + DEFAULT_DELIM + DEFAULT_DELIM);
     }
 
     private List<String> getItemsFromStringArrayContainingText(String[] array, String text) {
