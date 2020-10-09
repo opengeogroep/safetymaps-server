@@ -36,9 +36,11 @@ public class KROActionBean implements ActionBean {
     private String address;
 
     static final String ROLE = "kro";
-    static final String ADDRESS_DELIM = "|";
+    static final String DEFAULT_DELIM = "|";
+    static final String OBJECTTYPEPERADRESS_DELIM = ";;";
+    static final String OBJECTTYPEISCOMPANYNAME_DELIM = "**";
     static final String VIEW_OBJECT_ADDRESS_INFO = "oovkro.object_address_info";
-    static final String VIEW_OBJECTINFO = "oovkro.object_info";
+    static final String VIEW_OBJECTINFO = "oovkro.select_object_info";
     static final String TABLE_OBJECTTYPES = "oovkro.objecttypering_type";
     static final String TABLE_AANZIEN = "oovkro.aanzien";
     static final String TABLE_GEBRUIK = "oovkro.gebruik";
@@ -52,7 +54,7 @@ public class KROActionBean implements ActionBean {
     static final String COLUMN_HUISLET = "huisletter";
     static final String COLUMN_HUISTOEV = "huistoevg";
     static final String COLUMN_PLAATS = "plaatsnaam";
-    static final String COLUMN_OBJECTTYPERING = "adres_objecttypering";
+    static final String COLUMN_OBJECTTYPERING = "pand_objecttypering";
     static final String COLUMN_GEBRUIK_TYPERING = "objecttypering_gebruik";
 
     @Override
@@ -100,7 +102,7 @@ public class KROActionBean implements ActionBean {
         List<Map<String, Object>> rows = getKroFromDb();
         for (Map<String, Object> row : rows) {
             JSONObject kroFromDb = rowToJson(row, false, false);
-            kroFromDb.put("adres_objecttypering_ordered", getFilteredObjectTypesOrderedByScore((String)row.get(COLUMN_OBJECTTYPERING)));
+            kroFromDb.put("adres_objecttypering_ordered", getAndCountObjectTypesOrderedByScore((String)row.get(COLUMN_OBJECTTYPERING)));
             response.put(kroFromDb);
         }
 
@@ -167,12 +169,21 @@ public class KROActionBean implements ActionBean {
             " order by " + COLUMN_TYPESCORE + " desc, " + COLUMN_TYPEDESCRIPTION + " asc", new MapListHandler());
     }
 
-    private List<String> getFilteredObjectTypesOrderedByScore(String objectTypesDelimited) throws Exception {
+    private List<String> getAndCountObjectTypesOrderedByScore(String objectTypesDelimited) throws Exception {
+        String[] objectTypesPerAddress = splitObjectTypesPerAddress(objectTypesDelimited);
+        String[] objectTypesPerObjectType = splitObjectTypesPerObjectType(objectTypesDelimited);
         List<String> objectTypes = new ArrayList<String>();
         List<Map<String, Object>> rows = getObjectTypesOrderedPerScoreFromDb();
         for (Map<String, Object> row : rows) {
-            if (objectTypesDelimited.contains((String)row.get(COLUMN_TYPECODE))) {
-                objectTypes.add((String)row.get(COLUMN_TYPEDESCRIPTION));
+            String rowObjectType = (String)row.get(COLUMN_TYPECODE);
+            if (objectTypesDelimited.contains(rowObjectType)) {
+                int count = Arrays.stream(objectTypesPerAddress).filter(itm -> itm.contains(rowObjectType)).toArray().length;
+                objectTypes.add((String)row.get(COLUMN_TYPEDESCRIPTION) + "(" + count + ")");
+            }
+        }
+        for (int i = 0; i < objectTypesPerObjectType.length; i++) {
+            if (objectTypesPerObjectType[i].startsWith(OBJECTTYPEISCOMPANYNAME_DELIM)) {
+                objectTypes.add(objectTypesPerObjectType[i].substring(OBJECTTYPEISCOMPANYNAME_DELIM.length(), (objectTypesPerObjectType[i].length() - OBJECTTYPEISCOMPANYNAME_DELIM.length())));
             }
         }
         return objectTypes;
@@ -197,6 +208,14 @@ public class KROActionBean implements ActionBean {
     }
 
     private String[] splitAddress() {
-        return this.address.split("\\" + ADDRESS_DELIM, 5);
+        return this.address.split("\\" + DEFAULT_DELIM, 5);
+    }
+
+    private String[] splitObjectTypesPerAddress(String objectTypesDelimitedPerAddress) {
+        return objectTypesDelimitedPerAddress.split("\\" + OBJECTTYPEPERADRESS_DELIM);
+    }
+
+    private String[] splitObjectTypesPerObjectType(String objectTypesDelimitedPerAddress) {
+        return objectTypesDelimitedPerAddress.split("\\" + DEFAULT_DELIM + DEFAULT_DELIM);
     }
 }
