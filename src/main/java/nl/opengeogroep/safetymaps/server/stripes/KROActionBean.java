@@ -39,8 +39,7 @@ public class KROActionBean implements ActionBean {
     static final String DEFAULT_DELIM = "|";
     static final String OBJECTTYPEPERADRESS_DELIM = ";;";
     static final String OBJECTTYPEISCOMPANYNAME_DELIM = "**";
-    static final String VIEW_OBJECT_ADDRESS_INFO = "oovkro.object_info";
-    static final String VIEW_OBJECTINFO = "oovkro.select_object_info";
+    static final String VIEW_OBJECTINFO = "oovkro.object_info";
     static final String TABLE_OBJECTTYPES = "oovkro.objecttypering_type";
     static final String TABLE_AANZIEN = "oovkro.aanzien";
     static final String TABLE_GEBRUIK = "oovkro.gebruik";
@@ -205,7 +204,7 @@ public class KROActionBean implements ActionBean {
 
     private List<Map<String, Object>> getKroAddressesFromDb() throws NamingException, SQLException {
         QueryRunner qr = DB.kroQr();
-        String sql = "select * from " + VIEW_OBJECT_ADDRESS_INFO + " where ";
+        String sql = "select * from " + VIEW_OBJECTINFO + " where ";
         Object[] qparams;
 
         sql += COLUMN_BAGPANDID + "=?";
@@ -224,8 +223,8 @@ public class KROActionBean implements ActionBean {
                 "then concat(adres_objecttypering, '||', aanzien_objecttypering::text) " +
                 "else null::text " +
                 "end as " + COLUMN_OBJECTTYPERING + " " +
-            "from oovkro.object_info " +
-            "where bagpandid = ? " +
+            "from " + VIEW_OBJECTINFO + " " +
+            "where " + COLUMN_BAGPANDID + " = ? " +
             "group by adres, adres_objecttypering, aanzien_objecttypering";
         Object[] qparams;
 
