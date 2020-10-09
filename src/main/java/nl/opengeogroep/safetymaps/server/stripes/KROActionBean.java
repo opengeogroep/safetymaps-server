@@ -39,7 +39,7 @@ public class KROActionBean implements ActionBean {
     static final String DEFAULT_DELIM = "|";
     static final String OBJECTTYPEPERADRESS_DELIM = ";;";
     static final String OBJECTTYPEISCOMPANYNAME_DELIM = "**";
-    static final String VIEW_OBJECT_ADDRESS_INFO = "oovkro.object_address_info";
+    static final String VIEW_OBJECT_ADDRESS_INFO = "oovkro.object_info";
     static final String VIEW_OBJECTINFO = "oovkro.select_object_info";
     static final String TABLE_OBJECTTYPES = "oovkro.objecttypering_type";
     static final String TABLE_AANZIEN = "oovkro.aanzien";
@@ -109,7 +109,7 @@ public class KROActionBean implements ActionBean {
                 kroFromDb.put("pand_objecttypering_ordered", orderedObjectTypes);
             } else {
                 String text = (String)row.get(COLUMN_BEDRIJFSNAAM);
-                if (text == null || text.isBlank()) {
+                if (text == null || text.length() == 0) {
                     text = "Onbekend";
                 }
                 kroFromDb.put("pand_objecttypering_ordered", text);
