@@ -182,7 +182,7 @@ public class KROActionBean implements ActionBean {
             }
         }
         for (int i = 0; i < objectTypesPerObjectType.length; i++) {
-            if (objectTypesPerObjectType[i].startsWith(OBJECTTYPEISCOMPANYNAME_DELIM)) {
+            if (objectTypesPerObjectType[i].contains(OBJECTTYPEISCOMPANYNAME_DELIM)) {
                 objectTypes.add(objectTypesPerObjectType[i].substring(OBJECTTYPEISCOMPANYNAME_DELIM.length(), (objectTypesPerObjectType[i].length() - OBJECTTYPEISCOMPANYNAME_DELIM.length())));
             }
         }
