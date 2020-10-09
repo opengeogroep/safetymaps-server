@@ -102,7 +102,7 @@ public class KROActionBean implements ActionBean {
         List<Map<String, Object>> rows = getKroFromDb();
         for (Map<String, Object> row : rows) {
             JSONObject kroFromDb = rowToJson(row, false, false);
-            kroFromDb.put("adres_objecttypering_ordered", getAndCountObjectTypesOrderedByScore((String)row.get(COLUMN_OBJECTTYPERING)));
+            kroFromDb.put("pand_objecttypering_ordered", getAndCountObjectTypesOrderedByScore((String)row.get(COLUMN_OBJECTTYPERING)));
             response.put(kroFromDb);
         }
 
@@ -178,7 +178,7 @@ public class KROActionBean implements ActionBean {
             String rowObjectType = (String)row.get(COLUMN_TYPECODE);
             if (objectTypesDelimited.contains(rowObjectType)) {
                 int count = getItemsFromStringArrayContainingText(objectTypesPerAddress, rowObjectType).size();
-                objectTypes.add((String)row.get(COLUMN_TYPEDESCRIPTION) + "(" + count + ")");
+                objectTypes.add((String)row.get(COLUMN_TYPEDESCRIPTION) + " (" + count + ")");
             }
         }
         for (int i = 0; i < objectTypesPerObjectType.length; i++) {
