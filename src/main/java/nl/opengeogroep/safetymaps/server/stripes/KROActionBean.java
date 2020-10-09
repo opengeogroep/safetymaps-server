@@ -103,7 +103,14 @@ public class KROActionBean implements ActionBean {
         List<Map<String, Object>> rows = getKroFromDb();
         for (Map<String, Object> row : rows) {
             JSONObject kroFromDb = rowToJson(row, false, false);
-            List<String> orderedObjectTypes = getAndCountObjectTypesOrderedByScore((String)row.get(COLUMN_OBJECTTYPERING));
+            
+            String delimitedBagPandTypes = "";
+            List<Map<String, Object>> bagPandObjectTypes = getObjectTypesForBagPandId((String)row.get(COLUMN_BAGPANDID));
+            for (Map<String, Object> bagPandType : bagPandObjectTypes) {
+                delimitedBagPandTypes += OBJECTTYPEPERADRESS_DELIM;
+                delimitedBagPandTypes += (String)bagPandType.get(COLUMN_OBJECTTYPERING);
+            }
+            List<String> orderedObjectTypes = getAndCountObjectTypesOrderedByScore(delimitedBagPandTypes);
 
             if (orderedObjectTypes.size() > 0) {
                 kroFromDb.put("pand_objecttypering_ordered", orderedObjectTypes);
@@ -204,6 +211,26 @@ public class KROActionBean implements ActionBean {
         sql += COLUMN_BAGPANDID + "=?";
         qparams = new Object[] {
             this.bagPandId
+        };
+
+        List<Map<String, Object>> rows = qr.query(sql, new MapListHandler(), qparams);
+        return rows;
+    }
+
+    private List<Map<String, Object>> getObjectTypesForBagPandId(String bagPandId) throws Exception {
+        QueryRunner qr = DB.kroQr();
+        String sql = 
+            "select case when adres_objecttypering is not null or aanzien_objecttypering is not null " +
+                "then concat(adres_objecttypering, '||', aanzien_objecttypering::text) " +
+                "else null::text " +
+                "end as " + COLUMN_OBJECTTYPERING + " " +
+            "from oovkro.object_info " +
+            "where bagpandid = ? " +
+            "group by adres, adres_objecttypering, aanzien_objecttypering";
+        Object[] qparams;
+
+        qparams = new Object[] {
+            bagPandId
         };
 
         List<Map<String, Object>> rows = qr.query(sql, new MapListHandler(), qparams);
