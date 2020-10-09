@@ -177,7 +177,7 @@ public class KROActionBean implements ActionBean {
         for (Map<String, Object> row : rows) {
             String rowObjectType = (String)row.get(COLUMN_TYPECODE);
             if (objectTypesDelimited.contains(rowObjectType)) {
-                int count = Arrays.stream(objectTypesPerAddress).filter(itm -> itm.contains(rowObjectType)).toArray().length;
+                int count = getItemsFromStringArrayContainingText(objectTypesPerAddress, rowObjectType).size();
                 objectTypes.add((String)row.get(COLUMN_TYPEDESCRIPTION) + "(" + count + ")");
             }
         }
@@ -217,5 +217,15 @@ public class KROActionBean implements ActionBean {
 
     private String[] splitObjectTypesPerObjectType(String objectTypesDelimitedPerAddress) {
         return objectTypesDelimitedPerAddress.split("\\" + DEFAULT_DELIM + DEFAULT_DELIM);
+    }
+
+    private List<String> getItemsFromStringArrayContainingText(String[] array, String text) {
+        List<String> result = new ArrayList<String>();
+        for (int i = 0; i < array.length; i++) {
+            if (array[i].contains(text)) {
+                result.add(array[i]);
+            }
+        }
+        return result;
     }
 }
