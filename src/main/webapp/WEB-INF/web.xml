@@ -147,6 +147,7 @@
         <url-pattern>/viewer/api/safetyconnect/*</url-pattern>
         <url-pattern>/viewer/api/drawing/*</url-pattern>
         <url-pattern>/viewer/api/foto</url-pattern>
+        <url-pattern>/viewer/api/autocomplete/*</url-pattern>
     </filter-mapping>
     <filter-mapping>
         <filter-name>MellonHeaderAuthenticationFilter</filter-name>
