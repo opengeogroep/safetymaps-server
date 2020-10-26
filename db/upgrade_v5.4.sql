@@ -18,7 +18,8 @@ insert into role(role, protected, description) values
 CREATE TABLE safetymaps.kladblok (
 	incident varchar NOT NULL,
 	dtg timestamp NOT NULL,
-	inhoud varchar NULL
+	inhoud varchar NULL,
+	username varchar NULL
 );
 
 ALTER TABLE safetymaps.kladblok OWNER TO webdev;
