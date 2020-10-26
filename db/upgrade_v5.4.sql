@@ -16,6 +16,7 @@ insert into role(role, protected, description) values
 ('kladblokchat_viewer', true, 'Benodigd voor het kunnen zien van toegevoegde kladblokregels vanuit de viewer')
 
 CREATE TABLE safetymaps.kladblok (
+    id serial PRIMARY KEY,
 	incident varchar NOT NULL,
 	dtg timestamp NOT NULL,
 	inhoud varchar NULL,
