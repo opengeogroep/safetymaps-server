@@ -46,9 +46,6 @@ public class KladblokActionBean implements ActionBean {
     @Validate
     private String row;
 
-    @Validate
-    private String vehicle;
-
     @Override
     public ActionBeanContext getContext() {
         return context;
@@ -75,14 +72,6 @@ public class KladblokActionBean implements ActionBean {
         this.row = row;
     }
 
-    public String getVehicle() {
-        return vehicle;
-    }
-
-    public void setVehicle(String vehicle) {
-        this.vehicle = vehicle;
-    }
-
     @DefaultHandler
     public Resolution defaultHander() throws Exception {
         if("POST".equals(context.getRequest().getMethod())) {
@@ -101,7 +90,7 @@ public class KladblokActionBean implements ActionBean {
         }
 
         try {
-            List<Map<String,Object>> results = DB.qr().query("select DTG, Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
+            List<Map<String,Object>> results = DB.qr().query("select to_char(DTG, 'YYYY-MM-DD HH:MI:SS') as DTG, Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
 
             for (Map<String, Object> resultRow : results) {
                 response.put(rowToJson(resultRow, false, false));
@@ -121,13 +110,13 @@ public class KladblokActionBean implements ActionBean {
         }
 
         if(row.length() > 0 && row.length() <= 500) {
+            String username = getContext().getRequest().getRemoteUser();
             Date today = Calendar.getInstance().getTime(); 
-            DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
             Object[] qparams = new Object[] {
                 incident,
-                df.format(today),
-                "(" + vehicle + ") " + StringEscapeUtils.escapeJava(row)
+                today,
+                "(" + username + ") " + StringEscapeUtils.escapeJava(row)
             };
 
             try {

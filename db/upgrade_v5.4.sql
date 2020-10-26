@@ -17,7 +17,7 @@ insert into role(role, protected, description) values
 
 CREATE TABLE safetymaps.kladblok (
 	incident varchar NOT NULL,
-	dtg varchar NOT NULL,
+	dtg timestamp NOT NULL,
 	inhoud varchar NULL
 );
 
