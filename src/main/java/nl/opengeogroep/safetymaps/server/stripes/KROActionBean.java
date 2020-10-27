@@ -116,7 +116,7 @@ public class KROActionBean implements ActionBean {
                 kroFromDb.put("pand_objecttypering_ordered", orderedObjectTypes);
             }
 
-            if (orderedAddressObjectTypes.size > 0) {
+            if (orderedAddressObjectTypes.size() > 0) {
                 kroFromDb.put("address_objecttypering_ordered", orderedAddressObjectTypes);
             } else {
                 String text = (String)row.get(COLUMN_BEDRIJFSNAAM);
