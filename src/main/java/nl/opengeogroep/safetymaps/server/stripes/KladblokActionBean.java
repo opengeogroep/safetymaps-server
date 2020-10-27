@@ -87,7 +87,7 @@ public class KladblokActionBean implements ActionBean {
         }
 
         try {
-            List<Map<String,Object>> results = DB.qr().query("select to_char(dtg, 'YYYY-MM-DD HH:MI:SS') as DTG, '(' || username || ') ' || inhoud as Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
+            List<Map<String,Object>> results = DB.qr().query("select to_char(dtg, 'YYYY-MM-DD HH24:MI:SS') as DTG, '(' || username || ') ' || inhoud as Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
 
             for (Map<String, Object> resultRow : results) {
                 response.put(rowToJson(resultRow, false, false));
