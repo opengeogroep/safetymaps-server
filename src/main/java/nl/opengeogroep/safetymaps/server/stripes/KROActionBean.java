@@ -54,7 +54,7 @@ public class KROActionBean implements ActionBean {
     static final String COLUMN_HUISTOEV = "huistoevg";
     static final String COLUMN_PLAATS = "plaatsnaam";
     static final String COLUMN_OBJECTTYPERING = "pand_objecttypering";
-    static final String COLUMN_GEBRUIK_TYPERING = "objecttypering_gebruik";
+    static final String COLUMN_ADDRESS_OBJECTTYPERING = "adres_objecttypering";
     static final String COLUMN_BEDRIJFSNAAM = "adres_bedrijfsnaam";
 
     @Override
@@ -109,10 +109,15 @@ public class KROActionBean implements ActionBean {
                 delimitedBagPandTypes += OBJECTTYPEPERADRESS_DELIM;
                 delimitedBagPandTypes += (String)bagPandType.get(COLUMN_OBJECTTYPERING);
             }
-            List<String> orderedObjectTypes = getAndCountObjectTypesOrderedByScore(delimitedBagPandTypes);
+            List<String> orderedObjectTypes = getAndCountObjectTypesOrderedByScore(delimitedBagPandTypes, true);
+            List<String> orderedAddressObjectTypes = getAndCountObjectTypesOrderedByScore((String)row.get(COLUMN_ADDRESS_OBJECTTYPERING), false);
 
             if (orderedObjectTypes.size() > 0) {
                 kroFromDb.put("pand_objecttypering_ordered", orderedObjectTypes);
+            }
+
+            if (orderedAddressObjectTypes.size > 0) {
+                kroFromDb.put("address_objecttypering_ordered", orderedAddressObjectTypes);
             } else {
                 String text = (String)row.get(COLUMN_BEDRIJFSNAAM);
                 if (text == null || text.length() == 0) {
@@ -190,15 +195,21 @@ public class KROActionBean implements ActionBean {
             " order by " + COLUMN_TYPESCORE + " desc, " + COLUMN_TYPEDESCRIPTION + " asc", new MapListHandler());
     }
 
-    private List<String> getAndCountObjectTypesOrderedByScore(String objectTypesDelimited) throws Exception {
-        String[] objectTypesPerAddress = splitObjectTypesPerAddress(objectTypesDelimited);
+    private List<String> getAndCountObjectTypesOrderedByScore(String objectTypesDelimited, Boolean showCount) throws Exception {
         List<String> objectTypes = new ArrayList<String>();
+
+        if (objectTypesDelimited == null) {
+            return objectTypes;
+        }
+
+        String[] objectTypesPerAddress = splitObjectTypesPerAddress(objectTypesDelimited);
         List<Map<String, Object>> rows = getObjectTypesOrderedPerScoreFromDb();
         for (Map<String, Object> row : rows) {
             String rowObjectType = (String)row.get(COLUMN_TYPECODE);
             if (objectTypesDelimited.contains(rowObjectType)) {
                 int count = getItemsFromStringArrayContainingText(objectTypesPerAddress, rowObjectType).size();
-                objectTypes.add((String)row.get(COLUMN_TYPEDESCRIPTION) + " (" + count + ")");
+                String countText = showCount ? " (" + count + ")" : "";
+                objectTypes.add((String)row.get(COLUMN_TYPEDESCRIPTION) + countText);
             }
         }
         return objectTypes;
