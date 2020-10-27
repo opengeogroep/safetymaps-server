@@ -55,6 +55,7 @@ public class KROActionBean implements ActionBean {
     static final String COLUMN_PLAATS = "plaatsnaam";
     static final String COLUMN_OBJECTTYPERING = "pand_objecttypering";
     static final String COLUMN_ADDRESS_OBJECTTYPERING = "adres_objecttypering";
+    static final String COLUMN_AANZIEN_OBJECTTYPERING = "aanzien_objecttypering";
     static final String COLUMN_BEDRIJFSNAAM = "adres_bedrijfsnaam";
 
     @Override
@@ -104,13 +105,19 @@ public class KROActionBean implements ActionBean {
             JSONObject kroFromDb = rowToJson(row, false, false);
             
             String delimitedBagPandTypes = "";
+            String addressObjectTypes = (String)row.get(COLUMN_ADDRESS_OBJECTTYPERING);
+            String aanzienObjectTypes = (String)row.get(COLUMN_AANZIEN_OBJECTTYPERING);
+            String combinedObjectTypes = (addressObjectTypes == null ||  addressObjectTypes.length() == 0 ? "" : addressObjectTypes) + 
+                OBJECTTYPEPERADRESS_DELIM +
+                (aanzienObjectTypes == null ||  aanzienObjectTypes.length() == 0 ? "" : aanzienObjectTypes); 
+
             List<Map<String, Object>> bagPandObjectTypes = getObjectTypesForBagPandId((String)row.get(COLUMN_BAGPANDID));
             for (Map<String, Object> bagPandType : bagPandObjectTypes) {
                 delimitedBagPandTypes += OBJECTTYPEPERADRESS_DELIM;
                 delimitedBagPandTypes += (String)bagPandType.get(COLUMN_OBJECTTYPERING);
             }
             List<String> orderedObjectTypes = getAndCountObjectTypesOrderedByScore(delimitedBagPandTypes, true);
-            List<String> orderedAddressObjectTypes = getAndCountObjectTypesOrderedByScore((String)row.get(COLUMN_ADDRESS_OBJECTTYPERING), false);
+            List<String> orderedAddressObjectTypes = getAndCountObjectTypesOrderedByScore(combinedObjectTypes, false);
 
             if (orderedObjectTypes.size() > 0) {
                 kroFromDb.put("pand_objecttypering_ordered", orderedObjectTypes);
