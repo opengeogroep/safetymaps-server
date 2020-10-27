@@ -118,7 +118,9 @@ public class KROActionBean implements ActionBean {
                 if (text == null || text.length() == 0) {
                     text = "Onbekend";
                 }
-                kroFromDb.put("pand_objecttypering_ordered", "[" + text + "]");
+                orderedObjectTypes = new ArrayList<String>();
+                orderedObjectTypes.add(text);
+                kroFromDb.put("pand_objecttypering_ordered", orderedObjectTypes);
             }
 
             
@@ -135,7 +137,7 @@ public class KROActionBean implements ActionBean {
         addCORSHeaders();
 
         List<Map<String, Object>> rows;
-        List<String> orderedTypes= new ArrayList<String>();
+        List<String> orderedTypes = new ArrayList<String>();
         rows = getObjectTypesOrderedPerScoreFromDb();
         for (Map<String, Object> row : rows) {
             orderedTypes.add((String)row.get(COLUMN_TYPECODE));
