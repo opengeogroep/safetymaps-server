@@ -118,7 +118,7 @@ public class KROActionBean implements ActionBean {
                 if (text == null || text.length() == 0) {
                     text = "Onbekend";
                 }
-                kroFromDb.put("pand_objecttypering_ordered", text);
+                kroFromDb.put("pand_objecttypering_ordered", "[" + text + "]");
             }
 
             
