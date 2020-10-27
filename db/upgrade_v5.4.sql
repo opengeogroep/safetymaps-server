@@ -2,7 +2,6 @@ SET search_path = safetymaps, pg_catalog;
 
 create table safetymaps.drawing(incident varchar primary key, features text, last_modified timestamp, modified_by varchar);
 
-
 insert into role(role, protected, description) values
 ('incident_googlemapsnavigation', true, 'Benodigd voor Google Maps navigatie icoon bij Incident Adres')
 
@@ -23,6 +22,5 @@ CREATE TABLE safetymaps.kladblok (
 	username varchar NULL
 );
 
-ALTER TABLE safetymaps.kladblok OWNER TO webdev;
-GRANT ALL ON TABLE safetymaps.kladblok TO webdev;
-GRANT ALL ON TABLE safetymaps.kladblok TO postgres;
+create index on safetymaps.kladblok (incident);
+
