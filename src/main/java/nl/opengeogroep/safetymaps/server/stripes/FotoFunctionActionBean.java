@@ -5,29 +5,11 @@
  */
 package nl.opengeogroep.safetymaps.server.stripes;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.MultipartConfig;
-import javax.servlet.http.HttpServletResponse;
-import net.sourceforge.stripes.action.ActionBean;
-import net.sourceforge.stripes.action.ActionBeanContext;
-import net.sourceforge.stripes.action.DefaultHandler;
-import net.sourceforge.stripes.action.FileBean;
-import net.sourceforge.stripes.action.Resolution;
-import net.sourceforge.stripes.action.StreamingResolution;
-import net.sourceforge.stripes.action.StrictBinding;
-import net.sourceforge.stripes.action.UrlBinding;
+import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.Validate;
 import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import nl.opengeogroep.safetymaps.server.db.DB;
-import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -35,6 +17,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+
+import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 
 /**
  *
@@ -129,8 +124,6 @@ public class FotoFunctionActionBean implements ActionBean {
     @DefaultHandler
     public Resolution foto() throws IOException, ServletException {
         JSONObject response = new JSONObject();
-        context.getResponse().addHeader("Access-Control-Allow-Origin", context.getRequest().getHeader("origin"));
-        context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
         try {
             PATH = Cfg.getSetting("fotofunctie");
             if(PATH == null) {
@@ -159,8 +152,6 @@ public class FotoFunctionActionBean implements ActionBean {
     }
 
     public Resolution download() throws Exception {
-        context.getResponse().addHeader("Access-Control-Allow-Origin", context.getRequest().getHeader("origin"));
-        context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
         // First pathname security check: must exist in db
         boolean exists = DB.qr().query("select 1 from wfs." + TABLE + " where filename = ?", new ScalarHandler<>(), fileName) != null;
 
@@ -188,9 +179,6 @@ public class FotoFunctionActionBean implements ActionBean {
     }
 
     public Resolution fotoForIncident() throws Exception {      
-        context.getResponse().addHeader("Access-Control-Allow-Origin", context.getRequest().getHeader("origin"));
-        context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
-        
         JSONArray response = new JSONArray();
 
         List<Map<String, Object>> rows = getFromDb();

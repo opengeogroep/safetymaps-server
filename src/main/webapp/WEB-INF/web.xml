@@ -120,6 +120,11 @@
         <!-- enabled/disabled by safetymaps.settings database config -->
     </filter>
     <filter>
+        <!-- Filter add CORS headers BEFORE authentication is checked -->
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>nl.opengeogroep.safetymaps.server.security.CorsFilter</filter-class>
+    </filter>
+    <filter>
         <!-- Filter to put an auth-constraint on a path without triggering a servlet container security FORM-based authentication redirect -->
         <filter-name>AuthenticationRequiredFilter</filter-name>
         <filter-class>nl.opengeogroep.safetymaps.server.security.AuthenticationRequiredFilter</filter-class>
@@ -131,6 +136,17 @@
     <filter-mapping>
         <filter-name>SetCharacterEncodingFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <!-- Allow online access to these API endpoints from onboard safetymaps-viewer using mobile data connection. On
+             the device the browser must be logged in using a persistent login session to the online safetymaps-server
+             webapp version.
+             Filter BEFORE checking authorizations.
+        -->
+        <url-pattern>/viewer/api/safetyconnect/*</url-pattern>
+        <url-pattern>/viewer/api/drawing/*</url-pattern>
+        <url-pattern>/viewer/api/foto</url-pattern>
     </filter-mapping>
     <filter-mapping>
         <filter-name>MellonHeaderAuthenticationFilter</filter-name>
