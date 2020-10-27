@@ -125,7 +125,7 @@ public class KROActionBean implements ActionBean {
                 }
                 orderedObjectTypes = new ArrayList<String>();
                 orderedObjectTypes.add(text);
-                kroFromDb.put("pand_objecttypering_ordered", orderedObjectTypes);
+                kroFromDb.put("address_objecttypering_ordered", orderedObjectTypes);
             }
 
             
