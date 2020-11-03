@@ -13,8 +13,6 @@ import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -89,7 +87,7 @@ public class KladblokActionBean implements ActionBean {
         }
 
         try {
-            List<Map<String,Object>> results = DB.qr().query("select to_char(dtg, 'YYYY-MM-DD HH:MI:SS') as DTG, '(' || username || ') ' || inhoud as Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
+            List<Map<String,Object>> results = DB.qr().query("select to_char(dtg, 'YYYY-MM-DD HH24:MI:SS') as DTG, '(' || username || ') ' || inhoud as Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
 
             for (Map<String, Object> resultRow : results) {
                 response.put(rowToJson(resultRow, false, false));
@@ -110,17 +108,10 @@ public class KladblokActionBean implements ActionBean {
 
         if(row.length() > 0 && row.length() <= 500) {
             String username = getContext().getRequest().getRemoteUser();
-            Date today = Calendar.getInstance().getTime(); 
-
-            Object[] qparams = new Object[] {
-                incident,
-                today,
-                row,
-                username
-            };
 
             try {
-                DB.qr().insert("insert into safetymaps.kladblok (incident, dtg, inhoud, username) values (?,?,?,?)", new MapListHandler(), qparams);
+                DB.qr().insert("insert into safetymaps.kladblok (incident, dtg, inhoud, username) values (?,?,?,?)", new MapListHandler(), 
+                        incident, new java.sql.Timestamp(System.currentTimeMillis()), row, username);
                 return new ErrorMessageResolution(200, "");
             } catch(Exception e) {
                 return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getClass() + ": " + e.getMessage());
