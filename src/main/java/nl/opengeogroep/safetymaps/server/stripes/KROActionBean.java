@@ -174,9 +174,15 @@ public class KROActionBean implements ActionBean {
         addCORSHeaders();
 
         QueryRunner qr = DB.bagQr();
-        Object geovlak = qr.query("select geovlak from bag_actueel.pandactueelbestaand_filter where identificatie=?", new ScalarHandler<Object>(), getBagPandId());
+        List<Map<String, Object>> result = qr.query("select geovlak from bag_actueel.pandactueelbestaand_filter where identificatie=?", new MapListHandler(), getBagPandId());
         
-        return new StreamingResolution("application/json", geovlak.toString());
+        JSONArray response = new JSONArray();
+        for (Map<String, Object> row : rows) {
+            JSONObject pandGeo = rowToJson(row, false, false);
+            response.put(pandGeo);
+        }
+
+        return new StreamingResolution("application/json", response.toString());
     }
 
     private Boolean isNotAuthorized() {
