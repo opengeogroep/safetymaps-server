@@ -177,7 +177,7 @@ public class KROActionBean implements ActionBean {
         List<Map<String, Object>> result = qr.query("select geovlak from bag_actueel.pandactueelbestaand_filter where identificatie=?", new MapListHandler(), getBagPandId());
         
         JSONArray response = new JSONArray();
-        for (Map<String, Object> row : rows) {
+        for (Map<String, Object> row : result) {
             JSONObject pandGeo = rowToJson(row, false, false);
             response.put(pandGeo);
         }
