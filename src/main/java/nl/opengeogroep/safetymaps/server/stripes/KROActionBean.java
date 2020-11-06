@@ -165,6 +165,18 @@ public class KROActionBean implements ActionBean {
         return new StreamingResolution("application/json", response.toString());
     }
 
+    public Resolution pand() throws Exception {
+        if(isNotAuthorized()) {
+            return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot kro");
+        }
+        addCORSHeaders();
+
+        QueryRunner qr = DB.bagQr();
+        String geovlak = qr.query("select geovlak from bag_actueel.pandactueelbestaand_filter where identificatie=?", new ScalarHandler<String>(), getBagPandId());
+        
+        return new StreamingResolution("application/json", geovlak);
+    }
+
     private Boolean isNotAuthorized() {
         return !context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN);
     } 
