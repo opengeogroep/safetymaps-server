@@ -174,7 +174,7 @@ public class KROActionBean implements ActionBean {
         addCORSHeaders();
 
         QueryRunner qr = DB.bagQr();
-        List<Map<String, Object>> result = qr.query("select st_astext(geovlak) from bag_actueel.pandactueelbestaand_filter where identificatie=?", new MapListHandler(), getBagPandId());
+        List<Map<String, Object>> result = qr.query("select st_astext(st_force2d(geovlak)) from bag_actueel.pandactueelbestaand_filter where identificatie=?", new MapListHandler(), getBagPandId());
         
         JSONArray response = new JSONArray();
         for (Map<String, Object> row : result) {
