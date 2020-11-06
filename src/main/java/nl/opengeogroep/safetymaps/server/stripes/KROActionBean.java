@@ -3,6 +3,8 @@ package nl.opengeogroep.safetymaps.server.stripes;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 
+import org.apache.commons.dbutils.handlers.ScalarHandler;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
