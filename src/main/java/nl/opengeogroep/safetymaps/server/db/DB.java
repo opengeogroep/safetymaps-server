@@ -21,6 +21,7 @@ public class DB {
 
     private static final String JNDI_NAME = "java:/comp/env/jdbc/safetymaps-server";
     private static final String JNDI_NAME_BAG = "java:/comp/env/jdbc/nlextract-bag";
+    private static final String JNDI_NAME_OIV = "java:/comp/env/jdbc/oiv";
 
     public static final String USER_TABLE = "safetymaps.user_ ";
     public static final String USER_ROLE_TABLE = "safetymaps.user_roles ";
@@ -64,6 +65,10 @@ public class DB {
         return new QueryRunner(getDataSource(JNDI_NAME_BAG));
     }
 
+    public static final QueryRunner oivQr() throws NamingException {
+        return new QueryRunner(getDataSource(JNDI_NAME_OIV));
+    }
+    
     public static final JSONObject getUserDetails(HttpServletRequest request, Connection c) throws Exception {
         String username = request.getRemoteUser();
         if(username != null) {

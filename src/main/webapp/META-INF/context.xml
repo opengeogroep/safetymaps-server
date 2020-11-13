@@ -21,6 +21,7 @@
   <ResourceLink global="jdbc/safetymaps-server" name="jdbc/safetymaps-server" type="javax.sql.DataSource"/>
   <ResourceLink global="jdbc/filesetsync-server" name="jdbc/filesetsync-server" type="javax.sql.DataSource"/>
   <ResourceLink global="jdbc/nlextract-bag" name="jdbc/nlextract-bag" type="javax.sql.DataSource"/>
+  <ResourceLink global="jdbc/oiv" name="jdbc/oiv" type="javax.sql.DataSource"/>
 
   <!-- Place javax.mail.jar in Tomcat lib and add this to tomcat/conf/server.xml
     <Resource name="mail/session" auth="Container" type="javax.mail.Session" mail.smtp.host="ip here" />

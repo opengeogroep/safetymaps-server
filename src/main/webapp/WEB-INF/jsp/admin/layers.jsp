@@ -153,6 +153,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     </div>
                 </div>
                 <div class="form-group">
+                    <label class="col-sm-2 control-label">Basic authenticatie:</label>
+                    <div class="col-sm-10">
+                        <div class="form-group">
+                            <div class="col-sm-2" style="padding-top: 5px">Gebruiker:</div>
+                            <div class="col-sm-10">
+                                <stripes:text id="input-user" name="username" class="form-control" />
+                            </div>
+                            <div class="col-sm-2" style="padding-top: 5px">Wachtwoord:</div>
+                            <div class="col-sm-10">
+                                <stripes-dynattr:password name="auth" class="form-control" autocomplete="new-password" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
                     <label class="col-sm-2 control-label">Instellingen:</label>                    
                     <div class="col-sm-10">
                         <div class="checkbox">

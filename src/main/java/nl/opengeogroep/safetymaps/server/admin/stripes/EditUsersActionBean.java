@@ -249,7 +249,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
 
         int update = qr().update("update " + USER_TABLE + " set password = ?, session_expiry_number = ?, session_expiry_timeunit = ?, details = ?::json where username = ?", hashedPassword, expiry, expiryTimeUnit, detailsString, username);
         if(update == 0) {
-            qr().update("insert into " + USER_TABLE + " (username, password, session_expiry_number, session_expiry_timeunit) values(?, ?, ?, ?)", username, hashedPassword, expiry, expiryTimeUnit);
+            qr().update("insert into " + USER_TABLE + " (username, password, session_expiry_number, session_expiry_timeunit, details) values(?, ?, ?, ?, ?::json)", username, hashedPassword, expiry, expiryTimeUnit, detailsString);
         }
         qr().update("delete from " + USER_ROLE_TABLE + " where username = ?", username);
         if(roles != null) {
