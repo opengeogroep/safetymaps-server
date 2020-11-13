@@ -139,14 +139,14 @@
     </filter-mapping>
     <filter-mapping>
         <filter-name>CorsFilter</filter-name>
-        <!-- Allow online access to these API endpoints from onboard safetymaps-viewer using mobile data connection. On
-             the device the browser must be logged in using a persistent login session to the online safetymaps-server
-             webapp version.
-             Filter BEFORE checking authorizations.
+        <!-- Allow online access to the API endpoints from onboard safetymaps-viewer using mobile data connection and
+             from safetymaps-flamingo component from other origins. The user must be logged in on the viewer for CORS
+             requests with credentials: include to work. The sm-plogin cookie has SameSite=None, this filter adds the
+             Access-Control-Allow-Credentials header, the Access-Control-Allow-Origin header with the origin of the request
+             when the origin matches one of those configured in safetymaps.settings table in the cors_allowed_origins key,
+             and responds to OPTIONS requests with an OK status (so this filter must be BEFORE checking authorizations).
         -->
-        <url-pattern>/viewer/api/safetyconnect/*</url-pattern>
-        <url-pattern>/viewer/api/drawing/*</url-pattern>
-        <url-pattern>/viewer/api/foto</url-pattern>
+        <url-pattern>/viewer/api/*</url-pattern>
     </filter-mapping>
     <filter-mapping>
         <filter-name>MellonHeaderAuthenticationFilter</filter-name>
