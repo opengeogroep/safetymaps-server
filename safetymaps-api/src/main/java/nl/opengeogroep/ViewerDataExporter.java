@@ -12,7 +12,6 @@ import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -64,7 +63,7 @@ public class ViewerDataExporter {
             Integer id = (Integer)row.get("id");
             String name = (String)row.get("formele_naam");
             try {
-                JSONObject o = rowToJson(row, true, true);
+                JSONObject o = SafetymapsUtils.rowToJson(row, true, true);
                 if(verdiepingenIds.contains(id)) {
                     o.put("heeft_verdiepingen", true);
                 }
@@ -92,7 +91,7 @@ public class ViewerDataExporter {
         }
 
         try {
-            return rowToJson(rows.get(0), true, true);
+            return SafetymapsUtils.rowToJson(rows.get(0), true, true);
         } catch(Exception e) {
             throw new Exception(String.format("Error getting object details for id " + id), e);
         }
@@ -117,7 +116,7 @@ public class ViewerDataExporter {
             Object id = row.get("id");
             Object name = row.get("name");
             try {
-                result.add(rowToJson(row, true, true));
+                result.add(SafetymapsUtils.rowToJson(row, true, true));
             } catch(Exception e) {
                 throw new Exception(String.format("Error converting object details to JSON for id " + id + ", name " + name), e);
             }
@@ -136,7 +135,7 @@ public class ViewerDataExporter {
         List<Map<String,Object>> rows = new QueryRunner().query(c, "select * from wfs.type_compartment", new MapListHandler());
         for(Map<String,Object> row: rows) {
             String code = (String)row.get("code");
-            JSONObject compartment = rowToJson(row, false, false);
+            JSONObject compartment = SafetymapsUtils.rowToJson(row, false, false);
             compartments.put(code, compartment);
         }
 
@@ -145,7 +144,7 @@ public class ViewerDataExporter {
         rows = new QueryRunner().query(c, "select * from wfs.type_custom_line", new MapListHandler());
         for(Map<String,Object> row: rows) {
             String code = (String)row.get("code");
-            JSONObject line = rowToJson(row, false, false);
+            JSONObject line = SafetymapsUtils.rowToJson(row, false, false);
             lines.put(code, line);
         }
 
@@ -154,54 +153,10 @@ public class ViewerDataExporter {
         rows = new QueryRunner().query(c, "select * from wfs.type_custom_polygon", new MapListHandler());
         for(Map<String,Object> row: rows) {
             String code = (String)row.get("code");
-            JSONObject polygon = rowToJson(row, false, false);
+            JSONObject polygon = SafetymapsUtils.rowToJson(row, false, false);
             polygons.put(code, polygon);
         }
 
-        return o;
-    }
-    public static JSONObject rowToJson(Map<String, Object> row, boolean skipNull, boolean skipEmptyString) throws Exception {
-        JSONObject o = new JSONObject();
-        for(Map.Entry<String,Object> e: row.entrySet()) {
-            /* do not put null or empty string properties in result */
-
-            if(e.getValue() == null) {
-                if(!skipNull) {
-                    o.put(e.getKey(), (Object)null);
-                }
-                continue;
-            }
-
-            if("".equals(e.getValue())) {
-                if(!skipEmptyString) {
-                    o.put(e.getKey(), "");
-                }
-                continue;
-            }
-
-            /* JSON objects are returned as org.postgresql.util.PGobject,
-             * compare classname by string ignoring package
-             */
-            if(e.getValue().getClass().getName().endsWith("PGobject")) {
-                try {
-                    String json = e.getValue().toString();
-                    Object pgj;
-                    if(json.startsWith("[")) {
-                        pgj = new JSONArray(json);
-                    } else if(json.startsWith("{")) {
-                        pgj = new JSONObject(json);
-                    } else {
-                        // Just the toString()
-                        pgj = json;
-                    }
-                    o.put(e.getKey(), pgj);
-                } catch(JSONException ex) {
-                    throw new Exception("Error parsing PostgreSQL JSON for property " + e.getKey() + ": " + ex.getMessage() + ", JSON=" + e.getValue());
-                }
-            } else {
-                o.put(e.getKey(), e.getValue());
-            }
-        }
         return o;
     }
 }
