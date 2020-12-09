@@ -19,6 +19,7 @@
             <script type="text/javascript" src="${contextPath}/public/vendor/jquery-2.2.0/jquery.min.js"></script>
             <script type="text/javascript" src="${contextPath}/public/vendor/bootstrap-3.3.6-dist/js/bootstrap.min.js"></script>
             <script type="text/javascript" src="${contextPath}/public/vendor/moment-with-locales.js"></script>
+            <script type="text/javascript" src="${contextPath}/public/vendor/jquery.tableSorter.min.js"></script>
             <script>
                 moment.locale("nl");
             </script>

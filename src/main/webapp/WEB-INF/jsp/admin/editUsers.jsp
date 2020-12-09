@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
         <h1>Gebruikersbeheer</h1>
 
-        <table class="table table-bordered table-striped table-fixed-header table-condensed table-hover" id="layers-table">
+        <table class="table table-bordered table-striped table-condensed table-hover" id="layers-table">
             <thead>
                 <tr>
                     <th>Gebruikersnaam</th>

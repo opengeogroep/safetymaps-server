@@ -96,5 +96,10 @@
                 fixedHeaders[i].updateSize.apply(fixedHeaders[i]);
             }
         });
+
+        /** 
+         * Add table sorting func 
+         */
+        $('.table').tablesorter();
     });
 })(jQuery);
