@@ -46,8 +46,6 @@ public class MailActionBean implements ActionBean {
     public Resolution mail() throws IOException {
         Session session;
         JSONObject response = new JSONObject();
-        context.getResponse().addHeader("Access-Control-Allow-Origin", "http://localhost");
-        context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
         response.put("result", false);
         try {
             Context ctx = new InitialContext();
