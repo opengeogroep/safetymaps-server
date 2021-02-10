@@ -24,3 +24,5 @@ CREATE TABLE safetymaps.kladblok (
 
 create index on safetymaps.kladblok (incident);
 
+insert into safetymaps.role(role, protected, description) values
+('kro', true, 'Benodigd voor het laden van kro');
