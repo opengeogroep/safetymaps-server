@@ -295,8 +295,8 @@ function display(clients) {
             var states = "";
             var finishedStates = "";
             $.each(allStates, function(j, s) {
-                var title = ((stat.stateCount ? stat.stateCount[s + "_clients"] : false) || []).join(", ");
-                states += "<td title='" + title + "'>" + ((stat.stateCount ? stat.stateCount[s] : false) || 0) + "</td>";
+                var title = (stat.stateCount ? stat.stateCount[s + "_clients"] || [] : []).join(", ");
+                states += "<td title='" + title + "'>" + (stat.stateCount ? stat.stateCount[s] || 0 : 0) + "</td>";
             });
             $.each(allFinishedStates, function(j, s) {
                 var title = (stat.lastFinishedStateCount[s + "_clients"] || []).join(", ");
