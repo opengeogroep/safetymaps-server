@@ -36,6 +36,7 @@ public class DB {
     public static final String ROLE_EIGEN_VOERTUIGNUMMER = "eigen_voertuignummer";
     public static final String ROLE_DRAWING_EDITOR = "drawing_editor";
     public static final String ROLE_INCIDENT_GOOGLEMAPSNAVIGATION = "incident_googlemapsnavigation";
+    public static final String ROLE_INCIDENTMONITOR_PRIO_4_5 = "incidentmonitor_prio_4_5";
 
     public static final String ROLE_KLADBLOKCHAT_EDITOR = "kladblokchat_editor";
     public static final String ROLE_KLADBLOKCHAT_VIEWER = "kladblokchat_viewer";

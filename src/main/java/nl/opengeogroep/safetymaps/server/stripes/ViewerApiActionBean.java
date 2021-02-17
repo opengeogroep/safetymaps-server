@@ -31,6 +31,7 @@ import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENT_GOOGLEMAPSNA
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_MANUALLYCREATED;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_EDITOR;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_VIEWER;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_PRIO_4_5;
 import static nl.opengeogroep.safetymaps.server.db.DB.getUserDetails;
 import nl.opengeogroep.safetymaps.viewer.ViewerDataExporter;
 import org.apache.commons.dbutils.QueryRunner;
@@ -296,6 +297,7 @@ public class ViewerApiActionBean implements ActionBean {
             options.put("eigenVoertuignummerAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_EIGEN_VOERTUIGNUMMER));
             options.put("googleMapsNavigationAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENT_GOOGLEMAPSNAVIGATION));
             options.put("excludeManuallyCreatedIncidents", !request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_INCIDENTMONITOR_MANUALLYCREATED));
+            options.put("prio4and5Authorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_PRIO_4_5));
 
             options.put("editKladblokChatAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR));
             options.put("showKladblokChatAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOKCHAT_VIEWER) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR));
