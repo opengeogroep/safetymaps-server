@@ -100,7 +100,6 @@ public class KROActionBean implements ActionBean {
         if(isNotAuthorized()) {
             return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot kro");
         }
-        addCORSHeaders();
 
         JSONArray response = new JSONArray();
         List<Map<String, Object>> rows = getKroFromDb();
@@ -165,8 +164,7 @@ public class KROActionBean implements ActionBean {
         if(isNotAuthorized()) {
             return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot kro");
         }
-        addCORSHeaders();
-
+        
         List<Map<String, Object>> rows;
         List<String> orderedTypes = new ArrayList<String>();
         rows = getObjectTypesOrderedPerScoreFromDb();
@@ -188,7 +186,6 @@ public class KROActionBean implements ActionBean {
         if(isNotAuthorized()) {
             return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot kro");
         }
-        addCORSHeaders();
 
         QueryRunner qr = DB.bagQr();
         List<Map<String, Object>> result = qr.query("select st_astext(st_force2d(geovlak)) as pandgeo from bag_actueel.pandactueelbestaand_filter where identificatie=?", new MapListHandler(), getBagPandId());
@@ -205,13 +202,6 @@ public class KROActionBean implements ActionBean {
     private Boolean isNotAuthorized() {
         return !context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN);
     } 
-
-    private void addCORSHeaders() throws Exception {
-        String allowedOrigins = Cfg.getSetting("cors_allowed_origins");
-
-        context.getResponse().addHeader("Access-Control-Allow-Origin", allowedOrigins);
-        context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
-    }
 
     private List<Map<String, Object>> getKroFromDb() throws NamingException, SQLException {
         QueryRunner qr = DB.kroQr();
