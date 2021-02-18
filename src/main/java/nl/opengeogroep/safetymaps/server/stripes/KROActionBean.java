@@ -45,6 +45,7 @@ public class KROActionBean implements ActionBean {
     static final String TABLE_OBJECTTYPES = "oovkro.objecttypering_type";
     static final String TABLE_AANZIEN = "oovkro.aanzien";
     static final String TABLE_GEBRUIK = "oovkro.gebruik";
+    static final String TABLE_CONFIG = "safetymaps.kro";
     static final String COLUMN_TYPECODE = "code";
     static final String COLUMN_TYPESCORE = "risico_score";
     static final String COLUMN_TYPEDESCRIPTION = "omschrijving";
@@ -139,6 +140,22 @@ public class KROActionBean implements ActionBean {
 
             
             response.put(kroFromDb);
+        }
+
+        return new StreamingResolution("application/json", response.toString());
+    }
+
+    public Resolution config() throws Exception {
+        if(isNotAuthorized()) {
+            return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot kro");
+        }
+
+        JSONArray response = new JSONArray();
+        List<Map<String, Object>> rows;
+        rows = getConfigFromDb();
+        for (Map<String, Object> row : rows) {
+            JSONObject configFromDb = rowToJson(row, false, false);
+            response.put(configFromDb);
         }
 
         return new StreamingResolution("application/json", response.toString());
@@ -240,6 +257,13 @@ public class KROActionBean implements ActionBean {
             }
         }
         return objectTypes;
+    }
+
+    private List<Map<String, Object>> getConfigFromDb() throws NamingException, SQLException {
+        QueryRunner qr = DB.qr();
+        String sql = "select * from " + TABLE_CONFIG + "";
+        List<Map<String, Object>> rows = qr.query(sql, new MapListHandler());
+        return rows;
     }
 
     private List<Map<String, Object>> getKroAddressesFromDb() throws NamingException, SQLException {
