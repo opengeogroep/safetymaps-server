@@ -22,3 +22,9 @@ create table safetymaps.kro (
 	disabled bool null,
 	constraint kro_pkey primary key (lbl)
 );
+
+insert into safetymaps.kro(lbl, ord, src, disabled)
+values('Adres', null, 'dbk', true);
+
+insert into safetymaps.kro(lbl, ord, src, disabled)
+values('OMS nummer', null, 'dbk', true);
