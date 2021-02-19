@@ -23,4 +23,3 @@ CREATE TABLE safetymaps.kladblok (
 );
 
 create index on safetymaps.kladblok (incident);
-
