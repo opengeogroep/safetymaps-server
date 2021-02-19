@@ -1,15 +1,11 @@
 package nl.opengeogroep.safetymaps.server.stripes;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.StringReader;
-import java.util.zip.GZIPOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import net.sourceforge.stripes.action.*;
+import net.sourceforge.stripes.action.ActionBean;
+import net.sourceforge.stripes.action.ActionBeanContext;
+import net.sourceforge.stripes.action.Resolution;
+import net.sourceforge.stripes.action.UrlBinding;
 import nl.b3p.web.stripes.ErrorMessageResolution;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
-import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.commons.logging.Log;
@@ -20,6 +16,15 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.StringReader;
+import java.util.zip.GZIPOutputStream;
+
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
 
 /**
  *
@@ -54,12 +59,6 @@ public class SafetyConnectProxyActionBean implements ActionBean {
     }
 
     public Resolution proxy() throws Exception {
-        // Allow online access to webservice from onboard safetymaps-viewer using
-        // mobile data connection. On the device the browser must be logged in
-        // using a persistent login session to the safetymaps-server integrated version
-        context.getResponse().addHeader("Access-Control-Allow-Origin", "http://localhost");
-        context.getResponse().addHeader("Access-Control-Allow-Credentials", "true");
-
         if(!context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN)) {
             return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot webservice");
         }

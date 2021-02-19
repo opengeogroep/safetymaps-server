@@ -1,5 +1,19 @@
 package nl.opengeogroep.safetymaps.server.stripes;
 
+import net.sourceforge.stripes.action.*;
+import net.sourceforge.stripes.validation.Validate;
+import nl.b3p.web.stripes.ErrorMessageResolution;
+import nl.opengeogroep.safetymaps.server.db.DB;
+import org.apache.commons.dbutils.handlers.MapHandler;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.json.JSONObject;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.sql.Timestamp;
@@ -7,21 +21,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import net.sourceforge.stripes.action.*;
-import net.sourceforge.stripes.validation.Validate;
-import nl.b3p.web.stripes.ErrorMessageResolution;
-import nl.opengeogroep.safetymaps.server.db.DB;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_DRAWING_EDITOR;
-import org.apache.commons.dbutils.handlers.MapHandler;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.json.JSONObject;
+import static nl.opengeogroep.safetymaps.server.security.CorsFilter.addCorsHeaders;
 
 /**
  *
@@ -83,7 +87,8 @@ public class DrawingActionBean  implements ActionBean {
     }
 
     @DefaultHandler
-    public Resolution defaultHander() throws Exception {
+    public Resolution defaultHandler() throws Exception {
+
         if("POST".equals(context.getRequest().getMethod())) {
             return save();
         } else {

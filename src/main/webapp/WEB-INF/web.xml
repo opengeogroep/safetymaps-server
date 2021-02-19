@@ -120,6 +120,11 @@
         <!-- enabled/disabled by safetymaps.settings database config -->
     </filter>
     <filter>
+        <!-- Filter add CORS headers BEFORE authentication is checked -->
+        <filter-name>CorsFilter</filter-name>
+        <filter-class>nl.opengeogroep.safetymaps.server.security.CorsFilter</filter-class>
+    </filter>
+    <filter>
         <!-- Filter to put an auth-constraint on a path without triggering a servlet container security FORM-based authentication redirect -->
         <filter-name>AuthenticationRequiredFilter</filter-name>
         <filter-class>nl.opengeogroep.safetymaps.server.security.AuthenticationRequiredFilter</filter-class>
@@ -131,6 +136,17 @@
     <filter-mapping>
         <filter-name>SetCharacterEncodingFilter</filter-name>
         <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>CorsFilter</filter-name>
+        <!-- Allow online access to the API endpoints from onboard safetymaps-viewer using mobile data connection and
+             from safetymaps-flamingo component from other origins. The user must be logged in on the viewer for CORS
+             requests with credentials: include to work. The sm-plogin cookie has SameSite=None, this filter adds the
+             Access-Control-Allow-Credentials header, the Access-Control-Allow-Origin header with the origin of the request
+             when the origin matches one of those configured in safetymaps.settings table in the cors_allowed_origins key,
+             and responds to OPTIONS requests with an OK status (so this filter must be BEFORE checking authorizations).
+        -->
+        <url-pattern>/viewer/api/*</url-pattern>
     </filter-mapping>
     <filter-mapping>
         <filter-name>MellonHeaderAuthenticationFilter</filter-name>
