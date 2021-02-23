@@ -56,6 +56,7 @@ public class KROActionBean implements ActionBean {
     static final String COLUMN_HUISLET = "huisletter";
     static final String COLUMN_HUISTOEV = "huistoevg";
     static final String COLUMN_PLAATS = "plaatsnaam";
+    static final String COLUMN_PC= "postcode";
     static final String COLUMN_OBJECTTYPERING = "pand_objecttypering";
     static final String COLUMN_ADDRESS_OBJECTTYPERING = "adres_objecttypering";
     static final String COLUMN_AANZIEN_OBJECTTYPERING = "aanzien_objecttypering";
@@ -214,9 +215,9 @@ public class KROActionBean implements ActionBean {
             };
         } else {
             String[] address = splitAddress();
-            sql += COLUMN_STRAAT + "=? and " + COLUMN_HUISNR + "=? and " + COLUMN_HUISLET + "=? and " + COLUMN_HUISTOEV + "=? and " + COLUMN_PLAATS + "=?";
+            sql += COLUMN_STRAAT + "=? and " + COLUMN_HUISNR + "=? and " + COLUMN_HUISLET + "=? and " + COLUMN_HUISTOEV + "=? and (" + COLUMN_PLAATS + "=? or " + COLUMN_PC + "=?)";
             qparams = new Object[] {
-                address[0], Integer.parseInt(address[1]), address[2], address[3], address[4]
+                address[0], Integer.parseInt(address[1]), address[2], address[3], address[4], address[5]
             };
         }
         List<Map<String, Object>> rows = qr.query(sql, new MapListHandler(), qparams);
