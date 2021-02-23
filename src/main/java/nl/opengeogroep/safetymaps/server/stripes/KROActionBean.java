@@ -296,7 +296,7 @@ public class KROActionBean implements ActionBean {
     }
 
     private String[] splitAddress() {
-        return this.address.split("\\" + DEFAULT_DELIM, 5);
+        return this.address.split("\\" + DEFAULT_DELIM, 6);
     }
 
     private String[] splitObjectTypesPerAddress(String objectTypesDelimitedPerAddress) {
