@@ -48,7 +48,7 @@ public class KROActionBean implements ActionBean {
     static final String TABLE_CONFIG = "safetymaps.kro";
     static final String COLUMN_TYPECODE = "code";
     static final String COLUMN_TYPESCORE = "risico_score";
-    static final String COLUMN_TYPEDESCRIPTION = "omschrijving";
+    static final String COLUMN_TYPEDESCRIPTION = "omschrijving_aangepast";
     static final String COLUMN_BAGVBID = "bagvboid";
     static final String COLUMN_BAGPANDID = "bagpandid";
     static final String COLUMN_STRAAT = "straatnaam";
