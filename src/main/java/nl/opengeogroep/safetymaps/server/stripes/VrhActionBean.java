@@ -434,6 +434,9 @@ public class VrhActionBean implements ActionBean {
         String sn = (String)adres.get("openbareruimtenaam");
         String pl = (String)adres.get("woonplaatsnaam");
         String pc = (String)adres.get("postcode");
+        if (sn == null || pl == null || pc == null) {
+            return;
+        }
         String extraNr = adres.get("huisnummer") + "";
         if(adres.get("huisletter") != null || adres.get("huisnummertoevoeging") != null ) {
             extraNr += "|" + ObjectUtils.firstNonNull(adres.get("huisletter"), "");
