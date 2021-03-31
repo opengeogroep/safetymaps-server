@@ -43,6 +43,8 @@ public class KladblokActionBean implements ActionBean {
     @Validate
     private String row;
 
+    private String vehicle;
+
     @Override
     public ActionBeanContext getContext() {
         return context;
@@ -67,6 +69,14 @@ public class KladblokActionBean implements ActionBean {
 
     public void setRow(String row) {
         this.row = row;
+    }
+
+    public String getVehicle() {
+        return row;
+    }
+
+    public void setVehicle(String vehicle) {
+        this.vehicle = vehicle;
     }
 
     @DefaultHandler
@@ -108,6 +118,14 @@ public class KladblokActionBean implements ActionBean {
 
         if(row.length() > 0 && row.length() <= 500) {
             String username = getContext().getRequest().getRemoteUser();
+
+            if (vehicle != null && vehicle.length() > 0) {
+                username = vehicle;
+            } else {
+                String user = username.split("@")[0];
+                int length = user.length() > 10 ? 10 : user.length() - 1;
+                username = user.substring(0, length);
+            }
 
             try {
                 DB.qr().insert("insert into safetymaps.kladblok (incident, dtg, inhoud, username) values (?,?,?,?)", new MapListHandler(), 
