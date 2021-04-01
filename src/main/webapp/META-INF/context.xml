@@ -10,7 +10,7 @@
             password="<dbpassword>"
             driverClassName="org.postgresql.Driver"
             url="jdbc:postgresql://<server>:<port>/<dbname>"
-            maxActive="40"
+            maxTotal="40"
             validationQuery="select 1"
             timeBetweenEvictionRunsMillis="30000"
             minEvictableIdleTimeMillis="5000"
