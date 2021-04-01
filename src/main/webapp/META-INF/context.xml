@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Context antiJARLocking="true" path="/safetymaps-server">
+  <!-- For developing on localhost using http://, uncomment this to not set the persistent auth cookie with SameSite=None,
+       which is only accepted using https:// -->
+  <!--Parameter name="persistentAuthNoSameSite" value="true" override="false"/-->
+
   <!-- Paste this in tomcat/conf/server.xml with the correct settings. Restart tomcat. This has to be done once.
 
         <Resource
