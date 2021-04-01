@@ -45,6 +45,7 @@ public class PersistentAuthenticationFilter implements Filter {
     private static final String DEFAULT_LOGIN_SOURCE = "SafetyMaps";
 
     private static final String SESSION_PRINCIPAL = PersistentAuthenticationFilter.class.getName() + ".PRINCIPAL";
+    private static final String SESSION_PROCESSED = PersistentAuthenticationFilter.class.getName() + ".PROCESSED";
     
     private static final int EXPIRY_DEFAULT_UNIT = Calendar.YEAR;
     private static final int EXPIRY_DEFAULT = 10;
@@ -178,11 +179,18 @@ public class PersistentAuthenticationFilter implements Filter {
 
             // If valid persistent session already set, do nothing
             if(persistentSession != null) {
-                log.trace(request.getRequestURI() + ": Request external authenticated for user " + principal.getName() + ", persistent session verified, path: " + request.getRequestURI());
+                log.trace(request.getRequestURI() + ": Request externally authenticated for user " + principal.getName() + ", persistent session verified, path: " + request.getRequestURI());
 
                 chain.doFilter(servletRequest, servletResponse);
                 return;
             } else {
+                // Do this branch only once per session. When using http://localhost/ for testing, the SameSite=None
+                // cookie will not be accepted (not HTTPS) so do not recreate it everytime
+                if(Boolean.TRUE.equals(session.getAttribute(SESSION_PROCESSED))) {
+                    chain.doFilter(request, response);
+                    return;
+                }
+                session.setAttribute(SESSION_PROCESSED, true);
 
                 // Create new persistent session, if the user exists in the database.
 
@@ -195,7 +203,7 @@ public class PersistentAuthenticationFilter implements Filter {
 
                 for(String role: rolesAsDbUsernames) {
                     if(request.isUserInRole(role)) {
-                        log.trace(request.getRequestURI() + ": Request external authenticated and in role " + role + " which will be used as username to get persistent session settings");
+                        log.trace(request.getRequestURI() + ": Request externally authenticated and in role " + role + " which will be used as username to get persistent session settings");
                         dbUsername = role;
                         break;
                     }
