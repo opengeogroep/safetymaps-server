@@ -59,6 +59,7 @@ public class PersistentAuthenticationFilter implements Filter {
     private String[] rolesAsDbUsernames;
     private boolean enabled;
     private String logoutUrl;
+    private boolean noSameSite;
 
     /**
      * Get a filter init-parameter which can be overridden by a context parameter
@@ -84,6 +85,7 @@ public class PersistentAuthenticationFilter implements Filter {
         this.persistentLoginPrefix = ObjectUtils.firstNonNull(getInitParameter(PARAM_PERSISTENT_LOGIN_PATH_PREFIX), "/");
         this.rolesAsDbUsernames =  ObjectUtils.firstNonNull(getInitParameter(PARAM_ROLES_AS_DB_USERNAMES), "").split(",");
         this.logoutUrl = ObjectUtils.firstNonNull(getInitParameter(PARAM_LOGOUT_URL), "/logout.jsp");
+        this.noSameSite = "true".equals(getInitParameter(PARAM_ENABLED));
 
         UpdatableLoginSessionFilter.monitorSessionInvalidation(new SessionInvalidateMonitor() {
             @Override
@@ -262,7 +264,7 @@ public class PersistentAuthenticationFilter implements Filter {
                 cookie.setSecure(request.getScheme().equals("https"));
                 cookie.setMaxAge((int)((c.getTimeInMillis() - System.currentTimeMillis()) / 1000));
                 log.info(request.getRequestURI() + ": Request externally authenticated for user " + principal.getName() + ", setting persistent login cookie " + obfuscateSessionId(id));
-                addCookieWithSameSite(response, cookie, "None");
+                addCookieWithSameSite(response, cookie, this.noSameSite ? null : "None");
             }
         }
 
