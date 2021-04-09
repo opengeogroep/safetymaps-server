@@ -54,6 +54,7 @@ public class PersistentAuthenticationFilter implements Filter {
     private static final String PARAM_PERSISTENT_LOGIN_PATH_PREFIX = "persistentLoginPathPrefix";
     private static final String PARAM_LOGOUT_URL = "logoutUrl";
     private static final String PARAM_ROLES_AS_DB_USERNAMES = "rolesAsDbUsernames";
+    private static final String PARAM_NO_SAMESITE = "noSameSite";
 
     private String persistentLoginPrefix;
     private String[] rolesAsDbUsernames;
@@ -85,7 +86,7 @@ public class PersistentAuthenticationFilter implements Filter {
         this.persistentLoginPrefix = ObjectUtils.firstNonNull(getInitParameter(PARAM_PERSISTENT_LOGIN_PATH_PREFIX), "/");
         this.rolesAsDbUsernames =  ObjectUtils.firstNonNull(getInitParameter(PARAM_ROLES_AS_DB_USERNAMES), "").split(",");
         this.logoutUrl = ObjectUtils.firstNonNull(getInitParameter(PARAM_LOGOUT_URL), "/logout.jsp");
-        this.noSameSite = "true".equals(getInitParameter(PARAM_ENABLED));
+        this.noSameSite = "true".equals(getInitParameter(PARAM_NO_SAMESITE));
 
         UpdatableLoginSessionFilter.monitorSessionInvalidation(new SessionInvalidateMonitor() {
             @Override
