@@ -1,0 +1,235 @@
+CREATE OR REPLACE VIEW viewer.viewer_object_details
+AS SELECT vo.id,
+    vo.oms_nummer,
+    vo.formele_naam,
+    vo.informele_naam,
+    vo.bouwlaag_max,
+    vo.bouwlaag_min,
+    vo.datum_controle,
+    vo.datum_actualisatie,
+    vo.bhv_aanwezig,
+    vo.inzetprocedure,
+    vo.risicoklasse,
+    vo.symbool,
+    vo.adres_id,
+    vo.hoofdobject_id,
+    vo.bouwlaag,
+    vo.gebruikstype,
+    vo.gebruikstype_specifiek,
+    vo.bijzonderheden,
+    vo.bijzonderheden2,
+    vo.prev_bijz_1,
+    vo.prev_bijz_2,
+    vo.prep_bijz_1,
+    vo.prep_bijz_2,
+    vo.repr_bijz_1,
+    vo.repr_bijz_2,
+    a."Straatnaam" AS straatnaam,
+    a."Huisnummer" AS huisnummer,
+    a."Huisletter" AS huisletter,
+    a."Toevoeging" AS toevoeging,
+    a."Postcode" AS postcode,
+    a."Plaats" AS plaats,
+    ( SELECT "Object"."Gebouwconstructie"
+           FROM wfs."Object"
+          WHERE "Object"."DBK_ID" = vo.id
+         LIMIT 1) AS gebouwconstructie,
+        CASE
+            WHEN vo.hoofdobject_id IS NULL AND (( SELECT count(*) AS count
+               FROM viewer.viewer_object vov
+              WHERE vov.hoofdobject_id = vo.id)) = 0 THEN NULL::json
+            ELSE ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+               FROM ( SELECT vov.id,
+                        vov.bouwlaag,
+                        vov.formele_naam,
+                        vov.informele_naam,
+                        vov.hoofdobject_id IS NULL AS is_hoofdobject
+                       FROM viewer.viewer_object vov
+                      WHERE (vov.id = ANY (ARRAY[vo.id, vo.hoofdobject_id])) OR (vov.hoofdobject_id = ANY (ARRAY[vo.id, vo.hoofdobject_id]))
+                      ORDER BY vov.bouwlaag) r)
+        END AS verdiepingen,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT ap."TypeGroep" AS groep,
+                    ap."Aantal" AS aantal,
+                    ap."AantalNZR" AS aantal_nzr,
+                    ap."Begintijd" AS begintijd,
+                    ap."Eindtijd" AS eindtijd,
+                    ap.maandag,
+                    ap.dinsdag,
+                    ap.woensdag,
+                    ap.donderdag,
+                    ap.vrijdag,
+                    ap.zaterdag,
+                    ap.zondag
+                   FROM wfs."AantalPersonen" ap
+                  WHERE ap."DBK_ID" = vo.id) r) AS verblijf,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT "Bijzonderheid"."Soort" AS soort,
+                    "Bijzonderheid"."Tekst" AS tekst,
+                    "Bijzonderheid"."Tabblad" AS tabblad,
+                    "Bijzonderheid"."Seq" AS seq
+                   FROM wfs."Bijzonderheid"
+                  WHERE "Bijzonderheid"."DBK_ID" = vo.id
+                  ORDER BY "Bijzonderheid"."Seq") r) AS bijzonderhedenlijst,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT "Contact"."Functie" AS functie,
+                    "Contact"."Naam" AS naam,
+                    "Contact"."Telefoonnummer" AS telefoonnummer
+                   FROM wfs."Contact"
+                  WHERE "Contact"."DBK_ID" = vo.id) r) AS contacten,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT
+                        CASE
+                            WHEN "Foto"."Bestandstype"::text = 'Weblink'::text THEN ''::text
+                            ELSE "Foto"."DBK_ID" || '-'::text
+                        END || "Foto"."Documentnaam"::text AS filename,
+                    "Foto"."Bestandstype" AS type
+                   FROM wfs."Foto"
+                  WHERE "Foto"."DBK_ID" = vo.id
+                UNION
+                 SELECT "Brandweervoorziening"."Picturename" AS filename,
+                    'picture'::character varying AS type
+                   FROM wfs."Brandweervoorziening"
+                  WHERE "Brandweervoorziening"."Picturename"::text <> ''::text AND "Brandweervoorziening"."DBK_ID" = vo.id
+          ORDER BY 1) r) AS media,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT "AfwijkendeBinnendekking"."AlternatiefComm" AS alternatief,
+                    "AfwijkendeBinnendekking"."Dekking" AS dekking,
+                    "AfwijkendeBinnendekking"."Aanvullendeinformatie" AS aanvullende_informatie,
+                    st_astext("AfwijkendeBinnendekking".the_geom) AS location
+                   FROM wfs."AfwijkendeBinnendekking"
+                  WHERE "AfwijkendeBinnendekking"."DBK_ID" = vo.id) r) AS communication_coverage,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT "Brandweervoorziening"."Code" AS code,
+                    "Brandweervoorziening"."Rotatie" AS rotation,
+                    "Brandweervoorziening"."Omschrijving" AS omschrijving,
+                    "Brandweervoorziening"."Picturename" AS picture,
+                    st_astext("Brandweervoorziening".the_geom) AS location
+                   FROM wfs."Brandweervoorziening"
+                  WHERE "Brandweervoorziening"."DBK_ID" = vo.id) r) AS symbols,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT "Brandcompartiment"."Soort" AS style,
+                    "Brandcompartiment"."Omschrijving" AS omschrijving,
+                    "Brandcompartiment"."Label" AS label,
+                    st_astext("Brandcompartiment".the_geom) AS line
+                   FROM wfs."Brandcompartiment"
+                  WHERE "Brandcompartiment"."DBK_ID" = vo.id) r) AS fire_compartmentation,
+    ( SELECT st_astext(st_union("Gebied".the_geom)) AS st_astext
+           FROM wfs."Gebied"
+          WHERE "Gebied"."DBK_ID" = vo.id
+    ) AS select_area,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT "Custom_Polygon"."Soort" AS style,
+                    "Custom_Polygon"."Omschrijving" AS omschrijving,
+                    st_astext("Custom_Polygon".the_geom) AS polygon
+                   FROM wfs."Custom_Polygon"
+                     LEFT JOIN wfs.type_custom_polygon t ON t.code::text = "Custom_Polygon"."Soort"::text
+                  WHERE "Custom_Polygon"."DBK_ID" = vo.id
+                  ORDER BY t.sort_order) r) AS custom_polygons,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT "GevaarlijkeStof"."Omschrijving" AS omschrijving,
+                    "GevaarlijkeStof"."Symbol" AS symbol,
+                    "GevaarlijkeStof"."GEVIcode" AS gevi_code,
+                    "GevaarlijkeStof"."UNnr" AS un_nr,
+                    "GevaarlijkeStof"."Hoeveelheid" AS hoeveelheid,
+                    "GevaarlijkeStof"."NaamStof" AS naam_stof,
+                    st_astext("GevaarlijkeStof".the_geom) AS location
+                   FROM wfs."GevaarlijkeStof"
+                  WHERE "GevaarlijkeStof"."DBK_ID" = vo.id) r) AS danger_symbols,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT "Hulplijn"."Type" AS style,
+                    "Hulplijn"."Omschrijving" AS omschrijving,
+                    st_astext("Hulplijn".the_geom) AS line
+                   FROM wfs."Hulplijn"
+                  WHERE "Hulplijn"."DBK_ID" = vo.id) r) AS lines,
+    ( SELECT array_to_json(array_agg(st_astext("Polygon".the_geom))) AS array_to_json
+           FROM wfs."Polygon"
+          WHERE "Polygon"."DBK_ID" = vo.id) AS buildings,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT "TekstObject"."Tekst" AS text,
+                    "TekstObject"."Rotatie" AS rotation,
+                    "TekstObject"."LabelSize" AS size,
+                    st_astext("TekstObject".the_geom) AS location
+                   FROM wfs."TekstObject"
+                  WHERE "TekstObject"."DBK_ID" = vo.id) r) AS labels,
+    ( SELECT array_to_json(array_agg(row_to_json(r.*))) AS array_to_json
+           FROM ( SELECT "ToegangTerrein"."Primair" = 1 AS primair,
+                    "ToegangTerrein"."NaamRoute" AS naam,
+                    "ToegangTerrein"."Omschrijving" AS omschrijving,
+                    st_astext("ToegangTerrein".the_geom) AS line
+                   FROM wfs."ToegangTerrein"
+                  WHERE "ToegangTerrein"."DBK_ID" = vo.id) r) AS approach_routes
+   FROM viewer.viewer_object vo
+     LEFT JOIN wfs."Adres" a ON a."Adres_ID" = vo.adres_id;
+
+CREATE OR REPLACE VIEW viewer.viewer_object_map
+AS SELECT r.id,
+    r.oms_nummer,
+    r.formele_naam,
+    r.informele_naam,
+    r.symbool,
+    r.pand_centroid,
+    r.selectiekader,
+    r.selectiekader_centroid,
+    r.extent,
+    r.straatnaam,
+    r.huisnummer,
+    r.huisletter,
+    r.toevoeging,
+    r.postcode,
+    r.plaats
+   FROM ( SELECT vo.id,
+            vo.oms_nummer,
+            vo.formele_naam,
+            vo.informele_naam,
+            vo.symbool,
+            ( 	select st_astext(st_centroid(st_collect("Polygon".the_geom))) as st_astext
+                from wfs."Polygon"
+                where "Polygon"."DBK_ID" = vo.id
+            ) as pand_centroid,
+            ( 	select st_astext(st_extent("Gebied".the_geom))
+            	from wfs."Gebied"
+            	where "Gebied"."DBK_ID" = vo.id
+        	) as selectiekader,
+        	( 	select st_astext(st_centroid(st_collect("Gebied".the_geom))) as st_astext
+            	from wfs."Gebied"
+            	where "Gebied"."DBK_ID" = vo.id
+        	) as selectiekader_centroid,
+            --st_astext(selectiekader.the_geom) AS selectiekader,
+            --st_astext(st_centroid(selectiekader.the_geom)) AS selectiekader_centroid,
+            ( SELECT st_extent(e.the_geom)::character varying AS st_extent
+                   FROM ( SELECT "Gebied".the_geom
+                           FROM wfs."Gebied"
+                          WHERE "Gebied"."DBK_ID" = vo.id
+                        UNION ALL
+                         SELECT "Polygon".the_geom
+                           FROM wfs."Polygon"
+                          WHERE "Polygon"."DBK_ID" = vo.id
+                        UNION ALL
+                         SELECT "Brandweervoorziening".the_geom
+                           FROM wfs."Brandweervoorziening"
+                          WHERE "Brandweervoorziening"."DBK_ID" = vo.id
+                        UNION ALL
+                         SELECT "Custom_Polygon".the_geom
+                           FROM wfs."Custom_Polygon"
+                          WHERE "Custom_Polygon"."DBK_ID" = vo.id
+                        UNION ALL
+                         SELECT "Hulplijn".the_geom
+                           FROM wfs."Hulplijn"
+                          WHERE "Hulplijn"."DBK_ID" = vo.id
+                        UNION ALL
+                         SELECT "ToegangTerrein".the_geom
+                           FROM wfs."ToegangTerrein"
+                          WHERE "ToegangTerrein"."DBK_ID" = vo.id) e) AS extent,
+            a."Straatnaam" AS straatnaam,
+            a."Huisnummer" AS huisnummer,
+            a."Huisletter" AS huisletter,
+            a."Toevoeging" AS toevoeging,
+            a."Postcode" AS postcode,
+            a."Plaats" AS plaats
+           FROM viewer.viewer_object vo
+             LEFT JOIN wfs."Adres" a ON a."Adres_ID" = vo.adres_id
+             --LEFT JOIN wfs."Gebied" selectiekader ON selectiekader."DBK_ID" = vo.id
+             LEFT JOIN viewer.viewer_object_selectieadressen sa ON sa.id = vo.id
+          WHERE vo.hoofdobject_id IS NULL) r
+  WHERE COALESCE(r.pand_centroid, r.selectiekader_centroid) IS NOT NULL;
