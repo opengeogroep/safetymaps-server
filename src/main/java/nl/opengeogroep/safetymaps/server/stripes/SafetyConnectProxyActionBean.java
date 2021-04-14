@@ -185,8 +185,8 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 
             for(int i=0; i<content.length(); i++) {
                 JSONObject incident = (JSONObject)content.get(i);
-                JSONArray attachedVehicles;
                 
+                JSONArray attachedVehicles;
                 if (incident.has("BetrokkenEenheden")) {
                     attachedVehicles = (JSONArray)incident.get("BetrokkenEenheden");
                 } else {
@@ -194,8 +194,6 @@ public class SafetyConnectProxyActionBean implements ActionBean {
                 }
 
                 boolean incidentForUserVehicle = false;
-                boolean authorizedForIncident = true;
-
                 for(int v=0; v<attachedVehicles.length(); v++) {
                     JSONObject vehicle = (JSONObject)attachedVehicles.get(v);
                     if (userVehicleList.contains(vehicle.get("Roepnaam"))) {
@@ -203,15 +201,11 @@ public class SafetyConnectProxyActionBean implements ActionBean {
                     }
                 }
 
-                if(!incidentForUserVehicle && !eigenVoertuignummerAuthorized && incidentMonitorAuthorized && !incidentMonitorKladblokAuthorized) {
+                if(!incidentForUserVehicle && !eigenVoertuignummerAuthorized && !incidentMonitorKladblokAuthorized) {
                     incident.put("Kladblokregels", new JSONArray());
                 }
 
-                if(!incidentForUserVehicle && !eigenVoertuignummerAuthorized && !incidentMonitorAuthorized) {
-                    authorizedForIncident = false;
-                }
-
-                if(authorizedForIncident) {
+                if(incidentForUserVehicle || eigenVoertuignummerAuthorized || incidentMonitorAuthorized) {
                     authorizedContent.put(incident);
                 }
             }
