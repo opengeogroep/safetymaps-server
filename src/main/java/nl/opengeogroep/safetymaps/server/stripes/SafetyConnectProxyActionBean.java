@@ -87,75 +87,74 @@ public class SafetyConnectProxyActionBean implements ActionBean {
             return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Geen toegangsgegevens voor webservice geconfigureerd door beheerder");
         }
 
-        try(Connection c = DB.getConnection()) {
-            String qs = context.getRequest().getQueryString();
-            final HttpUriRequest req = RequestBuilder.get()
-                    .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
-                    .addHeader("Authorization", authorization)
-                    .build();
+        String qs = context.getRequest().getQueryString();
+        final HttpUriRequest req = RequestBuilder.get()
+                .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
+                .addHeader("Authorization", authorization)
+                .build();
 
-            try(CloseableHttpClient client = HttpClients.createDefault()) {
-                final MutableObject<String> contentType = new MutableObject<>("text/plain");
-                final String responseContent = client.execute(req, new ResponseHandler<String>() {
-                    @Override
-                    public String handleResponse(HttpResponse hr) {
-                        log.debug("proxy for user " + context.getRequest().getRemoteUser() + " URL " + req.getURI() + ", response: " + hr.getStatusLine().getStatusCode() + " " + hr.getStatusLine().getReasonPhrase());
-                        contentType.setValue(hr.getEntity().getContentType().getValue());
-                        try {
-                            return IOUtils.toString(hr.getEntity().getContent(), "UTF-8");
-                        } catch(IOException e) {
-                            log.error("Exception reading HTTP content", e);
-                            return "Exception " + e.getClass() + ": " + e.getMessage();
-                        }
+        try(CloseableHttpClient client = HttpClients.createDefault()) {
+            final MutableObject<String> contentType = new MutableObject<>("text/plain");
+            final String responseContent = client.execute(req, new ResponseHandler<String>() {
+                @Override
+                public String handleResponse(HttpResponse hr) {
+                    log.debug("proxy for user " + context.getRequest().getRemoteUser() + " URL " + req.getURI() + ", response: " + hr.getStatusLine().getStatusCode() + " " + hr.getStatusLine().getReasonPhrase());
+                    contentType.setValue(hr.getEntity().getContentType().getValue());
+                    try {
+                        return IOUtils.toString(hr.getEntity().getContent(), "UTF-8");
+                    } catch(IOException e) {
+                        log.error("Exception reading HTTP content", e);
+                        return "Exception " + e.getClass() + ": " + e.getMessage();
                     }
-                });
-                
-                final String content;
-                // Data that could lead to an person needs to be authorized or filtered. 
-                // This includes incident data and eenheidlocatie data.
-                if (keepResponseContentUnmodified()) {
-                    content = responseContent;
-                } else if (responseContentIs(INCIDENT_RESPONSE)) {
-                    content = applyAuthorizationToIncidentContent(responseContent, c);
-                } else if (responseContentIs(EENHEIDLOCATIE_RESPONSE)) {
-                    content = applyFilterToEenheidLocatieContent(responseContent);
-                } else {
-                    return unAuthorizedResolution();
                 }
-
-                return new Resolution() {
-                    @Override
-                    public void execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
-                        String encoding = "UTF-8";
-
-                        response.setCharacterEncoding(encoding);
-                        response.setContentType(contentType.getValue());
-
-                        OutputStream out;
-                        String acceptEncoding = request.getHeader("Accept-Encoding");
-                        if(acceptEncoding != null && acceptEncoding.contains("gzip")) {
-                            response.setHeader("Content-Encoding", "gzip");
-                            out = new GZIPOutputStream(response.getOutputStream(), true);
-                        } else {
-                            out = response.getOutputStream();
-                        }
-                        IOUtils.copy(new StringReader(content), out, encoding);
-                        out.flush();
-                        out.close();
-                    }
-                };
-            } catch(IOException e) {
-                log.error("Failed to write output:", e);
-                return null;
+            });
+            
+            final String content;
+            // Data that could lead to an person needs to be authorized or filtered. 
+            // This includes incident data and eenheidlocatie data.
+            if (keepResponseContentUnmodified()) {
+                content = responseContent;
+            } else if (responseContentIs(INCIDENT_RESPONSE)) {
+                content = applyAuthorizationToIncidentContent(responseContent);
+            } else if (responseContentIs(EENHEIDLOCATIE_RESPONSE)) {
+                content = applyFilterToEenheidLocatieContent(responseContent);
+            } else {
+                return unAuthorizedResolution();
             }
 
-        } catch(Exception e) {
-            return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + url + "/" + path, e).toString());
+            return new Resolution() {
+                @Override
+                public void execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
+                    String encoding = "UTF-8";
+
+                    response.setCharacterEncoding(encoding);
+                    response.setContentType(contentType.getValue());
+
+                    OutputStream out;
+                    String acceptEncoding = request.getHeader("Accept-Encoding");
+                    if(acceptEncoding != null && acceptEncoding.contains("gzip")) {
+                        response.setHeader("Content-Encoding", "gzip");
+                        out = new GZIPOutputStream(response.getOutputStream(), true);
+                    } else {
+                        out = response.getOutputStream();
+                    }
+                    IOUtils.copy(new StringReader(content), out, encoding);
+                    out.flush();
+                    out.close();
+                }
+            };
+        } catch(IOException e) {
+            log.error("Failed to write output:", e);
+            return null;
         }
     }
 
     private Resolution unAuthorizedResolution() {
         return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot webservice");
+    }
+
+    private Resolution defaultErrorResolution() {
+        return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + path, e).toString());
     }
 
     private boolean keepResponseContentUnmodified() {
@@ -166,53 +165,57 @@ public class SafetyConnectProxyActionBean implements ActionBean {
         return path.toLowerCase().startsWith(pathPart);
     }
 
-    private String applyAuthorizationToIncidentContent(String contentFromResponse, Connection c) throws Exception {
-        HttpServletRequest request = context.getRequest();
+    private String applyAuthorizationToIncidentContent(String contentFromResponse) throws Exception {
+        try(Connection c = DB.getConnection()) {
+            HttpServletRequest request = context.getRequest();
 
-        boolean kladblokAlwaysAuthorized = "true".equals(Cfg.getSetting("kladblok_always_authorized", "false"));
-        boolean incidentMonitorKladblokAuthorized = kladblokAlwaysAuthorized || request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_KLADBLOK);
-        boolean eigenVoertuignummerAuthorized = request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_EIGEN_VOERTUIGNUMMER);
-        boolean incidentMonitorAuthorized = request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR);
-        
-        JSONArray content = new JSONArray(contentFromResponse);
-        JSONArray authorizedContent = new JSONArray();
-        JSONObject details = getUserDetails(request, c);
-        List<String> userVehicleList = Arrays.asList(details.optString("voertuignummer", "-").replaceAll("\\s", ",").split(","));
-
-        for(int i=0; i<content.length(); i++) {
-            JSONObject incident = (JSONObject)content.get(i);
-            JSONArray attachedVehicles;
+            boolean kladblokAlwaysAuthorized = "true".equals(Cfg.getSetting("kladblok_always_authorized", "false"));
+            boolean incidentMonitorKladblokAuthorized = kladblokAlwaysAuthorized || request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_KLADBLOK);
+            boolean eigenVoertuignummerAuthorized = request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_EIGEN_VOERTUIGNUMMER);
+            boolean incidentMonitorAuthorized = request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR);
             
-            if (incident.has("BetrokkenEenheden")) {
-                attachedVehicles = (JSONArray)incident.get("BetrokkenEenheden");
-            } else {
-                attachedVehicles = new JSONArray();
-            }
+            JSONArray content = new JSONArray(contentFromResponse);
+            JSONArray authorizedContent = new JSONArray();
+            JSONObject details = getUserDetails(request, c);
+            List<String> userVehicleList = Arrays.asList(details.optString("voertuignummer", "-").replaceAll("\\s", ",").split(","));
 
-            boolean incidentForUserVehicle = false;
-            boolean authorizedForIncident = true;
+            for(int i=0; i<content.length(); i++) {
+                JSONObject incident = (JSONObject)content.get(i);
+                JSONArray attachedVehicles;
+                
+                if (incident.has("BetrokkenEenheden")) {
+                    attachedVehicles = (JSONArray)incident.get("BetrokkenEenheden");
+                } else {
+                    attachedVehicles = new JSONArray();
+                }
 
-            for(int v=0; v<attachedVehicles.length(); v++) {
-                JSONObject vehicle = (JSONObject)attachedVehicles.get(v);
-                if (userVehicleList.contains(vehicle.get("Roepnaam"))) {
-                    incidentForUserVehicle = true;
+                boolean incidentForUserVehicle = false;
+                boolean authorizedForIncident = true;
+
+                for(int v=0; v<attachedVehicles.length(); v++) {
+                    JSONObject vehicle = (JSONObject)attachedVehicles.get(v);
+                    if (userVehicleList.contains(vehicle.get("Roepnaam"))) {
+                        incidentForUserVehicle = true;
+                    }
+                }
+
+                if(!incidentForUserVehicle && !eigenVoertuignummerAuthorized && incidentMonitorAuthorized && !incidentMonitorKladblokAuthorized) {
+                    incident.put("Kladblokregels", new JSONArray());
+                }
+
+                if(!incidentForUserVehicle && !eigenVoertuignummerAuthorized && !incidentMonitorAuthorized) {
+                    authorizedForIncident = false;
+                }
+
+                if(authorizedForIncident) {
+                    authorizedContent.put(incident);
                 }
             }
 
-            if(!incidentForUserVehicle && !eigenVoertuignummerAuthorized && incidentMonitorAuthorized && !incidentMonitorKladblokAuthorized) {
-                incident.put("Kladblokregels", new JSONArray());
-            }
-
-            if(!incidentForUserVehicle && !eigenVoertuignummerAuthorized && !incidentMonitorAuthorized) {
-                authorizedForIncident = false;
-            }
-
-            if(authorizedForIncident) {
-                authorizedContent.put(incident);
-            }
+            return authorizedContent.toString();
+        } catch(Exception e) {
+            return defaultErrorResolution();
         }
-
-        return authorizedContent.toString();
     }
 
     // Applies filter to /eenheidLocatie to filter out locations for vehicles not attached to an incident
