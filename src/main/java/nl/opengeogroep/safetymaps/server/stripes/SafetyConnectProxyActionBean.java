@@ -51,6 +51,10 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 
     static final String ROLE = "safetyconnect_webservice";
 
+    static final String[] UNMODIFIED_REPSONSES = { "eenheid/", "eenheidstatus/" };
+    static final String INCIDENT_RESPONSE = "incident";
+    static final String EENHEIDLOCATIE_RESPONSE = "eenheidlocatie";
+
     private String path;
 
     @Override
@@ -73,7 +77,7 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 
     public Resolution proxy() throws Exception {
         if(!context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN)) {
-            return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot webservice");
+            return unAuthorizedResolution();
         }
 
         String authorization = Cfg.getSetting("safetyconnect_webservice_authorization");
@@ -107,14 +111,16 @@ public class SafetyConnectProxyActionBean implements ActionBean {
                 });
                 
                 final String content;
-                if (path.toLowerCase().startsWith("incident") && qs != null && qs.length() > 0) {
+                // Data that could lead to an person needs to be authorized or filtered. 
+                // This includes incident data and eenheidlocatie data.
+                if (keepResponseContentUnmodified()) {
+                    content = responseContent;
+                } else if (responseContentIs(INCIDENT_RESPONSE)) {
                     content = applyAuthorizationToIncidentContent(responseContent, c);
-                } else if (path.toLowerCase().startsWith("incident") && (qs == null || qs.length() == 0)) {
-                    throw new Exception("Incident request incomplete.");
-                } else if(path.toLowerCase().startsWith("eenheidlocatie")) {
+                } else if (responseContentIs(EENHEIDLOCATIE_RESPONSE)) {
                     content = applyFilterToEenheidLocatieContent(responseContent);
                 } else {
-                    content = responseContent;
+                    return unAuthorizedResolution();
                 }
 
                 return new Resolution() {
@@ -146,6 +152,18 @@ public class SafetyConnectProxyActionBean implements ActionBean {
         } catch(Exception e) {
             return new StreamingResolution("application/json", logExceptionAndReturnJSONObject(log, "Error on " + url + "/" + path, e).toString());
         }
+    }
+
+    private Resolution unAuthorizedResolution() {
+        return new ErrorMessageResolution(HttpServletResponse.SC_FORBIDDEN, "Gebruiker heeft geen toegang tot webservice");
+    }
+
+    private boolean keepResponseContentUnmodified() {
+        return Arrays.stream(UNMODIFIED_REPSONSES).anyMatch((path.toLowerCase())::contains);
+    }
+
+    private boolean responseContentIs(String pathPart) {
+        return path.toLowerCase().startsWith(pathPart);
     }
 
     private String applyAuthorizationToIncidentContent(String contentFromResponse, Connection c) throws Exception {
@@ -204,7 +222,7 @@ public class SafetyConnectProxyActionBean implements ActionBean {
         JSONArray authorizedFeatures = new JSONArray();
 
         for(int i=0; i<features.length(); i++) {
-            JSONObject featuore = (JSONObject)features.get(i);
+            JSONObject feature = (JSONObject)features.get(i);
             JSONObject props = (JSONObject)feature.get("properties");
             Integer incidentnr = (Integer)props.get("incidentNummer");
 
