@@ -151,8 +151,8 @@ public class SafetyConnectProxyActionBean implements ActionBean {
     private String applyAuthorizationToIncidentContent(String contentFromResponse, Connection c) throws Exception {
         HttpServletRequest request = context.getRequest();
 
-        boolean kladbklokAlwaysAuthorized = "true".equals(Cfg.getSetting("kladblok_always_authorized", "false"));
-        boolean incidentMonitorKladblokAuthorized = kladbklokAlwaysAuthorized || request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_KLADBLOK);
+        boolean kladblokAlwaysAuthorized = "true".equals(Cfg.getSetting("kladblok_always_authorized", "false"));
+        boolean incidentMonitorKladblokAuthorized = kladblokAlwaysAuthorized || request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_KLADBLOK);
         boolean eigenVoertuignummerAuthorized = request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_EIGEN_VOERTUIGNUMMER);
         boolean incidentMonitorAuthorized = request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR);
         
