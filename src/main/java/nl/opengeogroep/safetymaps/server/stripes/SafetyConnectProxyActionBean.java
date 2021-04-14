@@ -92,7 +92,7 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 
             try(CloseableHttpClient client = HttpClients.createDefault()) {
                 final MutableObject<String> contentType = new MutableObject<>("text/plain");
-                final String content = client.execute(req, new ResponseHandler<String>() {
+                final String responseContent = client.execute(req, new ResponseHandler<String>() {
                     @Override
                     public String handleResponse(HttpResponse hr) {
                         log.debug("proxy for user " + context.getRequest().getRemoteUser() + " URL " + req.getURI() + ", response: " + hr.getStatusLine().getStatusCode() + " " + hr.getStatusLine().getReasonPhrase());
@@ -106,15 +106,15 @@ public class SafetyConnectProxyActionBean implements ActionBean {
                     }
                 });
                 
-                final String authorizedContent;
+                final String content;
                 if (path.toLowerCase().startsWith("incident") && qs != null && qs.length() > 0) {
-                    authorizedContent = applyAuthorizationToIncidentContent(content, c);
+                    content = applyAuthorizationToIncidentContent(responseContent, c);
                 } else if (path.toLowerCase().startsWith("incident") && (qs == null || qs.length() == 0)) {
                     throw new Exception("Incident request incomplete.");
                 } else if(path.toLowerCase().startsWith("eenheidlocatie")) {
-                    authorizedContent = applyAuthorizationToEenheidLocatieContent(content);
+                    content = applyFilterToEenheidLocatieContent(responseContent);
                 } else {
-                    authorizedContent = content;
+                    content = responseContent;
                 }
 
                 return new Resolution() {
@@ -133,7 +133,7 @@ public class SafetyConnectProxyActionBean implements ActionBean {
                         } else {
                             out = response.getOutputStream();
                         }
-                        IOUtils.copy(new StringReader(authorizedContent), out, encoding);
+                        IOUtils.copy(new StringReader(content), out, encoding);
                         out.flush();
                         out.close();
                     }
@@ -197,13 +197,14 @@ public class SafetyConnectProxyActionBean implements ActionBean {
         return authorizedContent.toString();
     }
 
-    private String applyAuthorizationToEenheidLocatieContent(String contentFromResponse) throws Exception {
+    // Applies filter to /eenheidLocatie to filter out locations for vehicles not attached to an incident
+    private String applyFilterToEenheidLocatieContent(String contentFromResponse) throws Exception {
         JSONObject content = new JSONObject(contentFromResponse);
         JSONArray features = (JSONArray)content.get("features");
         JSONArray authorizedFeatures = new JSONArray();
 
         for(int i=0; i<features.length(); i++) {
-            JSONObject feature = (JSONObject)features.get(i);
+            JSONObject featuore = (JSONObject)features.get(i);
             JSONObject props = (JSONObject)feature.get("properties");
             Integer incidentnr = (Integer)props.get("incidentNummer");
 
