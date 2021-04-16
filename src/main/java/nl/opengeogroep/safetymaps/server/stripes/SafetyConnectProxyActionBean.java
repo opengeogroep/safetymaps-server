@@ -51,7 +51,7 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 
     static final String ROLE = "safetyconnect_webservice";
 
-    static final String[] UNMODIFIED_REPSONSES = { "eenheid/", "eenheidstatus/" };
+    static final String[] UNMODIFIED_REPSONSES = { "eenheid", "eenheidstatus" };
     static final String INCIDENT_RESPONSE = "incident";
     static final String EENHEIDLOCATIE_RESPONSE = "eenheidlocatie";
 
@@ -110,14 +110,13 @@ public class SafetyConnectProxyActionBean implements ActionBean {
             });
             
             final String content;
-            // Data that could lead to an person needs to be authorized or filtered. 
-            // This includes incident data and eenheidlocatie data.
-            if (keepResponseContentUnmodified()) {
-                content = responseContent;
-            } else if (responseContentIs(INCIDENT_RESPONSE)) {
+            // Filter response from the webservice to remove any data that the user is not authorized for
+            if (responseContentIs(INCIDENT_RESPONSE)) {
                 content = applyAuthorizationToIncidentContent(responseContent);
             } else if (responseContentIs(EENHEIDLOCATIE_RESPONSE)) {
                 content = applyFilterToEenheidLocatieContent(responseContent);
+            } else if (keepResponseContentUnmodified()) {
+                content = responseContent;
             } else {
                 return unAuthorizedResolution();
             }
@@ -158,7 +157,7 @@ public class SafetyConnectProxyActionBean implements ActionBean {
     }
 
     private boolean keepResponseContentUnmodified() {
-        return Arrays.stream(UNMODIFIED_REPSONSES).anyMatch((path.toLowerCase())::contains);
+        return Arrays.stream(UNMODIFIED_REPSONSES).anyMatch((path.toLowerCase())::startsWith);
     }
 
     private boolean responseContentIs(String pathPart) {
