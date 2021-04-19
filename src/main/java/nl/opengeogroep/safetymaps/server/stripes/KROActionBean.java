@@ -301,10 +301,6 @@ public class KROActionBean implements ActionBean {
         return this.address.split("\\" + DEFAULT_DELIM, 6);
     }
 
-    private String normalizeString(String src) {
-        return Normalizer.normalize(src, Form.NFD).replaceAll("/[\u0300-\u036f]/g", "");
-    }
-
     private String[] splitObjectTypesPerAddress(String objectTypesDelimitedPerAddress) {
         return objectTypesDelimitedPerAddress.split("\\" + OBJECTTYPEPERADRESS_DELIM);
     }
