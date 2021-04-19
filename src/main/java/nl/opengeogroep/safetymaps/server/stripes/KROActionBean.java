@@ -6,6 +6,8 @@ import static nl.opengeogroep.safetymaps.server.db.JSONUtils.rowToJson;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 
 import java.sql.SQLException;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -215,9 +217,9 @@ public class KROActionBean implements ActionBean {
             };
         } else {
             String[] address = splitAddress();
-            sql += COLUMN_STRAAT + "=? and " + COLUMN_HUISNR + "=? and " + COLUMN_HUISLET + "=? and " + COLUMN_HUISTOEV + "=? and (" + COLUMN_PLAATS + "=? or " + COLUMN_PC + "=?)";
+            sql += COLUMN_HUISNR + "=? and " + COLUMN_HUISLET + "=? and " + COLUMN_HUISTOEV + "=? and (" + COLUMN_PC + "=? or (" + COLUMN_PLAATS + "=? and " + COLUMN_STRAAT + "=?))";
             qparams = new Object[] {
-                address[0], Integer.parseInt(address[1]), address[2], address[3], address[4], address[5]
+                Integer.parseInt(address[1]), address[2], address[3], address[5], address[4], address[0]
             };
         }
         List<Map<String, Object>> rows = qr.query(sql, new MapListHandler(), qparams);
@@ -296,7 +298,11 @@ public class KROActionBean implements ActionBean {
     }
 
     private String[] splitAddress() {
-        return this.address.split("\\" + DEFAULT_DELIM, 6);
+        return address = this.address.split("\\" + DEFAULT_DELIM, 6);
+    }
+
+    private String normalizeString(String src) {
+        return Normalizer.normalize(src, Form.NFD).replaceAll("/[\u0300-\u036f]/g", "");
     }
 
     private String[] splitObjectTypesPerAddress(String objectTypesDelimitedPerAddress) {
