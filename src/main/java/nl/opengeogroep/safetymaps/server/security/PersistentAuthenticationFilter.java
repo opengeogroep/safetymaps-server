@@ -45,6 +45,7 @@ public class PersistentAuthenticationFilter implements Filter {
     private static final String DEFAULT_LOGIN_SOURCE = "SafetyMaps";
 
     private static final String SESSION_PRINCIPAL = PersistentAuthenticationFilter.class.getName() + ".PRINCIPAL";
+    private static final String SESSION_PROCESSED = PersistentAuthenticationFilter.class.getName() + ".PROCESSED";
     
     private static final int EXPIRY_DEFAULT_UNIT = Calendar.YEAR;
     private static final int EXPIRY_DEFAULT = 10;
@@ -53,11 +54,13 @@ public class PersistentAuthenticationFilter implements Filter {
     private static final String PARAM_PERSISTENT_LOGIN_PATH_PREFIX = "persistentLoginPathPrefix";
     private static final String PARAM_LOGOUT_URL = "logoutUrl";
     private static final String PARAM_ROLES_AS_DB_USERNAMES = "rolesAsDbUsernames";
+    private static final String PARAM_NO_SAMESITE = "noSameSite";
 
     private String persistentLoginPrefix;
     private String[] rolesAsDbUsernames;
     private boolean enabled;
     private String logoutUrl;
+    private boolean noSameSite;
 
     /**
      * Get a filter init-parameter which can be overridden by a context parameter
@@ -83,6 +86,7 @@ public class PersistentAuthenticationFilter implements Filter {
         this.persistentLoginPrefix = ObjectUtils.firstNonNull(getInitParameter(PARAM_PERSISTENT_LOGIN_PATH_PREFIX), "/");
         this.rolesAsDbUsernames =  ObjectUtils.firstNonNull(getInitParameter(PARAM_ROLES_AS_DB_USERNAMES), "").split(",");
         this.logoutUrl = ObjectUtils.firstNonNull(getInitParameter(PARAM_LOGOUT_URL), "/logout.jsp");
+        this.noSameSite = "true".equals(getInitParameter(PARAM_NO_SAMESITE));
 
         UpdatableLoginSessionFilter.monitorSessionInvalidation(new SessionInvalidateMonitor() {
             @Override
@@ -178,11 +182,18 @@ public class PersistentAuthenticationFilter implements Filter {
 
             // If valid persistent session already set, do nothing
             if(persistentSession != null) {
-                log.trace(request.getRequestURI() + ": Request external authenticated for user " + principal.getName() + ", persistent session verified, path: " + request.getRequestURI());
+                log.trace(request.getRequestURI() + ": Request externally authenticated for user " + principal.getName() + ", persistent session verified, path: " + request.getRequestURI());
 
                 chain.doFilter(servletRequest, servletResponse);
                 return;
             } else {
+                // Do this branch only once per session. When using http://localhost/ for testing, the SameSite=None
+                // cookie will not be accepted (not HTTPS) so do not recreate it everytime
+                if(Boolean.TRUE.equals(session.getAttribute(SESSION_PROCESSED))) {
+                    chain.doFilter(request, response);
+                    return;
+                }
+                session.setAttribute(SESSION_PROCESSED, true);
 
                 // Create new persistent session, if the user exists in the database.
 
@@ -195,7 +206,7 @@ public class PersistentAuthenticationFilter implements Filter {
 
                 for(String role: rolesAsDbUsernames) {
                     if(request.isUserInRole(role)) {
-                        log.trace(request.getRequestURI() + ": Request external authenticated and in role " + role + " which will be used as username to get persistent session settings");
+                        log.trace(request.getRequestURI() + ": Request externally authenticated and in role " + role + " which will be used as username to get persistent session settings");
                         dbUsername = role;
                         break;
                     }
@@ -254,7 +265,7 @@ public class PersistentAuthenticationFilter implements Filter {
                 cookie.setSecure(request.getScheme().equals("https"));
                 cookie.setMaxAge((int)((c.getTimeInMillis() - System.currentTimeMillis()) / 1000));
                 log.info(request.getRequestURI() + ": Request externally authenticated for user " + principal.getName() + ", setting persistent login cookie " + obfuscateSessionId(id));
-                addCookieWithSameSite(response, cookie, "None");
+                addCookieWithSameSite(response, cookie, this.noSameSite ? null : "None");
             }
         }
 
