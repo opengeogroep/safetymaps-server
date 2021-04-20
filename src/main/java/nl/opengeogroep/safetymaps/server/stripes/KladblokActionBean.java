@@ -97,7 +97,7 @@ public class KladblokActionBean implements ActionBean {
         }
 
         try {
-            List<Map<String,Object>> results = DB.qr().query("select to_char(dtg, 'YYYY-MM-DD HH24:MI:SS') as DTG, '(' || username || ') ' || inhoud as Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
+            List<Map<String,Object>> results = DB.qr().query("select to_char(dtg, 'YYYY-MM-DD HH24:MI:SS') as DTG, '(' || COALESCE(vehicle, username) || ') ' || inhoud as Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
 
             for (Map<String, Object> resultRow : results) {
                 response.put(rowToJson(resultRow, false, false));
@@ -118,18 +118,15 @@ public class KladblokActionBean implements ActionBean {
 
         if(row.length() > 0 && row.length() <= 500) {
             String username = getContext().getRequest().getRemoteUser();
+            String user = username.split("@")[0];
+            int length = user.length() > 10 ? 10 : user.length() - 1;
 
-            if (vehicle != null && vehicle.length() > 0) {
-                username = vehicle;
-            } else {
-                String user = username.split("@")[0];
-                int length = user.length() > 10 ? 10 : user.length() - 1;
-                username = user.substring(0, length);
-            }
+            username = user.substring(0, length);
 
             try {
-                DB.qr().insert("insert into safetymaps.kladblok (incident, dtg, inhoud, username) values (?,?,?,?)", new MapListHandler(), 
-                        incident, new java.sql.Timestamp(System.currentTimeMillis()), row, username);
+                DB.qr().insert("insert into safetymaps.kladblok (incident, dtg, inhoud, username, vehicle) values (?,?,?,?,?)", new MapListHandler(), 
+                    incident, new java.sql.Timestamp(System.currentTimeMillis()), row, username, vehicle);
+
                 return new ErrorMessageResolution(200, "");
             } catch(Exception e) {
                 return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getClass() + ": " + e.getMessage());
