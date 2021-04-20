@@ -51,9 +51,13 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 
     static final String ROLE = "safetyconnect_webservice";
 
-    static final String[] UNMODIFIED_REPSONSES = { "eenheid", "eenheidstatus" };
-    static final String INCIDENT_RESPONSE = "incident";
-    static final String EENHEIDLOCATIE_RESPONSE = "eenheidlocatie";
+    static final String INCIDENT_REQUEST = "incident";
+    static final String EENHEIDLOCATIE_REQUEST = "eenheidlocatie";
+    static final String KLADBLOKREGEL_REQUEST = "kladblokregel";
+    static final String EENHEID_REQUEST = "eenheid";
+    static final String EENHEIDSTATUS_REQUEST = "eenheidstatus";
+    static final String[] UNMODIFIED_REQUESTS = { EENHEID_REQUEST, EENHEIDSTATUS_REQUEST };
+    static final String[] POST_REQUESTS = { KLADBLOKREGEL_REQUEST };
 
     private String path;
 
@@ -111,11 +115,11 @@ public class SafetyConnectProxyActionBean implements ActionBean {
             
             final String content;
             // Filter response from the webservice to remove any data that the user is not authorized for
-            if (responseContentIs(INCIDENT_RESPONSE)) {
+            if (requestIs(INCIDENT_REQUEST)) {
                 content = applyAuthorizationToIncidentContent(responseContent);
-            } else if (responseContentIs(EENHEIDLOCATIE_RESPONSE)) {
+            } else if (requestIs(EENHEIDLOCATIE_REQUEST)) {
                 content = applyFilterToEenheidLocatieContent(responseContent);
-            } else if (keepResponseContentUnmodified()) {
+            } else if (keepRequestUnmodified()) {
                 content = responseContent;
             } else {
                 return unAuthorizedResolution();
@@ -156,11 +160,11 @@ public class SafetyConnectProxyActionBean implements ActionBean {
         return "Error on " + path;
     }
 
-    private boolean keepResponseContentUnmodified() {
-        return Arrays.stream(UNMODIFIED_REPSONSES).anyMatch((path.toLowerCase())::startsWith);
+    private boolean keepRequestUnmodified() {
+        return Arrays.stream(UNMODIFIED_REQUESTS).anyMatch((path.toLowerCase())::startsWith);
     }
 
-    private boolean responseContentIs(String pathPart) {
+    private boolean requestIs(String pathPart) {
         return path.toLowerCase().startsWith(pathPart);
     }
 
