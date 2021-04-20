@@ -34,6 +34,7 @@ import org.json.JSONObject;
 
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_KLADBLOK;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_EDITOR_GMS;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_EIGEN_VOERTUIGNUMMER;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR;
 import static nl.opengeogroep.safetymaps.server.db.DB.getUserDetails;
@@ -57,7 +58,6 @@ public class SafetyConnectProxyActionBean implements ActionBean {
     static final String EENHEID_REQUEST = "eenheid";
     static final String EENHEIDSTATUS_REQUEST = "eenheidstatus";
     static final String[] UNMODIFIED_REQUESTS = { EENHEID_REQUEST, EENHEIDSTATUS_REQUEST };
-    static final String[] POST_REQUESTS = { KLADBLOKREGEL_REQUEST };
 
     private String path;
 
@@ -81,6 +81,10 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 
     public Resolution proxy() throws Exception {
         if(!context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN)) {
+            return unAuthorizedResolution();
+        }
+
+        if (requestIs(KLADBLOKREGEL_REQUEST) && !context.getRequest().isUserInRole(ROLE_KLADBLOKCHAT_EDITOR_GMS)) {
             return unAuthorizedResolution();
         }
 
@@ -119,6 +123,8 @@ public class SafetyConnectProxyActionBean implements ActionBean {
                 content = applyAuthorizationToIncidentContent(responseContent);
             } else if (requestIs(EENHEIDLOCATIE_REQUEST)) {
                 content = applyFilterToEenheidLocatieContent(responseContent);
+            } else if (requestIs(KLADBLOKREGEL_REQUEST)) {
+                content = responseContent;
             } else if (keepRequestUnmodified()) {
                 content = responseContent;
             } else {
