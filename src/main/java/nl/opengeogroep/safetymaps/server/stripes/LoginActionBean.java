@@ -25,7 +25,7 @@ public class LoginActionBean implements ActionBean {
     }
 
     public Resolution redirect() {
-        String returnTo = request.getParameter("returnTo");
+        String returnTo = context.getRequest().getParameter("returnTo");
 
         if (returnTo == null || returnTo.length() == 0) {
             returnTo = "/viewer/";
