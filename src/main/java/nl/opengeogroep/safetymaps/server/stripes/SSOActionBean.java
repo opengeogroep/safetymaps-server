@@ -42,7 +42,7 @@ public class SSOActionBean implements ActionBean {
         }
 
         String returnTo = context.getRequest().getParameter("returnTo");
-        if (returnTo == null || returnTo.length() == 0) {
+        if (returnTo == null) {
             returnTo = "/viewer/";
         }
 
