@@ -41,7 +41,8 @@ public class SSOActionBean implements ActionBean {
         } catch(Exception e) {
         }
 
-        String url = "/viewer/api/login";
+        String returnTo = request.getParameter("returnTo");
+        String url = "/viewer/api/login?returnTo=" + returnTo;
 
         // Check if SSO is configured/enabled
         if(ssoPassiveUrl != null) {
