@@ -228,8 +228,18 @@ public class KROActionBean implements ActionBean {
 
     private List<Map<String, Object>> getObjectTypesOrderedPerScoreFromDb() throws NamingException, SQLException {
         QueryRunner qr = DB.kroQr();
-        return qr.query("select " + COLUMN_TYPECODE + ", " + COLUMN_TYPEDESCRIPTION + " from " + TABLE_OBJECTTYPES +  
-            " order by " + COLUMN_TYPESCORE + " desc, " + COLUMN_TYPEDESCRIPTION + " asc", new MapListHandler());
+        return qr.query("select code, omschrijving_aangepast, risico_score from oovkro.objecttypering_type ot " +
+            "union select 'woonfunctie' as code, 'woonfunctie' as omschrijving_aangepast, -1 as risico_score " +
+            "union select 'bijeenkomstfunctie' as code, 'bijeenkomstfunctie' as omschrijving_aangepast, -1 as risico_score " +
+            "union select 'celfunctie' as code, 'celfunctie' as omschrijving_aangepast, -1 as risico_score " +
+            "union select 'gezondheidsfunctie' as code, 'gezondheidsfunctie' as omschrijving_aangepast, -1 as risico_score " +
+            "union select 'industriefunctie' as code, 'industriefunctie' as omschrijving_aangepast, -1 as risico_score " +
+            "union select 'kantoorfunctie' as code, 'kantoorfunctie' as omschrijving_aangepast, -1 as risico_score " +
+            "union select 'logiesfunctie' as code, 'logiesfunctie' as omschrijving_aangepast, -1 as risico_score " +
+            "union select 'onderwijsfunctie' as code, 'onderwijsfunctie' as omschrijving_aangepast, -1 as risico_score " +
+            "union select 'sportfunctie' as code, 'sportfunctie' as omschrijving_aangepast, -1 as risico_score " +
+            "union select 'winkelfunctie' as code, 'winkelfunctie' as omschrijving_aangepast, -1 as risico_score " +
+            "order by risico_score desc, omschrijving_aangepast asc;", new MapListHandler());
     }
 
     private List<String> getAndCountObjectTypesOrderedByScore(String objectTypesDelimited, Boolean showCount) throws Exception {
