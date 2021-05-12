@@ -226,17 +226,11 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
     private JSONArray findPrimaryWaterwinning(double x, double y, int srid, int distance, int count) throws Exception {
         List<Map<String,Object>> rows = DB.qr().query("select st_distance(b.geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(geom) as x, st_y(geom) as y, * "
                 + "from "
-                + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'Voordruk aanwezig: ' || coalesce(initcap(voordruk),'Niet bekend') || coalesce(', ' || bar || ' bar', '') as info from vrh.brandkranen_eigen_terrein where lower(\"type\") <> 'afsluiter omloopleiding' "
+                + " (select geom, 'brandkranen_eigen_terrein' as tabel, \"type\", 'Voordruk aanwezig: ' || coalesce(initcap(voordruk),'Niet bekend') || coalesce(', ' || bar || ' bar', '') as info from vrh_new.brandkranen_eigen_terrein where lower(\"type\") <> 'afsluiter omloopleiding' "
                 + "  union all "
-//                + "  select geom, 'brandkranen_dunea' as tabel, lower(producttyp) || case when lower(verbinding) = 'draadstuk' then ' schroef' else '' end as \"type\", '' as info from vrh.brandkranen_dunea "
-//                + "  union all "
-//                + "  select geom, 'brandkranen_evides' as tabel, case when id_brandkr = 'BB' then 'bovengronds' else 'ondergronds' end as \"type\", '' as info from vrh.brandkranen_evides "
-//                + "  union all "
-//                + "  select geom, 'brandkranen_oasen' as tabel, case when lower(ondergrnds) = 'nee' then 'bovengronds' else 'ondergronds' end as \"type\", '' as info from vrh.brandkranen_oasen "
-//                + "  union all "
                 + "  select geom, 'brandkranen_landelijk' as tabel, case when lower(ligging) = 'bovengronds' then 'bovengronds' else 'ondergronds' end as \"type\", 'Diameter: ' || diameter as info from vrh_new.brandkranen_landelijk "
                 + "  union all "
-                + "  select geom, 'geboorde_putten' as tabel, 'geboorde_put' as \"type\", overige_in as info from vrh.geboorde_putten) b "
+                + "  select geom, 'geboorde_putten' as tabel, 'geboorde_put' as \"type\", overige_in as info from vrh_new.geboorde_putten) b "
                 + "where st_distance(b.geom, st_setsrid(st_point(?, ?),?)) < ? "
                 + "order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, distance, count);
         
@@ -250,18 +244,6 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 if(!"geom".equals(key)) {
                     o.put(key, row.get(key));
                 }
-            }
-            if("brandkranen_dunea".equals(row.get("tabel"))) {
-                Integer diameter = DB.qr().query("select artikel_d2::integer from vrh.hoofdleidingen_dunea order by st_distance(geom, st_setsrid(st_point(?, ?),?)) limit 1", new ScalarHandler<Integer>(), row.get("x"), row.get("y"), srid);
-                log.info(String.format("Leiding voor Dunea brandkraan op %s, %s is %s", row.get("x"), row.get("y"), diameter));
-                int opbrengst = 500;
-                if(diameter > 90) {
-                    opbrengst = 1000;
-                }
-                if(diameter > 190) {
-                    opbrengst = 1500;
-                }
-                o.put("info", "&plusmn; " + opbrengst + " &#8467;/min");
             }
             if("brandkranen_landelijk".equals(row.get("tabel"))) {
                 String s = (String)row.get("info");
@@ -293,9 +275,9 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
         
         List<Map<String,Object>> rows = DB.qr().query("select st_distance(b.geom, st_setsrid(st_point(?, ?),?)) as distance, st_x(point) as x, st_y(point) as y, type, info "
                 + "from "
-                + " (select geom, st_closestpoint(geom, st_setsrid(st_point(?, ?), ?)) as point, 'open_water' as \"type\", '' as info from vrh.openwater_vlakken "
+                + " (select geom, st_closestpoint(geom, st_setsrid(st_point(?, ?), ?)) as point, 'open_water' as \"type\", '' as info from vrh_new.openwater_vlakken "
                 + "  union all "
-                + "  select geom, geom as point, 'bluswaterriool' as \"type\", overige_in as info from vrh.bluswaterriool) b "
+                + "  select geom, geom as point, 'bluswaterriool' as \"type\", overige_in as info from vrh_new.bluswaterriool) b "
                 + " where st_distance(b.geom, st_setsrid(st_point(?, ?), ?)) < ? "
                 + " order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, x, y, srid, distance, count);
 
