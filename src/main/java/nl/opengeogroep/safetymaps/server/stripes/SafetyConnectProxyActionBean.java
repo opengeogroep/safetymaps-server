@@ -36,6 +36,8 @@ import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_KLADBLOK;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_EIGEN_VOERTUIGNUMMER;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOK_AMBU;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOK_POL;
 import static nl.opengeogroep.safetymaps.server.db.DB.getUserDetails;
 import static nl.opengeogroep.safetymaps.server.db.JsonExceptionUtils.*;
 
@@ -170,6 +172,8 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 
         boolean kladblokAlwaysAuthorized = "true".equals(Cfg.getSetting("kladblok_always_authorized", "false"));
         boolean incidentMonitorKladblokAuthorized = kladblokAlwaysAuthorized || request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_KLADBLOK);
+        boolean kladblokAmbuAuthorized = request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOK_AMBU);
+        boolean kladblokPolAuthorized = request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOK_POL);
         boolean eigenVoertuignummerAuthorized = request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_EIGEN_VOERTUIGNUMMER);
         boolean incidentMonitorAuthorized = request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR);
 
@@ -198,6 +202,24 @@ public class SafetyConnectProxyActionBean implements ActionBean {
                     if (userVehicleList.contains(vehicle.get("Roepnaam"))) {
                         incidentForUserVehicle = true;
                     }
+                }
+
+                if(!kladblokAmbuAuthorized || !kladblokPolAuthorized) {
+                    JSONArray kladblokregels = (JSONArray)incident.get("Kladblokregels");
+                    JSONArray authorizedKladblokregels = new JSONArray();
+
+                    for(int v=0; v<kladblokregels.length(); v++) {
+                        JSONObject kladblokregel = (JSONObject)kladblokregels.get(v);
+                        String discipline = (String)kladblokregel.get("Discipline");
+                        if (discipline.indexOf("B") != -1 ||
+                            (discipline.indexOf("A") != -1 && kladblokAmbuAuthorized) || 
+                            (discipline.indexOf("P") != -1 && kladblokPolAuthorized)) {
+                            
+                            authorizedKladblokregels.put(kladblokregel);
+                        }
+                    }
+
+                    incident.put("Kladblokregels", authorizedKladblokregels);
                 }
 
                 if(!incidentForUserVehicle && !eigenVoertuignummerAuthorized && !incidentMonitorKladblokAuthorized) {

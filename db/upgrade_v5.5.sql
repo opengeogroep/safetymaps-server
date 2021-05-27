@@ -3,3 +3,9 @@ insert into role(role, protected, description) values
 
 insert into role(role, protected, description) values
 ('incidentmonitor_without_units', true, 'Benodigd voor het kunnen zien van SafetyConnect incidenten zonder eenheden');
+
+insert into role(role, protected, description) values
+('kladblok_ambu', true, 'Benodigd voor het kunnen zien van ambulance kladblokregels in IM en VV');
+
+insert into role(role, protected, description) values
+('kladblok_pol', true, 'Benodigd voor het kunnen zien van politie kladblokregels in IM en VV');

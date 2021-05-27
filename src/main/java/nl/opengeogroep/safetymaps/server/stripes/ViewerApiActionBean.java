@@ -33,6 +33,8 @@ import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_EDITOR;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_VIEWER;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_PRIO_4_5;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_WITHOUT_UNITS;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOK_AMBU;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOK_POL;
 import static nl.opengeogroep.safetymaps.server.db.DB.getUserDetails;
 import nl.opengeogroep.safetymaps.viewer.ViewerDataExporter;
 import org.apache.commons.dbutils.QueryRunner;
@@ -303,6 +305,9 @@ public class ViewerApiActionBean implements ActionBean {
 
             options.put("editKladblokChatAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR));
             options.put("showKladblokChatAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOKCHAT_VIEWER) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR));
+
+            options.put("kladblokAmbuAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOK_AMBU));
+            options.put("kladblokPolAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOK_POL));
 
             JSONObject details = getUserDetails(request, c);
             options.put("userVoertuignummer", details.optString("voertuignummer", null));

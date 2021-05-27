@@ -42,6 +42,8 @@ public class DB {
 
     public static final String ROLE_KLADBLOKCHAT_EDITOR = "kladblokchat_editor";
     public static final String ROLE_KLADBLOKCHAT_VIEWER = "kladblokchat_viewer";
+    public static final String ROLE_KLADBLOK_AMBU = "kladblok_ambu";
+    public static final String ROLE_KLADBLOK_POL = "kladblok_pol";
 
     public static final String USERNAME_LDAP = "LDAP";
 
