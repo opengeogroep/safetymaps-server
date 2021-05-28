@@ -3,11 +3,17 @@ package nl.opengeogroep.safetymaps.server.stripes;
 import java.io.IOException;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.sourceforge.stripes.action.*;
 import net.sourceforge.stripes.validation.*;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import nl.opengeogroep.safetymaps.twitter.Twitter;
+import nl.opengeogroep.safetymaps.twitter.TwitterIncidentSearchResult;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,9 +35,14 @@ import org.json.JSONObject;
 public class TwitterSearchActionBean implements ActionBean {
     private static final Log log = LogFactory.getLog("twitter");
 
+    private static final long DEFAULT_MAX_CACHE_AGE = 25;
+    private static final String CFG_MAX_CACHE_AGE = "twitter_max_cache_age_seconds";
+
     private static String bearerToken = null;
 
     private ActionBeanContext context;
+
+    private static final ConcurrentHashMap<Long, TwitterIncidentSearchResult> cache = new ConcurrentHashMap<>();
 
     @Validate(required=true)
     private long incidentId;
@@ -136,7 +147,24 @@ public class TwitterSearchActionBean implements ActionBean {
         return bearerToken;
     }
 
-    public Resolution search() {
+    private static void evictExpiredCache() throws Exception {
+        final long maxCacheAge = Long.parseLong(Cfg.getSetting(CFG_MAX_CACHE_AGE, DEFAULT_MAX_CACHE_AGE + ""));
+        final List<Long> keysToEvict = new ArrayList<>();
+        for(Map.Entry<Long,TwitterIncidentSearchResult> entry: cache.entrySet()) {
+            final long incidentId = entry.getKey();
+            final TwitterIncidentSearchResult cachedResult = entry.getValue();
+            final long cacheAgeSeconds = (System.currentTimeMillis() - cachedResult.getDate().getTime()) / 1000;
+            if (cacheAgeSeconds > maxCacheAge) {
+                log.debug(String.format("Evicting cached response for incident %d with age of %d seconds, older than max %d seconds", incidentId, cacheAgeSeconds, maxCacheAge));
+                keysToEvict.add(incidentId);
+            }
+        }
+        for(Long key: keysToEvict) {
+            cache.remove(key);
+        }
+    }
+
+    public Resolution search() throws Exception {
 
         context.getResponse().addHeader("Access-Control-Allow-Origin", "*");
         if(context.getRequest().getMethod().equals("HEAD")) {
@@ -144,8 +172,24 @@ public class TwitterSearchActionBean implements ActionBean {
         }
 
         JSONObject response = new JSONObject("{result:false}");
+        response.put("result", false);
+        response.put("cached", false);
 
-        log.info("Search request for incident " + incidentId + ", location=" + location + ", terms " + terms);
+        evictExpiredCache();
+        TwitterIncidentSearchResult cachedResult = cache.get(incidentId);
+
+        if (cachedResult != null) {
+            log.debug(String.format("Incident %d: sending cached response", incidentId));
+
+            response.put("cached", true);
+            response.put("cachedAt", cachedResult.getDate().getTime());
+            response.put("response", cachedResult.getResponse());
+            response.put("responseTerms", cachedResult.getResponseTerms());
+            response.put("result", true);
+            return new StreamingResolution("application/json", new StringReader(response.toString(4)));
+        }
+
+        log.debug("Search request for incident " + incidentId + ", location=" + location + ", terms " + terms);
 
         try {
             try(CloseableHttpClient client = Twitter.getClient()) {
@@ -228,6 +272,14 @@ public class TwitterSearchActionBean implements ActionBean {
                     if(res.has("errors")) {
                         log.error("Response for searching terms \"" + terms + "\" has errors: " + res.getJSONArray("errors").toString());
                     }
+
+                    log.debug(String.format("Incident %d: caching result", incidentId));
+                    cache.put(incidentId, new TwitterIncidentSearchResult(
+                            new Date(),
+                            this.context.getRequest().getParameterMap(),
+                            response.getJSONObject("response"),
+                            response.getJSONObject("responseTerms")
+                    ));
                 }
             } catch(Exception e) {
                 log.error("Error searching tweets for terms " + terms, e);
