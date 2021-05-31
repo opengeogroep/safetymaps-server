@@ -18,6 +18,7 @@ public class TwitterIncidentSearchResult {
         this.date = time;
         this.parameters = parameters;
         this.response = response;
+        this.responseTerms = responseTerms;
     }
 
     public Date getDate() {
