@@ -45,6 +45,7 @@ public class SSOActionBean implements ActionBean {
         if (returnTo == null) {
             returnTo = "/viewer/";
         }
+        returnTo = URLEncoder.encode(returnTo, "UTF-8");
 
         String url = "/viewer/api/login?returnTo=" + returnTo;
 
