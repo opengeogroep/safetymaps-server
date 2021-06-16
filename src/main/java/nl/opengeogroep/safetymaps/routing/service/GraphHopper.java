@@ -1,9 +1,5 @@
 package nl.opengeogroep.safetymaps.routing.service;
 
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import nl.opengeogroep.safetymaps.routing.RoutingException;
 import nl.opengeogroep.safetymaps.routing.RoutingRequest;
 import nl.opengeogroep.safetymaps.routing.RoutingResult;
@@ -12,7 +8,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpResponse;
-import static org.apache.http.HttpStatus.SC_OK;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -29,6 +24,14 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
+
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.util.function.Function;
+
+import static org.apache.http.HttpStatus.SC_OK;
 
 /**
  *
@@ -76,16 +79,20 @@ public class GraphHopper implements RoutingService {
             Point fromTransformed = (Point)JTS.transform(from, transform);
             Point toTransformed = (Point)JTS.transform(to, transform);
                     
-            log.info("Reprojected destination point to service CRS: " + toTransformed);
-            
+            log.debug("Reprojected destination point to service CRS: " + toTransformed + ", axis order: " + CRS.getAxisOrder(crs));
+
+            Function<Point,String> toLonLat = CRS.getAxisOrder(crs) == CRS.AxisOrder.EAST_NORTH
+                    ? p -> p.getX() + "," + p.getY()
+                    : p -> p.getY() + "," + p.getX();
+
             // TODO: maybe use https://github.com/graphhopper/directions-api-clients/tree/master/java
 
             try(CloseableHttpClient client = getClient()) {
                 HttpUriRequest get = RequestBuilder.get()
                         .setUri(URL)
                         .addHeader("Accept", "text/json; charset=utf-8, application/json")
-                        .addParameter("point", fromTransformed.getY() + "," + fromTransformed.getX())
-                        .addParameter("point", toTransformed.getY() + "," + toTransformed.getX())
+                        .addParameter("point", toLonLat.apply(fromTransformed))
+                        .addParameter("point", toLonLat.apply(toTransformed))
                         .addParameter("vehicle", profile)
                         .addParameter("weighting", "fastest")
                         .addParameter("locale", "nl")
@@ -94,7 +101,7 @@ public class GraphHopper implements RoutingService {
                         .addParameter("points_encoded", "false")
                         .build();
 
-                log.info("GET > " + get.getRequestLine());
+                log.debug(get.getRequestLine());
                 String response = client.execute(get, new ResponseHandler<String>() {
                     @Override
                     public String handleResponse(HttpResponse hr) {
@@ -105,7 +112,7 @@ public class GraphHopper implements RoutingService {
                         } catch(IOException e) {
                         }
                         if(hr.getStatusLine().getStatusCode() != SC_OK) {
-                            log.error("HTTP error: " + hr.getStatusLine() + ", " + entity);
+                            log.error("HTTP error: " + hr.getStatusLine() + " returned for request " + get.getRequestLine() + ", response " + entity);
                         }
                         log.trace("< entity: " + entity);
                         return entity;
@@ -113,9 +120,9 @@ public class GraphHopper implements RoutingService {
                 });
                 if(response != null) {
                     JSONObject res = new JSONObject(response);
-                    log.info("JSON response: " + res.toString(4));
-                    
+
                     if(res.has("message")) {
+                        log.error("JSON response has error message for request " + get.getRequestLine() + ": " + res.getString("message"));
                         result = new RoutingResult(false, "GraphHopper routing engine error: " + res.getString("message"), null);
                     } else {
                         result = new RoutingResult(true, res);
@@ -153,5 +160,4 @@ public class GraphHopper implements RoutingService {
             )
             .build();
     }
-    
 }
