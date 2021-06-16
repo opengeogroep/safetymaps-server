@@ -41,7 +41,13 @@ public class SSOActionBean implements ActionBean {
         } catch(Exception e) {
         }
 
-        String url = "/viewer/api/login";
+        String returnTo = context.getRequest().getParameter("returnTo");
+        if (returnTo == null) {
+            returnTo = "/viewer/";
+        }
+        returnTo = URLEncoder.encode(returnTo, "UTF-8");
+
+        String url = "/viewer/api/login?returnTo=" + returnTo;
 
         // Check if SSO is configured/enabled
         if(ssoPassiveUrl != null) {
@@ -68,7 +74,7 @@ public class SSOActionBean implements ActionBean {
                 url = ssoPassiveUrl;
 
                 HttpServletRequest request = getContext().getRequest();
-                String returnUrl = new URL(request.getScheme(), request.getServerName(), request.getContextPath() + "/auth/saml?returnTo=/viewer/").toString();
+                String returnUrl = new URL(request.getScheme(), request.getServerName(), request.getContextPath() + "/auth/saml?returnTo=" + returnTo).toString();
                 String returnUrlParam = URLEncoder.encode(returnUrl, "UTF-8");
                 url = url.replace("[returnUrl]", returnUrlParam);
             }

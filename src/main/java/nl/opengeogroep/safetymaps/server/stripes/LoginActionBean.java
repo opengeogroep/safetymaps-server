@@ -25,9 +25,14 @@ public class LoginActionBean implements ActionBean {
     }
 
     public Resolution redirect() {
+        String returnTo = context.getRequest().getParameter("returnTo");
+        if (returnTo == null) {
+            returnTo = "/viewer/";
+        }
+        
         return new StreamingResolution("text/html",
             "<html><head>" +
-                "<meta http-equiv=\"refresh\" content=\"0;url=" + context.getRequest().getContextPath() + "/viewer/\">" +
+                "<meta http-equiv=\"refresh\" content=\"0;url=" + context.getRequest().getContextPath() + returnTo + "\">" +
             "</head></html>"
         );
     }
