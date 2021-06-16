@@ -84,8 +84,8 @@ public class GraphHopper implements RoutingService {
                 HttpUriRequest get = RequestBuilder.get()
                         .setUri(URL)
                         .addHeader("Accept", "text/json; charset=utf-8, application/json")
-                        .addParameter("point", fromTransformed.getY() + "," + fromTransformed.getX())
-                        .addParameter("point", toTransformed.getY() + "," + toTransformed.getX())
+                        .addParameter("point", fromTransformed.getX() + "," + fromTransformed.getY()) // Reverse lon lat again otherwise it will fail in vrh prod
+                        .addParameter("point", toTransformed.getX() + "," + toTransformed.getY()) // Reverse lon lat again otherwise it will fail in vrh prod
                         .addParameter("vehicle", profile)
                         .addParameter("weighting", "fastest")
                         .addParameter("locale", "nl")
