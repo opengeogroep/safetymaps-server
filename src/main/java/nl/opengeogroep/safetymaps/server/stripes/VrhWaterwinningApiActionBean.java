@@ -234,7 +234,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 + "where st_distance(b.geom, st_setsrid(st_point(?, ?),?)) < ? "
                 + "order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, distance, count);
         
-        log.info("Waterwinning primary results " + getContext().getRequest().getRequestURI() + "?" + getContext().getRequest().getQueryString() + ": " + rows);
+        log.debug("Waterwinning primary results " + getContext().getRequest().getRequestURI() + "?" + getContext().getRequest().getQueryString() + ": " + rows);
 
         JSONArray a = new JSONArray();
         for(Map<String,Object> row: rows) {
@@ -281,7 +281,7 @@ public class VrhWaterwinningApiActionBean implements ActionBean {
                 + " where st_distance(b.geom, st_setsrid(st_point(?, ?), ?)) < ? "
                 + " order by 1 asc limit ?", new MapListHandler(), x, y, srid, x, y, srid, x, y, srid, distance, count);
 
-        log.info("Waterwinning secondary results " + getContext().getRequest().getRequestURI() + "?" + getContext().getRequest().getQueryString() + ": " + rows);
+        log.debug("Waterwinning secondary results " + getContext().getRequest().getRequestURI() + "?" + getContext().getRequest().getQueryString() + ": " + rows);
 
         JSONArray a = new JSONArray();
         for(Map<String,Object> row: rows) {

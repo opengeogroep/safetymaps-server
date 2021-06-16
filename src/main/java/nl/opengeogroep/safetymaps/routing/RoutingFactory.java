@@ -6,7 +6,6 @@
 package nl.opengeogroep.safetymaps.routing;
 
 import nl.opengeogroep.safetymaps.routing.service.GraphHopper;
-import nl.opengeogroep.safetymaps.routing.service.OpenRouteService;
 import nl.opengeogroep.safetymaps.server.db.Cfg;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,25 +19,12 @@ public class RoutingFactory {
 
     public static RoutingService getRoutingService() throws Exception {
         try {
-            String engine = Cfg.getSetting("routing_engine", "openrouteservice");
-
-            if("openrouteservice".equals(engine)) {
-                String apiKey = Cfg.getSetting("openrouteservice_apikey");
-                OpenRouteService service = new OpenRouteService(apiKey);
-                service.setProfile(Cfg.getSetting("openrouteservice_profile"));
-                service.setPreference(Cfg.getSetting("openrouteservice_preference"));
-                log.info("Using OpenRouteService engine for routing");
-                return service;
-            } else if("graphhopper".equals(engine)) {
-                String url = Cfg.getSetting("graphhopper_url");
-                GraphHopper service = new GraphHopper();
-                service.setProfile(Cfg.getSetting("graphhopper_profile"));
-                service.setURL(url);
-                log.info("Using GraphHopper engine for routing with URL " + url);
-                return service;
-            } else {
-                throw new IllegalArgumentException("Invalid routing engine configured: " + engine);
-            }
+            String url = Cfg.getSetting("graphhopper_url");
+            GraphHopper service = new GraphHopper();
+            service.setProfile(Cfg.getSetting("graphhopper_profile"));
+            service.setURL(url);
+            log.debug("Using GraphHopper engine for routing with URL " + url);
+            return service;
         } catch(Exception e) {
             throw new Exception("Error initializing routing engine: " + e.getMessage(), e);
         }
