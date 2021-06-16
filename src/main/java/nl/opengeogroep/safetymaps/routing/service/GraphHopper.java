@@ -26,9 +26,6 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.util.function.Function;
 
 import static org.apache.http.HttpStatus.SC_OK;
@@ -151,7 +148,7 @@ public class GraphHopper implements RoutingService {
         return distance;
     }
     
-    private static CloseableHttpClient getClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    private static CloseableHttpClient getClient() {
         return HttpClients.custom()
             .setDefaultRequestConfig(RequestConfig.custom()
                     .setConnectTimeout(5 * 1000)
