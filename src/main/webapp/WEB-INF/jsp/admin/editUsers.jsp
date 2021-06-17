@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
             <thead>
                 <tr>
                     <th>Gebruikersnaam</th>
+                    <th></th>
                     <th>Afkomstig uit</th>
                     <th>Aantal voertuigviewer sessies</th>
                     <th>Laatst ingelogd op</th>
@@ -41,7 +42,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <c:set var="editLink" value=""/>
                 </c:if>
                 <tr style="${editLink == '' ? '' : 'cursor: pointer'}" class="${actionBean.username == u.username ? 'info' : ''}" onclick="${editLink != '' ? 'window.location.href=\''.concat(editLink).concat('\'') : ''}">
-                    <td><c:out value="${u.username}"/></td>
+                    <td><c:out value="${u.username}"/> </td>
+                    <td>
+                        <c:choose>
+                            <c:when test="${u.secure_password == null}"></c:when>
+                            <c:when test="${u.secure_password}">
+                                <span style="color: green">Wachtwoord veilig opgeslagen</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span style="color: red" title="Het wachtwoord is met een onveilig hash-algoritme (SHA-1) opgeslagen. Wijzig het wachtwoord zodat deze veiliger wordt opgeslagen (PBKDF2WithHmacSHA512 met salt en 100.000 iteraties)">Wachtwoord update nodig!</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </td>
                     <td><c:out value="${u.login_source}"/></td>
                     <td><c:out value="${u.session_count}"/></td>
                     <td><c:out value="${u.last_login}"/></td>
