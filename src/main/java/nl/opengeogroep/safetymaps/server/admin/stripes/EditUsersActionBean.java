@@ -17,21 +17,23 @@
 
 package nl.opengeogroep.safetymaps.server.admin.stripes;
 
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-import javax.naming.NamingException;
-import net.sourceforge.stripes.action.*;
-import net.sourceforge.stripes.validation.*;
-import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_TABLE;
-import static nl.opengeogroep.safetymaps.server.db.DB.SESSION_TABLE;
-import static nl.opengeogroep.safetymaps.server.db.DB.USERNAME_LDAP;
-import static nl.opengeogroep.safetymaps.server.db.DB.USER_ADMIN;
-import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
-import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
-import static nl.opengeogroep.safetymaps.server.db.DB.qr;
+import net.sourceforge.stripes.action.ActionBean;
+import net.sourceforge.stripes.action.ActionBeanContext;
+import net.sourceforge.stripes.action.Before;
+import net.sourceforge.stripes.action.DefaultHandler;
+import net.sourceforge.stripes.action.DontValidate;
+import net.sourceforge.stripes.action.ForwardResolution;
+import net.sourceforge.stripes.action.RedirectResolution;
+import net.sourceforge.stripes.action.Resolution;
+import net.sourceforge.stripes.action.SimpleMessage;
+import net.sourceforge.stripes.action.StrictBinding;
+import net.sourceforge.stripes.action.UrlBinding;
+import net.sourceforge.stripes.validation.SimpleError;
+import net.sourceforge.stripes.validation.Validate;
+import net.sourceforge.stripes.validation.ValidationErrorHandler;
+import net.sourceforge.stripes.validation.ValidationErrors;
 import nl.opengeogroep.safetymaps.server.security.UpdatableLoginSessionFilter;
-import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.catalina.realm.SecretKeyCredentialHandler;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
@@ -39,6 +41,19 @@ import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
+
+import javax.naming.NamingException;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.SESSION_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.USERNAME_LDAP;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_ADMIN;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.USER_TABLE;
+import static nl.opengeogroep.safetymaps.server.db.DB.qr;
 
 /**
  *
@@ -155,10 +170,10 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
     private void loadInfo() throws NamingException, SQLException {
         allRoles = qr().query("select role from " + ROLE_TABLE + " order by protected desc, role", new ColumnListHandler<String>());
 
-        allUsers = qr().query("select 'userDatabase' as login_source, username, (select count(*) from " + SESSION_TABLE + " ps where ps.username = u.username) as session_count, (select max(created_at) from " + SESSION_TABLE + " ps where ps.username = u.username) as last_login\n" +
+        allUsers = qr().query("select 'userDatabase' as login_source, username, length(password) > 40 as secure_password, (select count(*) from " + SESSION_TABLE + " ps where ps.username = u.username) as session_count, (select max(created_at) from " + SESSION_TABLE + " ps where ps.username = u.username) as last_login\n" +
                 "from " + USER_TABLE + " u\n" +
                 "union\n" +
-                "select 'LDAP' as login_source, username, (select count(*) from " + SESSION_TABLE + " ps where ps.username = ps1.username) as session_count, (select max(created_at) from " + SESSION_TABLE + " ps where ps.username = ps1.username) as last_login\n" +
+                "select 'LDAP' as login_source, username, null as secure_password, (select count(*) from " + SESSION_TABLE + " ps where ps.username = ps1.username) as session_count, (select max(created_at) from " + SESSION_TABLE + " ps where ps.username = ps1.username) as last_login\n" +
                 "from " + SESSION_TABLE + " ps1\n" +
                 "where login_source = 'LDAP'\n" +
                 "order by username", new MapListHandler());
@@ -232,7 +247,15 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
                 return new RedirectResolution(this.getClass()).flash(this);
             }
         } else {
-            hashedPassword = DigestUtils.sha1Hex(password);
+            // We need to construct this Tomcat class ourselves, because we use a NestedCredentialHandler, see:
+            // https://stackoverflow.com/questions/64733766/how-to-get-tomcat-credentialhandler-inside-java-when-nested-in-lockoutrealm
+            SecretKeyCredentialHandler credentialHandler = new SecretKeyCredentialHandler();
+            credentialHandler.setAlgorithm("PBKDF2WithHmacSHA512");
+            credentialHandler.setIterations(100000);
+            credentialHandler.setKeyLength(256);
+            credentialHandler.setSaltLength(16);
+            hashedPassword = credentialHandler.mutate(password);
+
             if(!USER_ADMIN.equals(username)) {
                 UpdatableLoginSessionFilter.invalidateUserSessions(username);
             }

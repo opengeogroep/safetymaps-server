@@ -34,8 +34,24 @@
   <!-- Security configuration -->
   <!-- use LockOutRealm instead of CombinedRealm to prevent brute-forcing -->
   <Realm className="org.apache.catalina.realm.LockOutRealm">
-    <Realm allRolesMode="authOnly" className="org.apache.catalina.realm.DataSourceRealm" dataSourceName="jdbc/safetymaps-server" digest="SHA-1" roleNameCol="role" userCredCol="password" userNameCol="username" userRoleTable="safetymaps.user_roles" userTable="safetymaps.user_">
-      <CredentialHandler algorithm="SHA-1" className="org.apache.catalina.realm.MessageDigestCredentialHandler"/>
+    <Realm allRolesMode="authOnly" className="org.apache.catalina.realm.DataSourceRealm" dataSourceName="jdbc/safetymaps-server" roleNameCol="role" userCredCol="password" userNameCol="username" userRoleTable="safetymaps.user_roles" userTable="safetymaps.user_">
+      <CredentialHandler className="org.apache.catalina.realm.NestedCredentialHandler">
+        <!-- When these attributes are changed, also modify them in EditUsersActionBean!
+             To generate a password from the commandline, execute:
+             apache-tomcat/bin/digest.sh -a PBKDF2WithHmacSHA512 -i 100000 -s 16 -k 256 -h "org.apache.catalina.realm.SecretKeyCredentialHandler" mypassword
+        -->
+        <CredentialHandler className="org.apache.catalina.realm.SecretKeyCredentialHandler"
+                           algorithm="PBKDF2WithHmacSHA512"
+                           iterations="100000"
+                           keyLength="256"
+                           saltLength="16"
+        />
+        <CredentialHandler className="org.apache.catalina.realm.MessageDigestCredentialHandler"
+                           algorithm="SHA-1"
+                           iterations="1"
+                           saltLength="0"
+        />
+      </CredentialHandler>
     </Realm>
     <!-- Use JNDIRealm for authenticating against a LDAP server (such as
              Active Directory):
