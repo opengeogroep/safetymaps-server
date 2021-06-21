@@ -3,3 +3,5 @@ git.properties
 api
 *.tar.gz
 src/main/webapp/viewer
+/.idea/
+*.iml
