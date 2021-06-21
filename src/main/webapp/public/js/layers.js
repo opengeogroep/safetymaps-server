@@ -45,17 +45,13 @@ function findLayers() {
 }
 
 function layersInit() {
-    var url = $("input[name='layer.url']").val();
+    let url = $("input[name='layer.url']").val();
 
-    if (!url) {
-        return;
-    }
-
-    if(url.length > 0 && typeof convertStaticWmsUrl !== "undefined") {
+    if(url && url.length > 0 && typeof convertStaticWmsUrl !== "undefined") {
         url = convertStaticWmsUrl(url);
     }
 
-    var defaultOption = $("#select-mapfiles").val();
+    const defaultOption = $("#select-mapfiles").val();
 
     $.each(mapFiles, function(i, m) {
         $("<option/>").text(m.path).attr("selected", m.path === url).appendTo("#select-mapfiles");
@@ -74,7 +70,7 @@ function layersInit() {
 
     $("#select-layer").change(function() {
         if(this.value !== defaultLayersOption) {
-            var layersParam = $("input[name='layersParam']");
+            const layersParam = $("input[name='layersParam']");
             layersParam.val(layersParam.val() === "" ? this.value : layersParam.val() + "," + this.value);
         }
         $(this).val(defaultLayersOption);
