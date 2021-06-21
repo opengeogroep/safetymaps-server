@@ -123,7 +123,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <label class="col-sm-2 control-label">URL:</label>
                     <div class="col-sm-10">
                         <stripes:text id="input-url" class="form-control" name="layer.url" size="80" maxlength="255"/><br/>
-                        <c:if test="${actionBean.vrhObjectsEnabled}">
+                        <c:if test="${actionBean.vrhBridgeLayersEnabled}">
                             <select id="select-mapfiles" class="form-control">
                                 <option>Kies beschikbare service...</option>
                             </select>
@@ -131,7 +131,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         </c:if>
                     </div>
                 </div>
-                <c:if test="${!actionBean.vrhObjectsEnabled}">
+                <c:if test="${!actionBean.vrhBridgeLayersEnabled}">
                     <div class="form-group">
                     <label class="col-sm-2 control-label">Modus:</label>
                     <div class="col-sm-10">
@@ -145,7 +145,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <label class="col-sm-2 control-label">Lagen:</label>
                     <div class="col-sm-10">
                         <stripes:text name="layersParam" class="form-control" /><br/>
-                        <c:if test="${actionBean.vrhObjectsEnabled}">
+                        <c:if test="${actionBean.vrhBridgeLayersEnabled}">
                             <select id="select-layer" class="form-control">
                                 <option>Laag toevoegen...</option>
                             </select>
@@ -167,7 +167,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <div class="checkbox">
                             <label><stripes:checkbox name="hidefeatureinfo"/>Geen feature info weergeven</label>
                         </div>
-                        <c:if test="${actionBean.vrhObjectsEnabled}">
+                        <c:if test="${actionBean.vrhBridgeLayersEnabled}">
                             <div class="checkbox">
                                 <label><stripes:checkbox name="dpiConversionEnabled"/>ArcGIS naar MapServer DPI conversie</label>
                             </div>

@@ -111,6 +111,8 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
 
     private boolean vrhObjectsEnabled = false;
 
+    private boolean vrhBridgeLayersEnabled = false;
+
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
     @Override
     public ActionBeanContext getContext() {
@@ -249,6 +251,14 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     public void setVrhObjectsEnabled(boolean vrhObjectsEnabled) {
         this.vrhObjectsEnabled = vrhObjectsEnabled;
     }
+
+    public boolean isVrhBridgeLayersEnabled() {
+        return vrhBridgeLayersEnabled;
+    }
+
+    public void setVrhBridgeLayersEnabled(boolean vrhBridgeLayersEnabled) {
+        this.vrhBridgeLayersEnabled = vrhBridgeLayersEnabled;
+    }
     // </editor-fold>
 
     @Before
@@ -258,6 +268,8 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
                 new BeanListHandler<>(ConfiguredLayer.class));
 
         vrhObjectsEnabled = qr().query("select 1 from organisation.modules where name='vrh_objects' and enabled", new ScalarHandler<>()) != null;
+
+        vrhBridgeLayersEnabled = "true".equals(Cfg.getSetting("vrh_bridge_layers_enabled", "false"));
     }
 
     @Override
