@@ -47,6 +47,10 @@ function findLayers() {
 function layersInit() {
     var url = $("input[name='layer.url']").val();
 
+    if (!url) {
+        return;
+    }
+
     if(url.length > 0 && typeof convertStaticWmsUrl !== "undefined") {
         url = convertStaticWmsUrl(url);
     }
