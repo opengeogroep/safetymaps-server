@@ -146,15 +146,13 @@ public class OivActionBean implements ActionBean {
 
   private JSONArray getFeaturesFromDatabase() throws Exception {
     QueryRunner qr = DB.oivQr();
-    String sql = "select * from objecten.vv_objecten_list";
+    String sql = "select row_to_json from objecten.vv_objecten_list";
     List<Map<String, Object>> rows = qr.query(sql, new MapListHandler());
     JSONArray results = new JSONArray();
 
     for (Map<String, Object> row : rows) {
       for(Map.Entry<String,Object> e: row.entrySet()) {
-        if (e.getKey() == "row_to_json") {
-          results.put(new JSONObject(e.getValue().toString()));
-        }
+        results.put(new JSONObject(e.getValue().toString()));
       }
     }
 
@@ -163,7 +161,7 @@ public class OivActionBean implements ActionBean {
 
   private JSONObject getObjectFromDatabase() throws Exception {
     QueryRunner qr = DB.oivQr();
-    String sql = "select * from objecten.vv_objecten where id || '_bouwlaag_' || bouwlaag = ?";
+    String sql = "select json_string from objecten.vv_objecten where id || '_bouwlaag_' || bouwlaag = ?";
     Object[] qparams;
     JSONObject result = new JSONObject();
     
@@ -177,9 +175,7 @@ public class OivActionBean implements ActionBean {
       return null;
     } else {
       for(Map.Entry<String,Object> e: rows.get(0).entrySet()) {
-        if (e.getKey() == "json_string") {
-          result = new JSONObject(e.getValue().toString());
-        }
+        result = new JSONObject(e.getValue().toString());
       }
     }
 
