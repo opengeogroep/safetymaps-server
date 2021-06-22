@@ -33,7 +33,7 @@ import nl.opengeogroep.safetymaps.server.db.DB;
 /**
  * @author bartv
  */
-@UrlBinding("/viewer/api/oiv")
+@UrlBinding("/viewer/api/oiv/{path}")
 public class OivActionBean implements ActionBean {
   private static final Log log = LogFactory.getLog(OivActionBean.class);
   private ActionBeanContext context;
