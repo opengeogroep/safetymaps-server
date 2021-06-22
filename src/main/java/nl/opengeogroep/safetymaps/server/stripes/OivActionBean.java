@@ -151,7 +151,11 @@ public class OivActionBean implements ActionBean {
     JSONArray results = new JSONArray();
 
     for (Map<String, Object> row : rows) {
-      results.put(new JSONObject((String)row.get("row_to_json")));
+      for(Map.Entry<String,Object> e: row.entrySet()) {
+        if (e.getKey() == "row_to_json") {
+          results.put(new JSONObject(e.getValue().toString()));
+        }
+      }
     }
 
     return results;
@@ -161,6 +165,7 @@ public class OivActionBean implements ActionBean {
     QueryRunner qr = DB.oivQr();
     String sql = "select * from objecten.vv_objecten where id || '_bouwlaag_' || bouwlaag = ?";
     Object[] qparams;
+    JSONObject result = new JSONObject();
     
     qparams = new Object[] {
       id
@@ -171,7 +176,13 @@ public class OivActionBean implements ActionBean {
     if(rows.isEmpty()) {
       return null;
     } else {
-      return new JSONObject((String)rows.get(0).get("json_string"));
+      for(Map.Entry<String,Object> e: rows.get(0).entrySet()) {
+        if (e.getKey() == "json_string") {
+          result = new JSONObject(e.getValue().toString());
+        }
+      }
     }
+
+    return result;
   }
 }
