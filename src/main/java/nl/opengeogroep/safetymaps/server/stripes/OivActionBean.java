@@ -151,7 +151,7 @@ public class OivActionBean implements ActionBean {
     JSONArray results = new JSONArray();
 
     for (Map<String, Object> row : rows) {
-      results.put((JSONObject)row.get("row_to_json"));
+      results.put(new JSONObject((String)row.get("row_to_json")));
     }
 
     return results;
@@ -171,7 +171,7 @@ public class OivActionBean implements ActionBean {
     if(rows.isEmpty()) {
       return null;
     } else {
-      return (JSONObject)rows.get(0);
+      return new JSONObject((String)rows.get(0).get("json_string"));
     }
   }
 }
