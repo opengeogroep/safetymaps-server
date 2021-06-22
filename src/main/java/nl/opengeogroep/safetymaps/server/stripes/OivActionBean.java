@@ -1,3 +1,5 @@
+package nl.opengeogroep.safetymaps.server.stripes;
+
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.sql.Connection;
