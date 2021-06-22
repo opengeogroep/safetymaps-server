@@ -146,7 +146,7 @@ public class OivActionBean implements ActionBean {
 
   private JSONArray getFeaturesFromDatabase() throws Exception {
     QueryRunner qr = DB.oivQr();
-    String sql = "select * from vv_objecten_list";
+    String sql = "select * from objecten.vv_objecten_list";
     List<Map<String, Object>> rows = qr.query(sql, new MapListHandler());
     JSONArray results = new JSONArray();
 
