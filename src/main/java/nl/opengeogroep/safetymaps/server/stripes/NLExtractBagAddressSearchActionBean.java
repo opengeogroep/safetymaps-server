@@ -64,7 +64,7 @@ public class NLExtractBagAddressSearchActionBean  implements ActionBean {
                 boolean isPostCode = term.matches("^[0-9]{4}[a-z]{0,2}$");
                 if(term.indexOf(' ') != -1 || isPostCode) {
                     where = "(textsearchable_adres @@ to_tsquery('dutch',?)) ";
-                    param = term.replaceAll("\\s+", ":*&");                    
+                    param = term.replaceAll("\\s+", ":*&") + ":*";                    
                 } else {
                     where = "openbareruimtenaam like ?";
                     param = term.substring(0, 1).toUpperCase() + term.substring(1) + "%";
