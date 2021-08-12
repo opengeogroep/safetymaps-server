@@ -373,7 +373,7 @@ public class MellonHeaderAuthenticationFilter implements Filter {
         return (Map<String, String>)request.getSession().getAttribute(ATTR_EXTRA_HEADERS);
     }
 
-    private class HeaderAuthenticatedPrincipal implements Principal {
+    public static class HeaderAuthenticatedPrincipal implements Principal {
         private final String name;
         private final Set<String> roles;
 
