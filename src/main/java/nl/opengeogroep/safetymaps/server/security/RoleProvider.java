@@ -13,6 +13,6 @@ import java.util.Map;
  * @author matthijsln
  */
 public interface RoleProvider {
-    public Collection<String> getRoles(String username) throws Exception;
-    public Map<String, Collection<String>> getAllRolesByUsername() throws Exception;
+    public Collection<String> getRoles(String username);
+    public Map<String, Collection<String>> getAllRolesByUsername();
 }
