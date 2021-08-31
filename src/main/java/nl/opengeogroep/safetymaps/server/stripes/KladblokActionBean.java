@@ -120,7 +120,7 @@ public class KladblokActionBean implements ActionBean {
         if(row.length() > 0 && row.length() <= 500) {
             String username = getContext().getRequest().getRemoteUser();
             String user = username.split("@")[0];
-            int length = user.length() > 10 ? 10 : user.length() - 1;
+            int length = user.length() > 10 ? 10 : user.length();
 
             username = user.substring(0, length);
 
