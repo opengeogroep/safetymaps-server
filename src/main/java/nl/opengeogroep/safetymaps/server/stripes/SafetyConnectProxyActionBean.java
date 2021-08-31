@@ -96,10 +96,19 @@ public class SafetyConnectProxyActionBean implements ActionBean {
         }
 
         String qs = context.getRequest().getQueryString();
-        final HttpUriRequest req = RequestBuilder.get()
+        final HttpUriRequest req;
+        
+        if (requestIs(KLADBLOKREGEL_REQUEST)) {
+            req = RequestBuilder.post()
                 .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
                 .addHeader("Authorization", authorization)
                 .build();
+        } else {
+            req = RequestBuilder.get()
+                .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
+                .addHeader("Authorization", authorization)
+                .build();
+        }
 
         try(CloseableHttpClient client = HttpClients.createDefault()) {
             final MutableObject<String> contentType = new MutableObject<>("text/plain");
