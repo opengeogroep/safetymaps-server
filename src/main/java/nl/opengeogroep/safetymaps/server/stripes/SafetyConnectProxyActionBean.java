@@ -16,6 +16,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
@@ -102,8 +103,9 @@ public class SafetyConnectProxyActionBean implements ActionBean {
             req = RequestBuilder.post()
                 .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
                 .addHeader("Authorization", authorization)
-                .addHeader("Content-Type", "application/xml")
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
                 .addHeader("Content-Length", "0")
+                .setEntity(new StringEntity(""))
                 .build();
         } else {
             req = RequestBuilder.get()
