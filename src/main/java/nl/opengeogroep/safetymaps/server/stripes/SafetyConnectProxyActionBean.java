@@ -102,6 +102,7 @@ public class SafetyConnectProxyActionBean implements ActionBean {
             req = RequestBuilder.post()
                 .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
                 .addHeader("Authorization", authorization)
+                .addHeader("Content-Length", "0")
                 .build();
         } else {
             req = RequestBuilder.get()
