@@ -44,6 +44,7 @@ public class KladblokActionBean implements ActionBean {
     @Validate
     private String row;
 
+    @Validate
     private String vehicle;
 
     @Override
@@ -73,7 +74,7 @@ public class KladblokActionBean implements ActionBean {
     }
 
     public String getVehicle() {
-        return row;
+        return vehicle;
     }
 
     public void setVehicle(String vehicle) {
