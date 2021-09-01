@@ -104,7 +104,6 @@ public class SafetyConnectProxyActionBean implements ActionBean {
                 .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
                 .addHeader("Authorization", authorization)
                 .addHeader("Content-Type", "none")
-                .addHeader("Content-Length", "0")
                 .setEntity(new StringEntity(""))
                 .build();
         } else {
