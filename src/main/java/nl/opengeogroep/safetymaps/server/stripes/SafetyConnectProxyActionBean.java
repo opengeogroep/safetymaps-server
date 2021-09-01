@@ -118,8 +118,11 @@ public class SafetyConnectProxyActionBean implements ActionBean {
             final String responseContent = client.execute(req, new ResponseHandler<String>() {
                 @Override
                 public String handleResponse(HttpResponse hr) {
-                    log.info("proxy for user " + context.getRequest().getRemoteUser() + " URL " + req.getURI() + ", response: " + hr.getStatusLine().getStatusCode() + " " + hr.getStatusLine().getReasonPhrase());
-                    contentType.setValue(hr.getEntity().getContentType().getValue());
+                    log.debug("proxy for user " + context.getRequest().getRemoteUser() + " URL " + req.getURI() + ", response: " + hr.getStatusLine().getStatusCode() + " " + hr.getStatusLine().getReasonPhrase());
+                    
+                    if (hr.getEntity() != null && hr.getEntity().getContentType() != null) {
+                        contentType.setValue(hr.getEntity().getContentType().getValue());
+                    }
                     try {
                         return IOUtils.toString(hr.getEntity().getContent(), "UTF-8");
                     } catch(IOException e) {
