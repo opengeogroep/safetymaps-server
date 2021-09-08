@@ -63,6 +63,7 @@ public class ViewerApiActionBean implements ActionBean {
 
     private static final String FEATURES = "features.json";
     private static final String ORGANISATION = "organisation.json";
+    private static final String ORGANISATION_SMVNG = "organisation-smvng.json";
     private static final String STYLES = "styles.json";
     private static final String LIBRARY = "library.json";
     private static final String OBJECT = "object/";
@@ -131,7 +132,10 @@ public class ViewerApiActionBean implements ActionBean {
                     return features(c);
                 }
                 if(ORGANISATION.equals(path)) {
-                    return organisation(c);
+                    return organisation(c, false);
+                }
+                if(ORGANISATION_SMVNG.equals(path)) {
+                    return organisation(c, true);
                 }
                 if(STYLES.equals(path)) {
                     return styles(c);
@@ -242,11 +246,12 @@ public class ViewerApiActionBean implements ActionBean {
             public boolean isUserInRole(String role) {
                 return roles.contains(role);
             }
-        }, c, srid);
+        }, c, srid, false);
     }
 
-    public static JSONObject getOrganisationWithAuthorizedModules(HttpServletRequest request, Connection c, int srid) throws Exception {
-        Object org = new QueryRunner().query(c, "select \"organisation\" from organisation.organisation_nieuw_json(" + srid + ")", new ScalarHandler<>());
+    public static JSONObject getOrganisationWithAuthorizedModules(HttpServletRequest request, Connection c, int srid, boolean isSmvng) throws Exception {
+        String functionString = isSmvng ? "organisation_nieuw_json" : "organisation_smvng_json";
+        Object org = new QueryRunner().query(c, "select \"organisation\" from organisation." + functionString + "(" + srid + ")", new ScalarHandler<>());
         JSONObject organisation = new JSONObject(org.toString());
         organisation.put("integrated", true);
         organisation.put("username", request.getRemoteUser());
@@ -264,7 +269,7 @@ public class ViewerApiActionBean implements ActionBean {
             for(int i = 0; i < modules.length(); i++) {
                 JSONObject module = modules.getJSONObject(i);
                 if(authorizedModules.contains(module.getString("name"))) {
-                    checkModuleAuthorizations(request, c, module);
+                    checkModuleAuthorizations(request, c, module, isSmvng);
                     jaAuthorizedModules.put(module);
                 }
             }
@@ -274,7 +279,7 @@ public class ViewerApiActionBean implements ActionBean {
             JSONArray modules = organisation.getJSONArray("modules");
             for(int i = 0; i < modules.length(); i++) {
                 // Add settings to options for admin
-                checkModuleAuthorizations(request, c, modules.getJSONObject(i));
+                checkModuleAuthorizations(request, c, modules.getJSONObject(i), isSmvng);
             }
         }
         JSONObject j = new JSONObject();
@@ -286,10 +291,11 @@ public class ViewerApiActionBean implements ActionBean {
     /**
      * Modify module options to apply authorizations.
      */
-    private static JSONObject checkModuleAuthorizations(HttpServletRequest request, Connection c, JSONObject module) throws Exception {
+    private static JSONObject checkModuleAuthorizations(HttpServletRequest request, Connection c, JSONObject module, boolean isSmvng) throws Exception {
         String name = module.getString("name");
         JSONObject options = module.isNull("options") ? new JSONObject(): module.getJSONObject("options");
-        if("incidents".equals(name)) {
+
+        if(!isSmvng && "incidents".equals(name)) {
             options.put("sourceVrhAGSAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(VrhAGSProxyActionBean.ROLE));
             options.put("sourceSafetyConnectAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(SafetyConnectProxyActionBean.ROLE));
             options.put("incidentMonitorAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR));
@@ -306,14 +312,15 @@ public class ViewerApiActionBean implements ActionBean {
 
             JSONObject details = getUserDetails(request, c);
             options.put("userVoertuignummer", details.optString("voertuignummer", null));
-        } else if("drawing".equals(name)) {
+        } else if(!isSmvng && "drawing".equals(name)) {
             options.put("editAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_DRAWING_EDITOR));
         }
+        
         return module;
     }
 
-    private Resolution organisation(Connection c) throws Exception {
-        return new StreamingResolution("application/json", getOrganisationWithAuthorizedModules(getContext().getRequest(), c, srid).toString(indent));
+    private Resolution organisation(Connection c, boolean isSmvng) throws Exception {
+        return new StreamingResolution("application/json", getOrganisationWithAuthorizedModules(getContext().getRequest(), c, srid, isSmvng).toString(indent));
     }
 
     public static JSONObject getLibrary(Connection c) throws Exception {
