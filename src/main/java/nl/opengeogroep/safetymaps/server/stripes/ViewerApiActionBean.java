@@ -259,12 +259,15 @@ public class ViewerApiActionBean implements ActionBean {
             List<Map<String,Object>> roles = new QueryRunner().query(c, "select role, modules from " + ROLE_TABLE + " where modules is not null", new MapListHandler());
             Set<String> authorizedModules = new HashSet();
             Set<String> authorizedLayers = new HashSet();
+            Set<String> defaultLayers = new HashSet();
             for(Map<String,Object> role: roles) {
                 if(request.isUserInRole(role.get("role").toString())) {
                     String modules = (String)role.get("modules");
                     authorizedModules.addAll(Arrays.asList(modules.split(", ")));
                     String layers = (String)role.get("wms");
                     authorizedLayers.addAll(Arrays.asList(layers.toLowerCase().split(", ")));
+                    String dlayers = (String)role.get("defaultwms");
+                    defaultLayers.addAll(Arrays.asList(dlayers.toLowerCase().split(", ")));
                 }
             }
             JSONArray modules = organisation.getJSONArray("modules");
@@ -282,6 +285,9 @@ public class ViewerApiActionBean implements ActionBean {
             for(int i = 0; i < layers.length(); i++) {
                 JSONObject layer = layers.getJSONObject(i);
                 if(authorizedLayers.contains(layer.getString("uid"))) {
+                    if(!layer.getBoolean("defaultEnabled")) {
+                        layer.put("defaultEnabled", defaultLayers.contains((layer.getString("uid"))));
+                    }
                     jaAuthorizedLayers.put(layer);
                 }
             }
