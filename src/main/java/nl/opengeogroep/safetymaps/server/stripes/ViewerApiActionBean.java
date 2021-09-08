@@ -292,6 +292,7 @@ public class ViewerApiActionBean implements ActionBean {
      * Modify module options to apply authorizations.
      */
     private static JSONObject checkModuleAuthorizations(HttpServletRequest request, Connection c, JSONObject module, boolean isSmvng) throws Exception {
+        String prefixSmvng = "isAuthorizedFor_";
         String name = module.getString("name");
         JSONObject options = module.isNull("options") ? new JSONObject(): module.getJSONObject("options");
 
@@ -314,8 +315,24 @@ public class ViewerApiActionBean implements ActionBean {
             options.put("userVoertuignummer", details.optString("voertuignummer", null));
         } else if(!isSmvng && "drawing".equals(name)) {
             options.put("editAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_DRAWING_EDITOR));
+        } else if (isSmvng && "Incident".equals(name)) {
+            options.put(prefixSmvng + "Show_Notepadchat", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
+            options.put(prefixSmvng + "Add_Notepadchat", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
+        } else if (isSmvng && "IncidentMonitor".equals(name)) {
+            options.put(prefixSmvng + "LeavingIncidentForLocalVehcile", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
+        } else if (isSmvng && "LiveData".equals(name)) {
+            options.put(prefixSmvng + "streetview", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
+            options.put(prefixSmvng + "twitter", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
+            options.put(prefixSmvng + "drawings", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
+            options.put(prefixSmvng + "photos", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
+        } else if (isSmvng && "VehicleInfo".equals(name)) {
+            options.put(prefixSmvng + "showVehicleLocationsOnIncident", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
+            options.put(prefixSmvng + "showVehicleLocationsOnMap", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
+            options.put(prefixSmvng + "showLocationsFromUnasignedVehiclesOnMap", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
+        } else if (isSmvng && "Drawing".equals(name)) {
+            options.put(prefixSmvng + "crud", request.isUserInRole(ROLE_ADMIN) || !request.isUserInRole(ROLE_ADMIN)); // temp, add always
         }
-        
+
         return module;
     }
 
