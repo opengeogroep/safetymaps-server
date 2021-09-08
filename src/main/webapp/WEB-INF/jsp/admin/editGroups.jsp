@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <th>Naam</th>
                     <th>Omschrijving</th>
                     <th>Geautoriseerde modules</th>
+                    <th>Geautoriseerde lagen</th>
                     <th class="table-actions">&nbsp;</th>
                 </tr>
             </thead>
@@ -47,9 +48,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <tr style="${editLink == '' ? '' : 'cursor: pointer'}" class="${actionBean.role == r.role ? 'info' : ''}" onclick="${editLink != '' ? 'window.location.href=\''.concat(editLink).concat('\'') : ''}">
                     <td><c:out value="${r.role}"/></td>
                     <td><c:out value="${r.description}"/></td>
-                    <td>
-                        <c:out value="${r.modules}"/>
-                    </td>
+                    <td><c:out value="${r.modules}"/></td>
+                    <td><c:out value="${r.wms}"/></td>
                     <td class="table-actions">
                         <c:if test="${!empty editLink}">
                             <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.EditGroupsActionBean" event="edit" title="Bewerken">
@@ -109,6 +109,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                                 <div class="custom-control custom-checkbox">
                                     <stripes:checkbox name="modules" class="custom-control-input" value="${module.name}" id="role${status.index}"/>
                                     <label class="custom-control-label" for="role${status.index}" style="${module.enabled ? '' : 'text-decoration: line-through'}"><c:out value="${module.name}"/></label>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Geautoriseerde lagen:</label>
+                        <div class="col-sm-10">
+                            Let op! Indien een laag voor alle gebruikers is uitgeschakeld is deze doorgestreept.
+                            <p>
+                            <c:forEach var="layer" items="${actionBean.allLayers}" varStatus="status">
+                                <div class="custom-control custom-checkbox">
+                                    <stripes:checkbox name="layers" class="custom-control-input" value="${layer.uid}" id="role${status.index}"/>
+                                    <label class="custom-control-label" for="role${status.index}" style="${layer.enabled ? '' : 'text-decoration: line-through'}"><c:out value="${layer.uid}"/></label>
                                 </div>
                             </c:forEach>
                         </div>
