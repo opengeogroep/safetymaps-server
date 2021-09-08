@@ -250,7 +250,7 @@ public class ViewerApiActionBean implements ActionBean {
     }
 
     public static JSONObject getOrganisationWithAuthorizedModules(HttpServletRequest request, Connection c, int srid, boolean isSmvng) throws Exception {
-        String functionString = isSmvng ? "organisation_nieuw_json" : "organisation_smvng_json";
+        String functionString = !isSmvng ? "organisation_nieuw_json" : "organisation_smvng_json";
         Object org = new QueryRunner().query(c, "select \"organisation\" from organisation." + functionString + "(" + srid + ")", new ScalarHandler<>());
         JSONObject organisation = new JSONObject(org.toString());
         organisation.put("integrated", true);
