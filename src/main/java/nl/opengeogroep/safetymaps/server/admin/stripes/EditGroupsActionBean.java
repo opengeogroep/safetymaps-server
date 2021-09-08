@@ -114,10 +114,6 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         this.allRoles = allRoles;
     }
 
-    public List<String> getModules() {
-        return modules;
-    }
-
     public boolean isProtectedGroup() {
         return protectedGroup;
     }
@@ -126,8 +122,21 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         this.protectedGroup = protectedGroup;
     }
 
+    public List<String> getModules() {
+        return modules;
+    }
+
     public void setModules(List<String> modules) {
         this.modules = modules;
+    }
+
+
+    public List<String> getLayers() {
+        return layers;
+    }
+
+    public void setLayers(List<String> layers) {
+        this.layers = layers;
     }
 
     public List<String> getAllUsers() {
