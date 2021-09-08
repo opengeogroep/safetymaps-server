@@ -236,7 +236,7 @@ public class ViewerApiActionBean implements ActionBean {
 
     public static JSONObject getOrganisationWithUserAuthorization(final String username, Connection c, int srid) throws Exception {
         final Set<String> roles = new HashSet<String>(new QueryRunner().query(c, "select role from " + USER_ROLE_TABLE + " where username = ?", new ColumnListHandler<String>(), username));
-        return getOrganisationWithAuthorizedModules(new HttpServletRequestWrapper(new MockHttpServletRequest(null, null)) {
+        return getOrganisationWithAuthorizedModulesAndLayers(new HttpServletRequestWrapper(new MockHttpServletRequest(null, null)) {
             @Override
             public String getRemoteUser() {
                 return username;
@@ -249,7 +249,7 @@ public class ViewerApiActionBean implements ActionBean {
         }, c, srid, false);
     }
 
-    public static JSONObject getOrganisationWithAuthorizedModules(HttpServletRequest request, Connection c, int srid, boolean isSmvng) throws Exception {
+    public static JSONObject getOrganisationWithAuthorizedModulesAndLayers(HttpServletRequest request, Connection c, int srid, boolean isSmvng) throws Exception {
         String functionString = !isSmvng ? "organisation_nieuw_json" : "organisation_smvng_json";
         Object org = new QueryRunner().query(c, "select \"organisation\" from organisation." + functionString + "(" + srid + ")", new ScalarHandler<>());
         JSONObject organisation = new JSONObject(org.toString());
@@ -258,10 +258,13 @@ public class ViewerApiActionBean implements ActionBean {
         if(!request.isUserInRole(ROLE_ADMIN)) {
             List<Map<String,Object>> roles = new QueryRunner().query(c, "select role, modules from " + ROLE_TABLE + " where modules is not null", new MapListHandler());
             Set<String> authorizedModules = new HashSet();
+            Set<String> authorizedLayers = new HashSet();
             for(Map<String,Object> role: roles) {
                 if(request.isUserInRole(role.get("role").toString())) {
                     String modules = (String)role.get("modules");
                     authorizedModules.addAll(Arrays.asList(modules.split(", ")));
+                    String layers = (String)role.get("wms");
+                    authorizedLayers.addAll(Arrays.asList(layers.split(", ")));
                 }
             }
             JSONArray modules = organisation.getJSONArray("modules");
@@ -274,7 +277,15 @@ public class ViewerApiActionBean implements ActionBean {
                 }
             }
             organisation.put("modules", jaAuthorizedModules);
-
+            JSONArray layers = organisation.getJSONArray("layers");
+            JSONArray jaAuthorizedLayers = new JSONArray();
+            for(int i = 0; i < layers.length(); i++) {
+                JSONObject layer = layers.getJSONObject(i);
+                if(authorizedLayers.contains(layer.getString("uid"))) {
+                    jaAuthorizedLayers.put(layer);
+                }
+            }
+            organisation.put("layers", jaAuthorizedLayers);
         } else {
             JSONArray modules = organisation.getJSONArray("modules");
             for(int i = 0; i < modules.length(); i++) {
@@ -337,7 +348,7 @@ public class ViewerApiActionBean implements ActionBean {
     }
 
     private Resolution organisation(Connection c, boolean isSmvng) throws Exception {
-        return new StreamingResolution("application/json", getOrganisationWithAuthorizedModules(getContext().getRequest(), c, srid, isSmvng).toString(indent));
+        return new StreamingResolution("application/json", getOrganisationWithAuthorizedModulesAndLayers(getContext().getRequest(), c, srid, isSmvng).toString(indent));
     }
 
     public static JSONObject getLibrary(Connection c) throws Exception {
