@@ -44,6 +44,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     </c:if>
                     <th>Beschikbaar</th>
                     <th>Index</th>
+                    <th>SMVNG</th>
                     <th class="table-actions">&nbsp;</th>
                 </tr>
             </thead>
@@ -61,6 +62,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         <span class="glyphicon ${l.enabled ? 'glyphicon-ok-circle text-success' : 'glyphicon-remove-circle'}"></span>
                     </td>
                     <td><c:out value="${l.index}"/></td>
+                    <td><span class="glyphicon ${l.issmvngwms ? 'glyphicon-ok-circle text-success' : 'glyphicon-remove-circle'}"></span></td>
                     <td class="table-actions">
                         <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.LayerActionBean" event="edit" title="Bewerken">
                             <stripes:param name="id" value="${l.gid}"/>

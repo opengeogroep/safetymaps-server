@@ -43,7 +43,7 @@ public class ModulesActionBean implements ActionBean {
 
     @DefaultHandler
     public Resolution list() throws NamingException, SQLException {
-        modules = DB.qr().query("select * from organisation.modules order by issmvngmodule desc, name asc", new MapListHandler());
+        modules = DB.qr().query("select * from organisation.modules order by issmvngmodule asc, name asc", new MapListHandler());
         return null;
     }
 }

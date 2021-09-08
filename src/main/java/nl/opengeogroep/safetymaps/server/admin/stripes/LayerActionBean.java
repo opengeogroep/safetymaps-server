@@ -264,7 +264,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     @Before
     private void loadInfo() throws NamingException, SQLException {
         layers = qr().query(
-                "select * from " + TABLE + " where layertype = 'WMS' order by gid",
+                "select * from " + TABLE + " where layertype = 'WMS' order by issmvngwms, gid",
                 new BeanListHandler<>(ConfiguredLayer.class));
 
         vrhObjectsEnabled = qr().query("select 1 from organisation.modules where name='vrh_objects' and enabled", new ScalarHandler<>()) != null;
