@@ -8,7 +8,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public class ConfiguredLayer {
     private Integer gid;
-    private boolean proxy, enabled, baselayer, getcapabilities;
+    private boolean proxy, enabled, baselayer, getcapabilities, issmvngwms;
     private int index;
     private String name, url, params, options, parent, pl, layertype = "WMS", notes, legend;
 
@@ -26,6 +26,14 @@ public class ConfiguredLayer {
 
     public void setProxy(boolean proxy) {
         this.proxy = proxy;
+    }
+
+    public boolean isIssmvngwms() {
+        return issmvngwms;
+    }
+
+    public void setIssmvngwms(boolean issmvngwms) {
+        this.issmvngwms = issmvngwms;
     }
 
     public boolean isEnabled() {
