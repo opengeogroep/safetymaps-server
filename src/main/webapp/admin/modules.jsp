@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <tr>
                     <th>Module</th>
                     <th>Ingeschakeld</th>
+                    <th>SMVNG</th>
                 </tr>
             </thead>
             <tbody>
@@ -37,6 +38,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <td><c:out value="${s.name}"/></td>
                     <td>
                         <span class="glyphicon ${s.enabled ? 'glyphicon-ok-circle text-success' : 'glyphicon-remove-circle'}"></span>
+                    </td>
+                    <td>
+                        <span class="glyphicon ${s.issmvngmodule ? 'glyphicon-ok-circle text-success' : 'glyphicon-remove-circle'}"></span>
                     </td>
                 </tr>
             </c:forEach>
