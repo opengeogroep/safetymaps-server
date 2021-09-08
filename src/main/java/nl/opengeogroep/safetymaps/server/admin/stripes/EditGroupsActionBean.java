@@ -177,7 +177,7 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         }
         String l = qr().query("select wms from " + ROLE_TABLE + " where role = ?", new ScalarHandler<String>(), role);
         if(l != null) {
-            modules = Arrays.asList(l.split(", "));
+            layers = Arrays.asList(l.split(", "));
         }
         protectedGroup = Boolean.TRUE.equals(qr().query("select protected from " + ROLE_TABLE + " where role = ?", new ScalarHandler<>(), role));
 
