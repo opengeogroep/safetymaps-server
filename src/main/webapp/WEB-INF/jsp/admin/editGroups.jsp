@@ -108,7 +108,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                             <c:forEach var="module" items="${actionBean.allModules}" varStatus="status">
                                 <div class="custom-control custom-checkbox">
                                     <stripes:checkbox name="modules" class="custom-control-input" value="${module.name}" id="role${status.index}"/>
-                                    <label class="custom-control-label" for="role${status.index}" style="${module.enabled ? '' : 'text-decoration: line-through'}"><c:out value="${module.name}"/></label>
+                                    <label class="custom-control-label" for="role${status.index}" style="${module.enabled ? '' : 'text-decoration: line-through;'} ${module.issmvngmodule ? 'font-weight: bold;' : ''}"><c:out value="${module.name}"/></label>
                                 </div>
                             </c:forEach>
                         </div>
@@ -121,7 +121,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                             <c:forEach var="layer" items="${actionBean.allLayers}" varStatus="status">
                                 <div class="custom-control custom-checkbox">
                                     <stripes:checkbox name="layers" class="custom-control-input" value="${layer.uid}" id="role${status.index}"/>
-                                    <label class="custom-control-label" for="role${status.index}" style="${layer.enabled ? '' : 'text-decoration: line-through'}"><c:out value="${layer.uid}"/></label>
+                                    <label class="custom-control-label" for="role${status.index}" style="${layer.enabled ? '' : 'text-decoration: line-through;'} ${layer.issmvngwms ? 'font-weight: bold;' : ''}"><c:out value="${layer.uid}"/></label>
                                 </div>
                             </c:forEach>
                         </div>
