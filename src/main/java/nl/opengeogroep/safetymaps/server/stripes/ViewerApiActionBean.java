@@ -264,7 +264,7 @@ public class ViewerApiActionBean implements ActionBean {
                     String modules = (String)role.get("modules");
                     authorizedModules.addAll(Arrays.asList(modules.split(", ")));
                     String layers = (String)role.get("wms");
-                    authorizedLayers.addAll(Arrays.asList(layers.split(", ")));
+                    authorizedLayers.addAll(Arrays.asList(layers.toLowerCase().split(", ")));
                 }
             }
             JSONArray modules = organisation.getJSONArray("modules");

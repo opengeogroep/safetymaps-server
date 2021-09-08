@@ -54,6 +54,7 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
 
     private List<Map<String,Object>> allRoles;
     private List<Map<String,Object>> allModules;
+    private List<Map<String,Object>> allLayers;
     private List<String> allUsers;
 
     private boolean protectedGroup;
@@ -63,6 +64,9 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
 
     @Validate
     List<String> modules = new ArrayList<>();
+
+    @Validate
+    List<String> layers = new ArrayList<>();
 
     @Validate
     List<String> users = new ArrayList<>();
@@ -84,6 +88,14 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
 
     public void setAllModules(List<Map<String, Object>> allModules) {
         this.allModules = allModules;
+    }
+
+    public List<Map<String, Object>> getAllLayers() {
+        return allLayers;
+    }
+
+    public void setAllLayers(List<Map<String, Object>> allLayers) {
+        this.allLayers = allLayers;
     }
 
     public String getRole() {
@@ -141,6 +153,8 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
 
         allModules = qr().query("select name, enabled from organisation.modules order by 1", new MapListHandler());
 
+        allLayers = qr().query("select uid, enabled from organisation.wms where coalesce(isbackgroundlayer, false) = false order by 1", new MapListHandler());
+
         allUsers = qr().query("select username from " + USER_TABLE + " order by 1", new ColumnListHandler<String>());
     }
 
@@ -157,9 +171,13 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
     }
 
     public Resolution edit() throws SQLException, NamingException {
-        String s = qr().query("select modules from " + ROLE_TABLE + " where role = ?", new ScalarHandler<String>(), role);
-        if(s != null) {
-            modules = Arrays.asList(s.split(", "));
+        String m = qr().query("select modules from " + ROLE_TABLE + " where role = ?", new ScalarHandler<String>(), role);
+        if(m != null) {
+            modules = Arrays.asList(m.split(", "));
+        }
+        String l = qr().query("select wms from " + ROLE_TABLE + " where role = ?", new ScalarHandler<String>(), role);
+        if(l != null) {
+            modules = Arrays.asList(l.split(", "));
         }
         protectedGroup = Boolean.TRUE.equals(qr().query("select protected from " + ROLE_TABLE + " where role = ?", new ScalarHandler<>(), role));
 
@@ -198,11 +216,12 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
             }
         }
 
-        String s = StringUtils.join(modules, ", ");
+        String m = StringUtils.join(modules, ", ");
+        String l = StringUtils.join(layers, ", ");
 
-        int update = qr().update("update " + ROLE_TABLE + " set modules = ? where role = ?", s, role);
+        int update = qr().update("update " + ROLE_TABLE + " set modules = ?, wms = ? where role = ?", m, l, role);
         if(update == 0) {
-            qr().update("insert into " + ROLE_TABLE + " (role, modules) values(?, ?)", role, s);
+            qr().update("insert into " + ROLE_TABLE + " (role, modules, wms) values(?, ?, ?)", role, m, l);
         }
 
         qr().update("delete from " + USER_ROLE_TABLE + " where role = ?", role);
