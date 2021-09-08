@@ -126,6 +126,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                             </c:forEach>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">Standaard lagen:</label>
+                        <div class="col-sm-10">
+                            <p>
+                            <c:forEach var="layer" items="layers" varStatus="status">
+                                <div class="custom-control custom-checkbox">
+                                    <stripes:checkbox name="defaultlayers" class="custom-control-input" value="${layer}" id="role${status.index}"/>
+                                    <label class="custom-control-label" for="role${status.index}"><c:out value="${layer}"/></label>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </div>
                 </c:if>
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Gebruikers lid van deze groep:</label>

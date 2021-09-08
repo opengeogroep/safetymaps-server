@@ -69,6 +69,9 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
     List<String> layers = new ArrayList<>();
 
     @Validate
+    List<String> defaultlayers = new ArrayList<>();
+
+    @Validate
     List<String> users = new ArrayList<>();
 
     // <editor-fold defaultstate="collapsed" desc="getters and setters">
@@ -130,13 +133,20 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         this.modules = modules;
     }
 
-
     public List<String> getLayers() {
         return layers;
     }
 
     public void setLayers(List<String> layers) {
         this.layers = layers;
+    }
+
+    public List<String> getDefaultlayers() {
+        return defaultlayers;
+    }
+
+    public void setDefaultlayers(List<String> defaultlayers) {
+        this.defaultlayers = defaultlayers;
     }
 
     public List<String> getAllUsers() {
@@ -188,6 +198,10 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         if(l != null) {
             layers = Arrays.asList(l.split(", "));
         }
+        String dl = qr().query("select defaultwms from " + ROLE_TABLE + " where role = ?", new ScalarHandler<String>(), role);
+        if(dl != null) {
+            defaultlayers = Arrays.asList(dl.split(", "));
+        }
         protectedGroup = Boolean.TRUE.equals(qr().query("select protected from " + ROLE_TABLE + " where role = ?", new ScalarHandler<>(), role));
 
         users = qr().query("select username from " + USER_ROLE_TABLE + " where role = ?", new ColumnListHandler<String>(), role);
@@ -227,10 +241,11 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
 
         String m = StringUtils.join(modules, ", ");
         String l = StringUtils.join(layers, ", ");
+        String dl = StringUtils.join(defaultlayers, ", ");
 
-        int update = qr().update("update " + ROLE_TABLE + " set modules = ?, wms = ? where role = ?", m, l, role);
+        int update = qr().update("update " + ROLE_TABLE + " set modules = ?, wms = ?, defaultwms = ? where role = ?", m, l, dl, role);
         if(update == 0) {
-            qr().update("insert into " + ROLE_TABLE + " (role, modules, wms) values(?, ?, ?)", role, m, l);
+            qr().update("insert into " + ROLE_TABLE + " (role, modules, wms, defaultwms) values(?, ?, ?, ?)", role, m, l, dl);
         }
 
         qr().update("delete from " + USER_ROLE_TABLE + " where role = ?", role);
