@@ -116,7 +116,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <div class="form-group">
                         <label class="col-sm-2 control-label">Geautoriseerde lagen:</label>
                         <div class="col-sm-10">
-                            Let op! Indien een laag voor alle gebruikers is uitgeschakeld is deze doorgestreept.
                             <p>
                             <c:forEach var="layer" items="${actionBean.allLayers}" varStatus="status">
                                 <div class="custom-control custom-checkbox">
