@@ -172,7 +172,7 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
 
         allModules = qr().query("select issmvngmodule, name, enabled from organisation.modules order by 1, 2", new MapListHandler());
 
-        allLayers = qr().query("select issmvngwms, uid, enabled from organisation.wms where coalesce(isbackgroundlayer, false) = false order by 1, 2", new MapListHandler());
+        allLayers = qr().query("select issmvngwms, uid, enabled from organisation.wms where coalesce(isbackgroundlayer, false) = false and enabled = true order by 1, 2", new MapListHandler());
 
         allUsers = qr().query("select username from " + USER_TABLE + " order by 1", new ColumnListHandler<String>());
     }
@@ -194,7 +194,7 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
         if(m != null) {
             modules = Arrays.asList(m.split(", "));
         }
-        String l = qr().query("select wms from " + ROLE_TABLE + " where enabled = true and role = ?", new ScalarHandler<String>(), role);
+        String l = qr().query("select wms from " + ROLE_TABLE + " where and role = ?", new ScalarHandler<String>(), role);
         if(l != null) {
             layers = Arrays.asList(l.split(", "));
         }
