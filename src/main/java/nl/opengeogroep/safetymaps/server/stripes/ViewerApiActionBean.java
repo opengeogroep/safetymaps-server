@@ -256,7 +256,7 @@ public class ViewerApiActionBean implements ActionBean {
         organisation.put("integrated", true);
         organisation.put("username", request.getRemoteUser());
         if(!request.isUserInRole(ROLE_ADMIN)) {
-            List<Map<String,Object>> roles = new QueryRunner().query(c, "select role, modules from " + ROLE_TABLE + " where modules is not null", new MapListHandler());
+            List<Map<String,Object>> roles = new QueryRunner().query(c, "select role, modules, coalesce(wms, '') as wms, coalesce(defaultwms, '') as defaultwms from " + ROLE_TABLE + " where modules is not null", new MapListHandler());
             Set<String> authorizedModules = new HashSet();
             Set<String> authorizedLayers = new HashSet();
             Set<String> defaultLayers = new HashSet();
