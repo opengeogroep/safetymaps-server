@@ -299,10 +299,14 @@ public class ViewerApiActionBean implements ActionBean {
                 checkModuleAuthorizations(request, c, modules.getJSONObject(i), isSmvng);
             }
         }
-        JSONObject j = new JSONObject();
-
-        j.put("organisation", organisation);
-        return j;
+        
+        if (!isSmvng) {
+            JSONObject j = new JSONObject();
+            j.put("organisation", organisation);
+            return j;
+        } else {
+            return organisation;
+        }
     }
 
     /**
