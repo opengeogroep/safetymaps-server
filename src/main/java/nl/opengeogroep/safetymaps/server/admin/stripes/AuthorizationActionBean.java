@@ -43,7 +43,7 @@ public class AuthorizationActionBean implements ActionBean {
 
     @DefaultHandler
     public Resolution list() throws NamingException, SQLException {
-      authorizations = DB.qr().query("select ur.username, r.* from safetymaps.user_roles ur inner join role r on r.role = ur.role order by 1 asc", new MapListHandler());
+      authorizations = DB.qr().query("select ur.username, r.* from safetymaps.user_roles ur inner join safetymaps.role r on r.role = ur.role order by 1 asc", new MapListHandler());
       return null;
     }
 }
