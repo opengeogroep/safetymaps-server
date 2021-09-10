@@ -2,14 +2,20 @@
     'use strict';
 
     function Fixedheader(table, scrollbarWidth) {
+        var className = 'fixed-table-wrapper';
+        if (table.hasClass('table-fixed-header--full')) {
+            className += ' fixed-table-wrapper--full'
+        }
+
         this.table = table;
         this.scrollbarWidth = scrollbarWidth;
-        this.init();
+        this.init(className);
+
         return this;
     }
 
-    Fixedheader.prototype.init = function() {
-        this.wrapper = $('<div class="fixed-table-wrapper"></div>');
+    Fixedheader.prototype.init = function(className) {
+        this.wrapper = $('<div class="' + className + '"></div>');
         this.header = this.table.find('thead');
         this.fixedTableWrapper = $('<div></div>');
         this.fixedHeader = this.header.clone();

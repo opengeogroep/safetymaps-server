@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
         <stripes:useActionBean var="actionBean" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.AuthorizationActionBean" event="list"/> 
         
-        <table class="table table-bordered table-striped table-fixed-header">
+        <table class="table table-bordered table-striped table-fixed-header table-fixed-header--full">
             <thead>
                 <tr>
                     <th>Gebruiker</th>

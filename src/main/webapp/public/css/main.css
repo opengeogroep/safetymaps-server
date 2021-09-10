@@ -8,6 +8,13 @@
     margin-top: 0;
 }
 
+.main-container {
+    position: absolute;
+    top: 75px;
+    bottom: 15px;
+    overflow: auto;
+}
+
 .table-actions {
     width: 55px;
     white-space: nowrap;
@@ -19,4 +26,8 @@
     overflow: auto;
     margin-top: -21px;
     margin-bottom: 10px;
+}
+
+.fixed-table-wrapper--full {
+    max-height: 85% !important;
 }
