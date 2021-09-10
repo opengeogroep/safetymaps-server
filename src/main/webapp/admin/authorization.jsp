@@ -34,13 +34,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 </tr>
             </thead>
             <tbody>
+            <c:set var="lastUsername" scope="session" value="" /> 
             <c:forEach var="s" items="${actionBean.authorizations}" varStatus="status">
                 <tr>
-                    <td><span style="${status.index > 0 ? 'display: none;' : ''}"><c:out value="${s.username}"/></span></td>
+                    <td><span style="${status.index > 0 && lastUsername == s.username ? 'display: none;' : ''}"><c:out value="${s.username}"/></span></td>
                     <td><c:out value="${s.role}"/></td>
                     <td><c:out value="${s.modules}"/></td>
                     <td><c:out value="${s.wms}"/></td>
                 </tr>
+                <c:set var="lastUsername" value="${s.username}" />
             </c:forEach>
             </tbody>
         </table>
