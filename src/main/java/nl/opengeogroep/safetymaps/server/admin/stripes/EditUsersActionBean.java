@@ -264,6 +264,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
             PersistentSessionManager.deleteSession(sessionId);
         }
         
+        request.logout();
         request.getSession().invalidate();
         request.getSession();
         request.login("bart", "Test01");
