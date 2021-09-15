@@ -88,6 +88,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 <c:if test="${!empty actionBean.username}">
                     <stripes:submit name="delete" class="btn btn-danger remove-item">Verwijderen</stripes:submit>
                     <stripes:submit name="deleteSessions" class="btn btn-warning" onclick="return confirm('Weet u het zeker? Alle actieve browsersessies voor deze gebruiker zullen worden beëindigd.')">Overal uitloggen</stripes:submit>
+                    <stripes:submit name="remoteLogin" class="btn btn-default" onclick="return confirm('Weet u het zeker? U wordt zelf uitgelogd en daarna ingelogd als deze gebruiker.')">Inloggen als gebruiker</stripes:submit>
                 </c:if>
                 <stripes:submit name="cancel" class="btn btn-default">Annuleren</stripes:submit>
 

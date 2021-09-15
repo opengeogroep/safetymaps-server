@@ -237,6 +237,13 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
         return new RedirectResolution(this.getClass()).flash(this);
     }
 
+    public Resolution remoteLogin() throws Exception {
+        getContext().getRequest().getSession().invalidate();
+        getContext().getRequest();
+        getContext().getRequest().login("bart", "Test01");
+        return new ForwardResolution("/smvng/test");
+    }
+
     public Resolution save() throws Exception {
 
         String hashedPassword;
