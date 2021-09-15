@@ -32,6 +32,7 @@ import net.sourceforge.stripes.validation.SimpleError;
 import net.sourceforge.stripes.validation.Validate;
 import net.sourceforge.stripes.validation.ValidationErrorHandler;
 import net.sourceforge.stripes.validation.ValidationErrors;
+import nl.opengeogroep.safetymaps.server.security.PersistentSessionManager;
 import nl.opengeogroep.safetymaps.server.security.UpdatableLoginSessionFilter;
 import org.apache.catalina.realm.SecretKeyCredentialHandler;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
@@ -43,6 +44,10 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
 
 import javax.naming.NamingException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -238,9 +243,31 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
     }
 
     public Resolution remoteLogin() throws Exception {
-        getContext().getRequest().getSession().invalidate();
-        getContext().getRequest();
-        getContext().getRequest().login("bart", "Test01");
+        HttpServletRequest request = getContext().getRequest();
+        HttpServletResponse response = getContext().getResponse();
+        
+        Cookie authCookie = null;
+        if(request.getCookies() != null) {
+            for(Cookie cookie: request.getCookies()) {
+                if("sm-plogin".equals(cookie.getName())) {
+                    authCookie = cookie;
+                }
+            }
+        }
+
+        if(authCookie != null) {
+            String sessionId = authCookie.getValue();
+            log.info("Clearing persistent login cookie for persistent session ID " + sessionId + " on logout");
+            Cookie cookie = new Cookie("sm-plogin", sessionId);
+            cookie.setMaxAge(0);
+            response.addCookie(cookie);
+            PersistentSessionManager.deleteSession(sessionId);
+        }
+        
+        request.getSession().invalidate();
+        request.getSession();
+        request.login("bart", "Test01");
+
         return new ForwardResolution("/smvng/test");
     }
 
