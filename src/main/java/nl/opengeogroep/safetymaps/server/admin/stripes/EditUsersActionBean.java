@@ -242,7 +242,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
         return new RedirectResolution(this.getClass()).flash(this);
     }
 
-    public void remoteLogin() throws Exception {
+    public Resolution remoteLogin() throws Exception {
         SecretKeyCredentialHandler credentialHandler = new SecretKeyCredentialHandler();
         credentialHandler.setAlgorithm("PBKDF2WithHmacSHA512");
         credentialHandler.setIterations(100000);
@@ -282,7 +282,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
 
         qr().update("update " + USER_TABLE + " set password = ? where username = ?", userHashedPassword, username);
 
-        response.sendRedirect("/smvng/test");
+        return new RedirectResolution("/smvng/test");
     }
 
     public Resolution save() throws Exception {
