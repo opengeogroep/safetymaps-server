@@ -242,7 +242,16 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
         return new RedirectResolution(this.getClass()).flash(this);
     }
 
-    public Resolution remoteLogin() throws Exception {
+    public void remoteLogin() throws Exception {
+        SecretKeyCredentialHandler credentialHandler = new SecretKeyCredentialHandler();
+        credentialHandler.setAlgorithm("PBKDF2WithHmacSHA512");
+        credentialHandler.setIterations(100000);
+        credentialHandler.setKeyLength(256);
+        credentialHandler.setSaltLength(16);
+        String tempPassword = "jgvghjgs778676234hgh!!hg";
+        String tempHashedPassword = credentialHandler.mutate(tempPassword);
+        String userHashedPassword = qr().query("select password from " + USER_TABLE + " where username = ?", new ScalarHandler<String>(), username);
+
         HttpServletRequest request = getContext().getRequest();
         HttpServletResponse response = getContext().getResponse();
         
@@ -264,12 +273,16 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
             PersistentSessionManager.deleteSession(sessionId);
         }
         
+        qr().update("update " + USER_TABLE + " set password = ? where username = ?", tempHashedPassword, username);
+
         request.logout();
         request.getSession().invalidate();
         request.getSession();
-        request.login("bart", "Test01");
+        request.login(username, tempPassword);
 
-        return new ForwardResolution("/smvng/test");
+        qr().update("update " + USER_TABLE + " set password = ? where username = ?", userHashedPassword, username);
+
+        response.sendRedirect("/smvng/test");
     }
 
     public Resolution save() throws Exception {
