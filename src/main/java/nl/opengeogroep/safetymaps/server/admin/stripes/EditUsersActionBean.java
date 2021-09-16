@@ -39,6 +39,7 @@ import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONObject;
@@ -51,6 +52,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.SESSION_TABLE;
@@ -248,7 +250,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
         credentialHandler.setIterations(100000);
         credentialHandler.setKeyLength(256);
         credentialHandler.setSaltLength(16);
-        String tempPassword = "jgvghjgs778676234hgh!!hg";
+        String tempPassword = RandomStringUtils.random(12, true, true);
         String tempHashedPassword = credentialHandler.mutate(tempPassword);
         String userHashedPassword = qr().query("select password from " + USER_TABLE + " where username = ?", new ScalarHandler<String>(), username);
 
