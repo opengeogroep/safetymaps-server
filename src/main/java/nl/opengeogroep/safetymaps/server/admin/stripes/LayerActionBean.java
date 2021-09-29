@@ -264,7 +264,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
     @Before
     private void loadInfo() throws NamingException, SQLException {
         layers = qr().query(
-                "select * from " + TABLE + " where layertype = 'WMS' order by issmvngwms, gid",
+                "select * from " + TABLE + " where layertype = 'WMS' and issmvngwms=true order by issmvngwms, gid",
                 new BeanListHandler<>(ConfiguredLayer.class));
 
         vrhObjectsEnabled = qr().query("select 1 from organisation.modules where name='vrh_objects' and enabled", new ScalarHandler<>()) != null;
@@ -460,6 +460,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
                     new ScalarHandler<Integer>(),
                     qparams);
             layer.setGid(newId);
+            qr().update("update" + TABLE + " set issmvngwms = true, uid = lower(replace(replace(name, '\\', '-'), ' ', '-')) where gid=" + layer.getGid());
             log.debug("new layer id: " + newId);
         } else {
             log.debug("updating layer id " + layer.getGid() + ": " + Arrays.toString(qparams));
