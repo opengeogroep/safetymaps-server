@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 <stripes:layout-render name="/WEB-INF/jsp/templates/admin.jsp" pageTitle="Maptrip beheer" menuitem="maptrip">
   <stripes:layout-component name="content">
 
-    <h1>Maptrip beheer</h1>
+    <h1>Maptrip koppelingen</h1>
 
     <table class="table table-bordered table-striped table-fixed-header table-condensed table-hover" id="layers-table">
       <thead>
@@ -32,7 +32,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       </thead>
       <tbody>
         <c:forEach var="u" items="${actionBean.units}">
-          <tr style="cursor: pointer" class="${actionBean.rowId == u.row_id ? 'info' : ''}" onclick="window.location.href=''.concat(editLink).concat('\'')">
+          <stripes:url var="editLink" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.MaptripActionBean" event="edit">
+            <stripes:param name="rowId" value="${u.row_id}"/>
+          </stripes:url>
+          <tr style="cursor: pointer" class="${actionBean.rowId == u.row_id ? 'info' : ''}" onclick="${ 'window.location.href=\''.concat(editLink).concat('\'') }">
             <td><c:out value="${u.safetyconnect_unit}"/></td>
             <td><c:out value="${u.maptrip_device}"/></td>
             <td class="table-actions">
@@ -49,6 +52,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         </c:forEach>
       </tbody>
     </table>
+
+    <stripes:form beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.MaptripActionBean" class="form-horizontal">
+      <c:set var="event" value="${actionBean.context.eventName}"/>
+      <br>
+      <c:if test="${event == 'list'}">
+          <stripes:submit name="edit" class="btn btn-primary">Nieuwe koppeling</stripes:submit>
+      </c:if>
+      <c:if test="${event == 'edit' || event == 'save'}">
+        <stripes:submit name="save" class="btn btn-primary">Opslaan</stripes:submit>
+        <c:if test="${!empty actionBean.rowId}">
+          <stripes:submit name="delete" class="btn btn-danger remove-item">Verwijderen</stripes:submit>
+        </c:if>
+        <stripes:submit name="cancel" class="btn btn-default">Annuleren</stripes:submit>
+      </c:if>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label">Voertuignummer:</label>
+        <div class="col-sm-10">
+          <stripes:text class="form-control" name="voertuignummer" disabled="${!empty actionBean.rowId}"/>
+          <c:if test="${!empty actionBean.rowId}">
+              <stripes:hidden name="voertuignummer" value="${actionBean.rowId}" />
+          </c:if>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-2 control-label">Maptrip licentie:</label>
+        <div class="col-sm-10">
+          <stripes:text class="form-control" name="maptriplicentie" />
+        </div>
+      </div>
+    </stripes:form>
 
   </stripes:layout-component>
 </stripes:layout-render>

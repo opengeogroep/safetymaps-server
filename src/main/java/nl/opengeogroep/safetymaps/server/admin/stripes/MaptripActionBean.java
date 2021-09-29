@@ -9,7 +9,9 @@ import net.sourceforge.stripes.action.ActionBean;
 import net.sourceforge.stripes.action.ActionBeanContext;
 import net.sourceforge.stripes.action.Before;
 import net.sourceforge.stripes.action.DefaultHandler;
+import net.sourceforge.stripes.action.DontValidate;
 import net.sourceforge.stripes.action.ForwardResolution;
+import net.sourceforge.stripes.action.RedirectResolution;
 import net.sourceforge.stripes.action.Resolution;
 import net.sourceforge.stripes.action.UrlBinding;
 import nl.opengeogroep.safetymaps.server.db.DB;
@@ -42,13 +44,38 @@ public class MaptripActionBean implements ActionBean {
       this.units = units;
   }
 
+  private Number rowId = 0;
+  public Number getRowId() {
+    return rowId;
+  }
+  public void setRowId(Number value) {
+    this.rowId = value;
+  }
+
   @Before
   private void loadInfo() throws NamingException, SQLException {
-    units = DB.maptripQr().query("select * from broker.unit_devices order by safetyconncet_unit", new MapListHandler());
+    units = DB.maptripQr().query("select * from broker.unit_devices order by safetyconnect_unit", new MapListHandler());
   }
 
   @DefaultHandler
   public Resolution list() throws NamingException, SQLException {
     return new ForwardResolution(JSP);
+  }
+
+  public Resolution edit() throws SQLException, NamingException {
+    return new ForwardResolution(JSP);
+  }
+
+  public Resolution save() throws Exception {
+    return cancel();
+  }
+
+  public Resolution delete() throws Exception {
+    return cancel();
+  }
+
+  @DontValidate
+  public Resolution cancel() {
+    return new RedirectResolution(this.getClass()).flash(this);
   }
 }
