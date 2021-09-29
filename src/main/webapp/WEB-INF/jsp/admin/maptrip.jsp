@@ -66,6 +66,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         </c:if>
         <stripes:submit name="cancel" class="btn btn-default">Annuleren</stripes:submit>
 
+        <c:if test="${!empty actionBean.rowid}">
+            <stripes:hidden name="rowid" value="${actionBean.rowid}"/>
+        </c:if>
         <div class="form-group">
           <label class="col-sm-2 control-label">Voertuignummer:</label>
           <div class="col-sm-10">
