@@ -172,7 +172,7 @@ public class EditGroupsActionBean implements ActionBean, ValidationErrorHandler 
 
         allModules = qr().query("select issmvngmodule, name, enabled from organisation.modules where issmvngmodule = true order by 1, 2", new MapListHandler());
 
-        allLayers = qr().query("select issmvngwms, uid, enabled from organisation.wms where issmvngwms = true and coalesce(isbackgroundlayer, false) = false and enabled = true order by 1, 2", new MapListHandler());
+        allLayers = qr().query("select issmvngwms, uid, enabled, name from organisation.wms where issmvngwms = true and coalesce(isbackgroundlayer, false) = false and enabled = true order by 1, 2", new MapListHandler());
 
         allUsers = qr().query("select username from " + USER_TABLE + " order by 1", new ColumnListHandler<String>());
     }
