@@ -51,7 +51,7 @@ public class MaptripActionBean implements ActionBean, ValidationErrorHandler {
       this.units = units;
   }
 
-  @Validate(required = true, on={"save", "delete"})
+  @Validate
   private String rowid;
 
   public String getRowid() {
@@ -125,6 +125,8 @@ public class MaptripActionBean implements ActionBean, ValidationErrorHandler {
 
   @Override
   public Resolution handleValidationErrors(ValidationErrors errors) throws Exception {
-    return null;
+      loadInfo();
+      return new ForwardResolution(JSP);
   }
+
 }
