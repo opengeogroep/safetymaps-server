@@ -33,6 +33,7 @@
             <li${menuitem == 'dbksymbols' ? ' class="active"' : ''}><a href="${contextPath}/admin/dbksymbols.jsp">DBK Symbolen</a></li>
             <li${menuitem == 'layertoggle' ? ' class="active"' : ''}><a href="${contextPath}/admin/layertoggle.jsp">Inzetbalk</a></li>
             <li${menuitem == 'edit' ? ' class="active"' : ''}><a href="#">Tekenmodule</a></li--%>
+            <li${menuitem == 'maptrip' ? ' class="active"' : ''}><stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.MaptripActionBean">Maptrip</stripes:link></li>
         </ul>
     </li>
     <li class="dropdown">
