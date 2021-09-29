@@ -14,6 +14,7 @@ import net.sourceforge.stripes.action.ForwardResolution;
 import net.sourceforge.stripes.action.RedirectResolution;
 import net.sourceforge.stripes.action.Resolution;
 import net.sourceforge.stripes.action.UrlBinding;
+import net.sourceforge.stripes.validation.Validate;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 
@@ -44,7 +45,9 @@ public class MaptripActionBean implements ActionBean {
       this.units = units;
   }
 
+  @Validate
   private Number rowId;
+
   public Number getRowId() {
     return rowId;
   }
@@ -52,7 +55,9 @@ public class MaptripActionBean implements ActionBean {
     this.rowId = value;
   }
 
+  @Validate
   private String voertuignummer;
+
   public String getVoertuignummer() {
     return voertuignummer;
   }
@@ -60,7 +65,9 @@ public class MaptripActionBean implements ActionBean {
     this.voertuignummer = value;
   }
 
+  @Validate
   private String maptriplicentie;
+  
   public String getMaptriplicentie() {
     return maptriplicentie;
   }
