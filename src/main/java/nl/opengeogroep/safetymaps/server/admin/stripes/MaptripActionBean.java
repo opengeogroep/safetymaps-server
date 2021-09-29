@@ -44,12 +44,28 @@ public class MaptripActionBean implements ActionBean {
       this.units = units;
   }
 
-  private Number rowId = 0;
+  private Number rowId;
   public Number getRowId() {
     return rowId;
   }
   public void setRowId(Number value) {
     this.rowId = value;
+  }
+
+  private String voertuignummer;
+  public String getVoertuignummer() {
+    return voertuignummer;
+  }
+  public void setVoertuignummer(String value) {
+    this.voertuignummer = value;
+  }
+
+  private String maptriplicentie;
+  public String getMaptriplicentie() {
+    return maptriplicentie;
+  }
+  public void setMaptriplicentie(String value) {
+    this.maptriplicentie = value;
   }
 
   @Before
@@ -67,15 +83,22 @@ public class MaptripActionBean implements ActionBean {
   }
 
   public Resolution save() throws Exception {
+    if (rowId == null) {
+      DB.maptripQr().update("insert into broker.unit_devices(safetyconnect_unit, maptrip_device) values(?, ?)", voertuignummer, maptriplicentie);
+    } else {
+      DB.maptripQr().update("update broker.unit_devices set maptrip_device = ? where row_id=?", maptriplicentie, rowId);
+    }
     return cancel();
   }
 
   public Resolution delete() throws Exception {
+    DB.maptripQr().update("delete from broker.unit_devices where row_id = ?", rowId);
     return cancel();
   }
 
   @DontValidate
-  public Resolution cancel() {
+  public Resolution cancel() throws Exception {
+    loadInfo();
     return new RedirectResolution(this.getClass()).flash(this);
   }
 }

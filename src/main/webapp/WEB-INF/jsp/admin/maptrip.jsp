@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     <h1>Maptrip koppelingen</h1>
 
-    <table class="table table-bordered table-striped table-fixed-header table-condensed table-hover" id="layers-table">
+    <table class="table table-bordered table-striped table-fixed-header table-condensed table-hover" id="maptrip-table">
       <thead>
           <tr>
               <th>Voertuignummer</th>
@@ -47,7 +47,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                   <stripes:param name="rowId" value="${u.row_id}"/>
                   <span class="glyphicon glyphicon-remove"></span>
               </stripes:link>
-          </td>
+            </td>
           </tr>
         </c:forEach>
       </tbody>
@@ -65,23 +65,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
           <stripes:submit name="delete" class="btn btn-danger remove-item">Verwijderen</stripes:submit>
         </c:if>
         <stripes:submit name="cancel" class="btn btn-default">Annuleren</stripes:submit>
-      </c:if>
 
-      <div class="form-group">
-        <label class="col-sm-2 control-label">Voertuignummer:</label>
-        <div class="col-sm-10">
-          <stripes:text class="form-control" name="voertuignummer" disabled="${!empty actionBean.rowId}"/>
-          <c:if test="${!empty actionBean.rowId}">
-              <stripes:hidden name="voertuignummer" value="${actionBean.rowId}" />
-          </c:if>
+        <div class="form-group">
+          <label class="col-sm-2 control-label">Voertuignummer:</label>
+          <div class="col-sm-10">
+            <stripes:text class="form-control" name="voertuignummer" disabled="${!empty actionBean.rowId}"/>
+            <c:if test="${!empty actionBean.rowId}">
+                <stripes:hidden name="voertuignummer" value="${actionBean.rowId}" />
+            </c:if>
+          </div>
         </div>
-      </div>
-      <div class="form-group">
-        <label class="col-sm-2 control-label">Maptrip licentie:</label>
-        <div class="col-sm-10">
-          <stripes:text class="form-control" name="maptriplicentie" />
+        <div class="form-group">
+          <label class="col-sm-2 control-label">Maptrip licentie:</label>
+          <div class="col-sm-10">
+            <stripes:text class="form-control" name="maptriplicentie" />
+          </div>
         </div>
-      </div>
+      </c:if>
     </stripes:form>
 
   </stripes:layout-component>
