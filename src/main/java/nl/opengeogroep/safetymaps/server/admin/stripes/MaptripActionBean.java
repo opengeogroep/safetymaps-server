@@ -93,7 +93,7 @@ public class MaptripActionBean implements ActionBean, ValidationErrorHandler {
 
   public Resolution edit() throws SQLException, NamingException {
     if (rowid != null) {
-      Map<String,Object> data = DB.maptripQr().query("select * from broker.unit_device where row_id = ?", new MapHandler(), Integer.parseInt(rowid));
+      Map<String,Object> data = DB.maptripQr().query("select * from broker.unit_devices where row_id = ?", new MapHandler(), Integer.parseInt(rowid));
 
       if(data.get("row_id") != null) {
         voertuignummer = data.get("safetyconnect_unit").toString();
