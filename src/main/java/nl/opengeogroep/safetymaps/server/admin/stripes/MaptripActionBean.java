@@ -19,6 +19,8 @@ import net.sourceforge.stripes.validation.Validate;
 import net.sourceforge.stripes.validation.ValidationErrorHandler;
 import net.sourceforge.stripes.validation.ValidationErrors;
 import nl.opengeogroep.safetymaps.server.db.DB;
+
+import org.apache.commons.dbutils.handlers.MapHandler;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 
 /**
@@ -50,13 +52,13 @@ public class MaptripActionBean implements ActionBean, ValidationErrorHandler {
   }
 
   @Validate(required = true, on={"save", "delete"})
-  private Number rowId;
+  private String rowid;
 
-  public Number getRowId() {
-    return rowId;
+  public String getRowid() {
+    return rowid;
   }
-  public void setRowId(Number rowId) {
-    this.rowId = rowId;
+  public void setRowid(String rowid) {
+    this.rowid = rowid;
   }
 
   @Validate
@@ -90,20 +92,28 @@ public class MaptripActionBean implements ActionBean, ValidationErrorHandler {
   }
 
   public Resolution edit() throws SQLException, NamingException {
+    if (rowid != null) {
+      Map<String,Object> data = DB.maptripQr().query("select * from broker.unit_device where row_id = ?", new MapHandler(), Integer.parseInt(rowid));
+
+      if(data.get("row_id") != null) {
+        voertuignummer = data.get("safetyconnect_unit").toString();
+        maptriplicentie = data.get("maptrip_device").toString();
+      }
+    }
     return new ForwardResolution(JSP);
   }
 
   public Resolution save() throws Exception {
-    if (rowId == null) {
+    if (rowid == null) {
       DB.maptripQr().update("insert into broker.unit_devices(safetyconnect_unit, maptrip_device) values(?, ?)", voertuignummer, maptriplicentie);
     } else {
-      DB.maptripQr().update("update broker.unit_devices set maptrip_device = ? where row_id=?", maptriplicentie, rowId);
+      DB.maptripQr().update("update broker.unit_devices set maptrip_device = ? where row_id=?", maptriplicentie, Integer.parseInt(rowid));
     }
     return cancel();
   }
 
   public Resolution delete() throws Exception {
-    DB.maptripQr().update("delete from broker.unit_devices where row_id = ?", rowId);
+    DB.maptripQr().update("delete from broker.unit_devices where row_id = ?", Integer.parseInt(rowid));
     return cancel();
   }
 
