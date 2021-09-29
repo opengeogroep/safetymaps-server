@@ -13,8 +13,11 @@ import net.sourceforge.stripes.action.DontValidate;
 import net.sourceforge.stripes.action.ForwardResolution;
 import net.sourceforge.stripes.action.RedirectResolution;
 import net.sourceforge.stripes.action.Resolution;
+import net.sourceforge.stripes.action.StrictBinding;
 import net.sourceforge.stripes.action.UrlBinding;
 import net.sourceforge.stripes.validation.Validate;
+import net.sourceforge.stripes.validation.ValidationErrorHandler;
+import net.sourceforge.stripes.validation.ValidationErrors;
 import nl.opengeogroep.safetymaps.server.db.DB;
 import org.apache.commons.dbutils.handlers.MapListHandler;
 
@@ -22,8 +25,9 @@ import org.apache.commons.dbutils.handlers.MapListHandler;
  *
  * @author Safety C&T
  */
+@StrictBinding
 @UrlBinding("/admin/action/maptrip")
-public class MaptripActionBean implements ActionBean {
+public class MaptripActionBean implements ActionBean, ValidationErrorHandler {
   private ActionBeanContext context;
 
   private static final String JSP = "/WEB-INF/jsp/admin/maptrip.jsp";
@@ -45,14 +49,14 @@ public class MaptripActionBean implements ActionBean {
       this.units = units;
   }
 
-  @Validate
+  @Validate(required = true, on={"save", "delete"})
   private Number rowId;
 
   public Number getRowId() {
     return rowId;
   }
-  public void setRowId(Number value) {
-    this.rowId = value;
+  public void setRowId(Number rowId) {
+    this.rowId = rowId;
   }
 
   @Validate
@@ -61,18 +65,18 @@ public class MaptripActionBean implements ActionBean {
   public String getVoertuignummer() {
     return voertuignummer;
   }
-  public void setVoertuignummer(String value) {
-    this.voertuignummer = value;
+  public void setVoertuignummer(String voertuignummer) {
+    this.voertuignummer = voertuignummer;
   }
 
   @Validate
   private String maptriplicentie;
-  
+
   public String getMaptriplicentie() {
     return maptriplicentie;
   }
-  public void setMaptriplicentie(String value) {
-    this.maptriplicentie = value;
+  public void setMaptriplicentie(String maptriplicentie) {
+    this.maptriplicentie = maptriplicentie;
   }
 
   @Before
@@ -107,5 +111,10 @@ public class MaptripActionBean implements ActionBean {
   public Resolution cancel() throws Exception {
     loadInfo();
     return new RedirectResolution(this.getClass()).flash(this);
+  }
+
+  @Override
+  public Resolution handleValidationErrors(ValidationErrors errors) throws Exception {
+    return null;
   }
 }
