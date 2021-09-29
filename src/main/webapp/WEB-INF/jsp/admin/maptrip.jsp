@@ -33,18 +33,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       <tbody>
         <c:forEach var="u" items="${actionBean.units}">
           <stripes:url var="editLink" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.MaptripActionBean" event="edit">
-            <stripes:param name="rowId" value="${u.row_id}"/>
+            <stripes:param name="rowid" value="${u.row_id}"/>
           </stripes:url>
-          <tr style="cursor: pointer" class="${actionBean.rowId == u.row_id ? 'info' : ''}" onclick="${ 'window.location.href=\''.concat(editLink).concat('\'') }">
+          <tr style="cursor: pointer" class="${actionBean.rowid == u.row_id ? 'info' : ''}" onclick="${ 'window.location.href=\''.concat(editLink).concat('\'') }">
             <td><c:out value="${u.safetyconnect_unit}"/></td>
             <td><c:out value="${u.maptrip_device}"/></td>
             <td class="table-actions">
               <stripes:link beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.MaptripActionBean" event="edit" title="Bewerken">
-                  <stripes:param name="rowId" value="${u.row_id}"/>
+                  <stripes:param name="rowid" value="${u.row_id}"/>
                   <span class="glyphicon glyphicon-pencil"></span>
               </stripes:link>
               <stripes:link class="remove-item" beanclass="nl.opengeogroep.safetymaps.server.admin.stripes.MaptripActionBean" event="delete" title="Verwijderen">
-                  <stripes:param name="rowId" value="${u.row_id}"/>
+                  <stripes:param name="rowid" value="${u.row_id}"/>
                   <span class="glyphicon glyphicon-remove"></span>
               </stripes:link>
             </td>
@@ -61,7 +61,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       </c:if>
       <c:if test="${event == 'edit' || event == 'save'}">
         <stripes:submit name="save" class="btn btn-primary">Opslaan</stripes:submit>
-        <c:if test="${!empty actionBean.rowId}">
+        <c:if test="${!empty actionBean.rowid}">
           <stripes:submit name="delete" class="btn btn-danger remove-item">Verwijderen</stripes:submit>
         </c:if>
         <stripes:submit name="cancel" class="btn btn-default">Annuleren</stripes:submit>
@@ -69,9 +69,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <div class="form-group">
           <label class="col-sm-2 control-label">Voertuignummer:</label>
           <div class="col-sm-10">
-            <stripes:text class="form-control" name="voertuignummer" disabled="${!empty actionBean.rowId}"/>
-            <c:if test="${!empty actionBean.rowId}">
-                <stripes:hidden name="voertuignummer" value="${actionBean.rowId}" />
+            <stripes:text class="form-control" name="voertuignummer" disabled="${!empty actionBean.rowid}"/>
+            <c:if test="${!empty actionBean.rowid}">
+                <stripes:hidden name="voertuignummer" value="${actionBean.rowid}" />
             </c:if>
           </div>
         </div>
