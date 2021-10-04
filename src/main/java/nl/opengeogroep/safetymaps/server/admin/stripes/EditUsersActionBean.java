@@ -330,6 +330,9 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
                 qr().update("insert into " + USER_ROLE_TABLE + " (username, role) values (?, ?)", username, r);
             }
         }
+        qr().update("insert into " + USER_ROLE_TABLE + " (username, role) values (?, ?)", username, "viewer");
+        qr().update("insert into " + USER_ROLE_TABLE + " (username, role) values (?, ?)", username, "safetyconnect_webservice");
+        
         UpdatableLoginSessionFilter.updateUserSessionRoles(username);
 
         getContext().getMessages().add(new SimpleMessage("Gebruiker is opgeslagen"));
