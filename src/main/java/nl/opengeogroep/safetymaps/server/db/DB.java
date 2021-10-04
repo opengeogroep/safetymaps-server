@@ -44,6 +44,9 @@ public class DB {
     public static final String ROLE_KLADBLOKCHAT_EDITOR = "kladblokchat_editor";
     public static final String ROLE_KLADBLOKCHAT_VIEWER = "kladblokchat_viewer";
 
+    public static final String ROLE_SMVNG_KLADBLOKCHAT_EDITOR = "smvng_incident_addchat";
+    public static final String ROLE_SMVNG_KLADBLOKCHAT_VIEWER = "smvng_incident_showchat";
+
     public static final String USERNAME_LDAP = "LDAP";
 
     public static final DataSource getDataSource(String jndiName) throws NamingException {

@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
       <thead>
           <tr>
               <th>Voertuignummer</th>
-              <th>Maptrip licentie</th>
+              <th>Maptrip deviceid</th>
               <th class="table-actions">&nbsp;</th>
           </tr>
       </thead>
@@ -79,7 +79,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
           </div>
         </div>
         <div class="form-group">
-          <label class="col-sm-2 control-label">Maptrip licentie:</label>
+          <label class="col-sm-2 control-label">Maptrip deviceid:</label>
           <div class="col-sm-10">
             <stripes:text class="form-control" name="maptriplicentie" />
           </div>

@@ -165,7 +165,9 @@ public class SafetyConnectProxyActionBean implements ActionBean {
     }
 
     private String applyAuthorizationToIncidentContent(String contentFromResponse) throws Exception {
-        HttpServletRequest request = context.getRequest();
+        return contentFromResponse;
+
+        /*HttpServletRequest request = context.getRequest();
         JSONArray content = new JSONArray(contentFromResponse);
 
         boolean kladblokAlwaysAuthorized = "true".equals(Cfg.getSetting("kladblok_always_authorized", "false"));
@@ -212,7 +214,7 @@ public class SafetyConnectProxyActionBean implements ActionBean {
             return authorizedContent.toString();
         } catch(Exception e) {
             return defaultError(e);
-        }
+        }*/
     }
 
     // Applies filter to /eenheidLocatie to filter out locations for vehicles not attached to an incident
