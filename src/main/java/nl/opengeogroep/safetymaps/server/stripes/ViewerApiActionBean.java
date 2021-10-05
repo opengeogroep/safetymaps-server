@@ -348,6 +348,7 @@ public class ViewerApiActionBean implements ActionBean {
             options.put(prefixSmvng + "drawings", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_livedata_drawings")); 
             options.put(prefixSmvng + "photos", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_livedata_photos")); 
             options.put(prefixSmvng + "earth", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_livedata_earth")); 
+            options.put(prefixSmvng + "livestream", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_livedata_livestream")); 
         } else if (isSmvng && "VehicleInfo".equals(name)) {
             options.put(prefixSmvng + "showVehicleLocationsOnIncident", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_vehicleinfo_incidentlocations")); 
             options.put(prefixSmvng + "showVehicleLocationsOnMap", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_vehicleinfo_maplocations")); 

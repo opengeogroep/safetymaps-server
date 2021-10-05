@@ -39,3 +39,6 @@ values('smvng_drawing_crud', true, 'SMVNG Drawing - CRUD acties');
 
 insert into safetymaps.role(role, protected, description) 
 values('smvng_imagedrawing', true, 'SMVNG Imagedrawing');
+
+insert into safetymaps.role(role, protected, description) 
+values('smvng_livedata_livestream', true, 'SMVNG Livedata - Live stream');
