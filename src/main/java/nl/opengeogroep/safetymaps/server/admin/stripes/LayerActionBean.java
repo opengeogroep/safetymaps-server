@@ -460,7 +460,7 @@ public class LayerActionBean implements ActionBean, ValidationErrorHandler {
                     new ScalarHandler<Integer>(),
                     qparams);
             layer.setGid(newId);
-            qr().update("update" + TABLE + " set issmvngwms = true, uid = lower(replace(replace(name, '\\', '-'), ' ', '-')) where gid=" + layer.getGid());
+            qr().update("update " + TABLE + " set issmvngwms = true, uid = lower(replace(replace(name, '\\', '-'), ' ', '-')) where gid=" + layer.getGid());
             log.debug("new layer id: " + newId);
         } else {
             log.debug("updating layer id " + layer.getGid() + ": " + Arrays.toString(qparams));
