@@ -341,6 +341,7 @@ public class ViewerApiActionBean implements ActionBean {
             options.put(prefixSmvng + "Show_Notepadchat", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_incident_showchat")); 
             options.put(prefixSmvng + "Add_Notepadchat", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_incident_addchat")); 
             options.put(prefixSmvng + "GoogleNav", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_incident_googlenav")); 
+            options.put(prefixSmvng + "LogToGms_Notepadchat", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_incident_logtogms_notepadchat")); 
             options.put("userVoertuignummer", details.optString("voertuignummer", null));
         } else if (isSmvng && "IncidentMonitor".equals(name)) {
             options.put(prefixSmvng + "LeavingIncidentForLocalVehcile", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_incidentmonitor_leaveincident")); 

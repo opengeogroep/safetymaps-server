@@ -42,3 +42,6 @@ values('smvng_imagedrawing', true, 'SMVNG Imagedrawing');
 
 insert into safetymaps.role(role, protected, description) 
 values('smvng_livedata_livestream', true, 'SMVNG Livedata - Live stream');
+
+insert into safetymaps.role(role, protected, description) 
+values('smvng_incident_logtogms_notepadchat', true, 'SMVNG Incident - Log chat kladblokregels naar GMS');
