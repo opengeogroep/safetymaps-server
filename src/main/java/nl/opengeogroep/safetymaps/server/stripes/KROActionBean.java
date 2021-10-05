@@ -203,7 +203,7 @@ public class KROActionBean implements ActionBean {
     }
 
     private Boolean isNotAuthorized() {
-        return !context.getRequest().isUserInRole(ROLE) && !context.getRequest().isUserInRole(ROLE_ADMIN);
+        return false;
     } 
 
     private List<Map<String, Object>> getKroFromDb() throws NamingException, SQLException {
