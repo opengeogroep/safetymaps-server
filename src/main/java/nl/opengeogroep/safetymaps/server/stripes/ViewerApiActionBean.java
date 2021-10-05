@@ -337,9 +337,11 @@ public class ViewerApiActionBean implements ActionBean {
         } else if(!isSmvng && "drawing".equals(name)) {
             options.put("editAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_DRAWING_EDITOR));
         } else if (isSmvng && "Incident".equals(name)) {
+            JSONObject details = getUserDetails(request, c);
             options.put(prefixSmvng + "Show_Notepadchat", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_incident_showchat")); 
             options.put(prefixSmvng + "Add_Notepadchat", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_incident_addchat")); 
             options.put(prefixSmvng + "GoogleNav", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_incident_googlenav")); 
+            options.put("userVoertuignummer", details.optString("voertuignummer", null));
         } else if (isSmvng && "IncidentMonitor".equals(name)) {
             options.put(prefixSmvng + "LeavingIncidentForLocalVehcile", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole("smvng_incidentmonitor_leaveincident")); 
         } else if (isSmvng && "LiveData".equals(name)) {
