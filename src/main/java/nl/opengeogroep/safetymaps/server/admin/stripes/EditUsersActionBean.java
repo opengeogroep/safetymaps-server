@@ -175,7 +175,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
 
     @Before
     private void loadInfo() throws NamingException, SQLException {
-        allRoles = qr().query("select role, description from " + ROLE_TABLE + " where protected = false or (protected = true and (left(role, 6) = 'smvng_' or role = 'admin')) order by protected desc, role", new MapListHandler());
+        allRoles = qr().query("select role, coalesce(description, role) as description from " + ROLE_TABLE + " where protected = false or (protected = true and (left(role, 6) = 'smvng_' or role = 'admin')) order by protected desc, role", new MapListHandler());
 
         allUsers = qr().query("select 'userDatabase' as login_source, username, length(password) > 40 as secure_password, (select count(*) from " + SESSION_TABLE + " ps where ps.username = u.username) as session_count, (select max(created_at) from " + SESSION_TABLE + " ps where ps.username = u.username) as last_login\n" +
                 "from " + USER_TABLE + " u\n" +
