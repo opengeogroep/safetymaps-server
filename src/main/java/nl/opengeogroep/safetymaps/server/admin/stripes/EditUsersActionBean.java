@@ -75,7 +75,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
 
     private ActionBeanContext context;
 
-    private List<String> allRoles;
+    private List<Map<String, Object>> allRoles;
 
     private List<Map<String,Object>> allUsers;
 
@@ -108,11 +108,11 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
         this.context = context;
     }
 
-    public List<String> getAllRoles() {
+    public List<Map<String, Object>> getAllRoles() {
         return allRoles;
     }
 
-    public void setAllRoles(List<String> allRoles) {
+    public void setAllRoles(List<Map<String, Object>> allRoles) {
         this.allRoles = allRoles;
     }
 
@@ -175,7 +175,7 @@ public class EditUsersActionBean implements ActionBean, ValidationErrorHandler {
 
     @Before
     private void loadInfo() throws NamingException, SQLException {
-        allRoles = qr().query("select role, description from " + ROLE_TABLE + " where protected = false or (protected = true and (left(role, 6) = 'smvng_' or role = 'admin')) order by protected desc, role", new ColumnListHandler<String>());
+        allRoles = qr().query("select role, description from " + ROLE_TABLE + " where protected = false or (protected = true and (left(role, 6) = 'smvng_' or role = 'admin')) order by protected desc, role", new MapListHandler());
 
         allUsers = qr().query("select 'userDatabase' as login_source, username, length(password) > 40 as secure_password, (select count(*) from " + SESSION_TABLE + " ps where ps.username = u.username) as session_count, (select max(created_at) from " + SESSION_TABLE + " ps where ps.username = u.username) as last_login\n" +
                 "from " + USER_TABLE + " u\n" +
