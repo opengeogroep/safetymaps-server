@@ -108,7 +108,11 @@ public class KladblokActionBean implements ActionBean {
     public Resolution save() throws Exception {
         HttpServletRequest request = getContext().getRequest();
 
-        if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR)) {
+        if(!request.isUserInRole(ROLE_ADMIN) && 
+            !request.isUserInRole(ROLE_KLADBLOKCHAT_VIEWER) && 
+            !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR) && 
+            !request.isUserInRole(ROLE_SMVNG_KLADBLOKCHAT_VIEWER) && 
+            !request.isUserInRole(ROLE_SMVNG_KLADBLOKCHAT_EDITOR)) {
             return new ErrorResolution(HttpServletResponse.SC_FORBIDDEN);
         }
 
