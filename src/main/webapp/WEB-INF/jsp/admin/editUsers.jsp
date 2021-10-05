@@ -152,8 +152,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         </c:if>
                     <c:forEach var="role" items="${actionBean.allRoles}" varStatus="status">
                         <div class="custom-control custom-checkbox">
-                            <stripes:checkbox name="roles" class="custom-control-input" value="${role}" id="role${status.index}"/>
-                            <label class="custom-control-label" for="role${status.index}"><c:out value="${role}"/></label>
+                            <stripes:checkbox name="roles" class="custom-control-input" value="${role.role}" id="role${status.index}"/>
+                            <label class="custom-control-label" for="role${status.index}"><c:out value="${role.description}"/></label>
                         </div>
                     </c:forEach>
                     </div>
