@@ -216,7 +216,7 @@ public class DrawingActionBean  implements ActionBean {
         HttpServletRequest request = getContext().getRequest();
 
         // TODO must re-check database, using cached info
-        if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_DRAWING_EDITOR)) {
+        if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_DRAWING_EDITOR) && !request.isUserInRole("smvng_drawing_crud")) {
             return new ErrorResolution(HttpServletResponse.SC_FORBIDDEN);
         }
 
