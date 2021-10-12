@@ -78,7 +78,7 @@ public class GraphHopper implements RoutingService {
                     
             log.debug("Reprojected destination point to service CRS: " + toTransformed + ", axis order: " + CRS.getAxisOrder(crs));
 
-            Function<Point,String> toLonLat = CRS.getAxisOrder(crs) == CRS.AxisOrder.EAST_NORTH
+            Function<Point,String> toLonLat = CRS.getAxisOrder(serviceCrs) == CRS.AxisOrder.NORTH_EAST
                     ? p -> p.getY() + "," + p.getX()
                     : p -> p.getX() + "," + p.getY();
 
