@@ -78,10 +78,10 @@ public class GraphHopper implements RoutingService {
                     
             log.debug("Reprojected destination point to service CRS: " + toTransformed + ", axis order: " + CRS.getAxisOrder(crs));
 
-            Function<Point,String> toLonLat = CRS.getAxisOrder(crs) == CRS.AxisOrder.EAST_NORTH
+            Function<Point,String> toLonLat = CRS.getAxisOrder(serviceCrs) == CRS.AxisOrder.NORTH_EAST
                     ? p -> p.getX() + "," + p.getY()
                     : p -> p.getY() + "," + p.getX();
-
+                    
             // TODO: maybe use https://github.com/graphhopper/directions-api-clients/tree/master/java
 
             try(CloseableHttpClient client = getClient()) {
