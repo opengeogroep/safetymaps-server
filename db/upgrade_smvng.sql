@@ -14,15 +14,6 @@ insert into safetymaps.role(role, protected, description)
 values('smvng_livedata_streetview', true, 'SMVNG Livedata - Toon Streetview');
 
 insert into safetymaps.role(role, protected, description) 
-values('smvng_livedata_twitter', true, 'SMVNG Livedata - Toon Twitter');
-
-insert into safetymaps.role(role, protected, description) 
-values('smvng_livedata_drawings', true, 'SMVNG Livedata - Toon tekenen');
-
-insert into safetymaps.role(role, protected, description) 
-values('smvng_livedata_photos', true, 'SMVNG Livedata - Toon fotos');
-
-insert into safetymaps.role(role, protected, description) 
 values('smvng_livedata_earth', true, 'SMVNG Livedata - Toon Google earth');
 
 insert into safetymaps.role(role, protected, description) 
