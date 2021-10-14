@@ -40,6 +40,7 @@ public class DB {
     public static final String ROLE_INCIDENTMONITOR_PRIO_4_5 = "incidentmonitor_prio_4_5";
     public static final String ROLE_INCIDENTMONITOR_WITHOUT_UNITS = "incidentmonitor_without_units";
 
+    public static final String ROLE_KLADBLOKCHAT_EDITOR_GMS = "kladblokchat_editor_gms";
     public static final String ROLE_KLADBLOKCHAT_EDITOR = "kladblokchat_editor";
     public static final String ROLE_KLADBLOKCHAT_VIEWER = "kladblokchat_viewer";
 

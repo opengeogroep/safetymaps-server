@@ -26,6 +26,7 @@ import org.json.JSONArray;
 
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_EDITOR;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_EDITOR_GMS;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_VIEWER;
 
 /**
@@ -42,6 +43,9 @@ public class KladblokActionBean implements ActionBean {
 
     @Validate
     private String row;
+
+    @Validate
+    private String vehicle;
 
     @Override
     public ActionBeanContext getContext() {
@@ -69,6 +73,14 @@ public class KladblokActionBean implements ActionBean {
         this.row = row;
     }
 
+    public String getVehicle() {
+        return vehicle;
+    }
+
+    public void setVehicle(String vehicle) {
+        this.vehicle = vehicle;
+    }
+
     @DefaultHandler
     public Resolution defaultHander() throws Exception {
         if("POST".equals(context.getRequest().getMethod())) {
@@ -82,12 +94,12 @@ public class KladblokActionBean implements ActionBean {
         HttpServletRequest request = getContext().getRequest();
         JSONArray response = new JSONArray();
 
-        if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_KLADBLOKCHAT_VIEWER) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR)) {
+        if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_KLADBLOKCHAT_VIEWER) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR_GMS)) {
             return new ErrorResolution(HttpServletResponse.SC_FORBIDDEN);
         }
 
         try {
-            List<Map<String,Object>> results = DB.qr().query("select to_char(dtg, 'YYYY-MM-DD HH24:MI:SS') as DTG, '(' || username || ') ' || inhoud as Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
+            List<Map<String,Object>> results = DB.qr().query("select to_char(dtg, 'YYYY-MM-DD HH24:MI:SS') as DTG, '(' || COALESCE(vehicle, username) || ') ' || inhoud as Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
 
             for (Map<String, Object> resultRow : results) {
                 response.put(rowToJson(resultRow, false, false));
@@ -102,16 +114,21 @@ public class KladblokActionBean implements ActionBean {
     public Resolution save() throws Exception {
         HttpServletRequest request = getContext().getRequest();
 
-        if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR)) {
+        if(!request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR) && !request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR_GMS)) {
             return new ErrorResolution(HttpServletResponse.SC_FORBIDDEN);
         }
 
         if(row.length() > 0 && row.length() <= 500) {
             String username = getContext().getRequest().getRemoteUser();
+            String user = username.split("@")[0];
+            int length = user.length() > 10 ? 10 : user.length();
+
+            username = user.substring(0, length);
 
             try {
-                DB.qr().insert("insert into safetymaps.kladblok (incident, dtg, inhoud, username) values (?,?,?,?)", new MapListHandler(), 
-                        incident, new java.sql.Timestamp(System.currentTimeMillis()), row, username);
+                DB.qr().insert("insert into safetymaps.kladblok (incident, dtg, inhoud, username, vehicle) values (?,?,?,?,?)", new MapListHandler(), 
+                    incident, new java.sql.Timestamp(System.currentTimeMillis()), row, username, vehicle);
+
                 return new ErrorMessageResolution(200, "");
             } catch(Exception e) {
                 return new ErrorMessageResolution(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getClass() + ": " + e.getMessage());

@@ -30,6 +30,7 @@ import static nl.opengeogroep.safetymaps.server.db.DB.USER_ROLE_TABLE;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENT_GOOGLEMAPSNAVIGATION;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_MANUALLYCREATED;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_EDITOR;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_EDITOR_GMS;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_VIEWER;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_PRIO_4_5;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_WITHOUT_UNITS;
@@ -300,9 +301,9 @@ public class ViewerApiActionBean implements ActionBean {
             options.put("excludeManuallyCreatedIncidents", !request.isUserInRole(ROLE_ADMIN) && !request.isUserInRole(ROLE_INCIDENTMONITOR_MANUALLYCREATED));
             options.put("prio4and5Authorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_PRIO_4_5));
             options.put("withoutUnitsAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_INCIDENTMONITOR_WITHOUT_UNITS));
-
-            options.put("editKladblokChatAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR));
-            options.put("showKladblokChatAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOKCHAT_VIEWER) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR));
+            options.put("logKladblokToGmsAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR_GMS));
+            options.put("editKladblokChatAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR_GMS));
+            options.put("showKladblokChatAuthorized", request.isUserInRole(ROLE_ADMIN) || request.isUserInRole(ROLE_KLADBLOKCHAT_VIEWER) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR) || request.isUserInRole(ROLE_KLADBLOKCHAT_EDITOR_GMS));
 
             JSONObject details = getUserDetails(request, c);
             options.put("userVoertuignummer", details.optString("voertuignummer", null));

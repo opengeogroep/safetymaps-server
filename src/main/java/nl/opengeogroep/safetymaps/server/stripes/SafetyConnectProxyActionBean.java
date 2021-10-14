@@ -16,6 +16,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 
@@ -34,6 +35,7 @@ import org.json.JSONObject;
 
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_ADMIN;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR_KLADBLOK;
+import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_KLADBLOKCHAT_EDITOR_GMS;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_EIGEN_VOERTUIGNUMMER;
 import static nl.opengeogroep.safetymaps.server.db.DB.ROLE_INCIDENTMONITOR;
 import static nl.opengeogroep.safetymaps.server.db.DB.getUserDetails;
@@ -51,9 +53,12 @@ public class SafetyConnectProxyActionBean implements ActionBean {
 
     static final String ROLE = "safetyconnect_webservice";
 
-    static final String[] UNMODIFIED_REPSONSES = { "eenheid", "eenheidstatus" };
-    static final String INCIDENT_RESPONSE = "incident";
-    static final String EENHEIDLOCATIE_RESPONSE = "eenheidlocatie";
+    static final String INCIDENT_REQUEST = "incident";
+    static final String EENHEIDLOCATIE_REQUEST = "eenheidlocatie";
+    static final String KLADBLOKREGEL_REQUEST = "kladblokregel";
+    static final String EENHEID_REQUEST = "eenheid";
+    static final String EENHEIDSTATUS_REQUEST = "eenheidstatus";
+    static final String[] UNMODIFIED_REQUESTS = { EENHEID_REQUEST, EENHEIDSTATUS_REQUEST };
 
     private String path;
 
@@ -80,6 +85,10 @@ public class SafetyConnectProxyActionBean implements ActionBean {
             return unAuthorizedResolution();
         }
 
+        if (requestIs(KLADBLOKREGEL_REQUEST) && !context.getRequest().isUserInRole(ROLE_KLADBLOKCHAT_EDITOR_GMS) && !context.getRequest().isUserInRole(ROLE_ADMIN)) {
+            return unAuthorizedResolution();
+        }
+
         String authorization = Cfg.getSetting("safetyconnect_webservice_authorization");
         String url = Cfg.getSetting("safetyconnect_webservice_url");
 
@@ -88,10 +97,21 @@ public class SafetyConnectProxyActionBean implements ActionBean {
         }
 
         String qs = context.getRequest().getQueryString();
-        final HttpUriRequest req = RequestBuilder.get()
+        final HttpUriRequest req;
+        
+        if (requestIs(KLADBLOKREGEL_REQUEST)) {
+            req = RequestBuilder.post()
+                .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
+                .addHeader("Authorization", authorization)
+                .addHeader("Content-Type", "none")
+                .setEntity(new StringEntity(""))
+                .build();
+        } else {
+            req = RequestBuilder.get()
                 .setUri(url + "/" + path + (qs == null ? "" : "?" + qs))
                 .addHeader("Authorization", authorization)
                 .build();
+        }
 
         try(CloseableHttpClient client = HttpClients.createDefault()) {
             final MutableObject<String> contentType = new MutableObject<>("text/plain");
@@ -99,7 +119,10 @@ public class SafetyConnectProxyActionBean implements ActionBean {
                 @Override
                 public String handleResponse(HttpResponse hr) {
                     log.debug("proxy for user " + context.getRequest().getRemoteUser() + " URL " + req.getURI() + ", response: " + hr.getStatusLine().getStatusCode() + " " + hr.getStatusLine().getReasonPhrase());
-                    contentType.setValue(hr.getEntity().getContentType().getValue());
+                    
+                    if (hr.getEntity() != null && hr.getEntity().getContentType() != null) {
+                        contentType.setValue(hr.getEntity().getContentType().getValue());
+                    }
                     try {
                         return IOUtils.toString(hr.getEntity().getContent(), "UTF-8");
                     } catch(IOException e) {
@@ -111,11 +134,13 @@ public class SafetyConnectProxyActionBean implements ActionBean {
             
             final String content;
             // Filter response from the webservice to remove any data that the user is not authorized for
-            if (responseContentIs(INCIDENT_RESPONSE)) {
+            if (requestIs(INCIDENT_REQUEST)) {
                 content = applyAuthorizationToIncidentContent(responseContent);
-            } else if (responseContentIs(EENHEIDLOCATIE_RESPONSE)) {
+            } else if (requestIs(EENHEIDLOCATIE_REQUEST)) {
                 content = applyFilterToEenheidLocatieContent(responseContent);
-            } else if (keepResponseContentUnmodified()) {
+            } else if (requestIs(KLADBLOKREGEL_REQUEST)) {
+                content = responseContent;
+            } else if (keepRequestUnmodified()) {
                 content = responseContent;
             } else {
                 return unAuthorizedResolution();
@@ -156,11 +181,11 @@ public class SafetyConnectProxyActionBean implements ActionBean {
         return "Error on " + path;
     }
 
-    private boolean keepResponseContentUnmodified() {
-        return Arrays.stream(UNMODIFIED_REPSONSES).anyMatch((path.toLowerCase())::startsWith);
+    private boolean keepRequestUnmodified() {
+        return Arrays.stream(UNMODIFIED_REQUESTS).anyMatch((path.toLowerCase())::startsWith);
     }
 
-    private boolean responseContentIs(String pathPart) {
+    private boolean requestIs(String pathPart) {
         return path.toLowerCase().startsWith(pathPart);
     }
 
