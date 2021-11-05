@@ -99,7 +99,7 @@ public class KladblokActionBean implements ActionBean {
         }
 
         try {
-            List<Map<String,Object>> results = DB.qr().query("select to_char(dtg, 'YYYY-MM-DD HH24:MI:SS') as DTG, '(' || COALESCE(vehicle, username) || ') ' || inhoud as Inhoud from safetymaps.kladblok where incident = ?", new MapListHandler(), incident);
+            List<Map<String,Object>> results = DB.qr().query("select to_char(dtg, 'YYYY-MM-DD HH24:MI:SS') as DTG, case when coalesce(s.value, 'false') = 'false' then '(' || COALESCE(vehicle, username) || ') ' || inhoud when coalesce(s.value, 'false') = 'true' then '(' || username || ') ' || inhoud end as Inhoud from safetymaps.kladblok k left join safetymaps.settings s on s.name = 'show_user_in_chat' where incident = ?", new MapListHandler(), incident);
 
             for (Map<String, Object> resultRow : results) {
                 response.put(rowToJson(resultRow, false, false));
