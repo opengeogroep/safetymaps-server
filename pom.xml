@@ -125,7 +125,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.2.5.jre7</version>
+            <version>42.2.25.jre7</version>
             <!-- scope provided voor commandline gebruik API, jre7 op server -->
             <scope>provided</scope>
         </dependency>
